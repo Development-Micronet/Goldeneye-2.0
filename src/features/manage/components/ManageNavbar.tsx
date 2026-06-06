@@ -1,0 +1,59 @@
+import React from "react";
+import { useAuthStore } from "../../../store/useAuthStore";
+
+export type TabType = "company-requests" | "end-users" | "allocated-products";
+
+interface TabConfig {
+  value: TabType;
+  label: string;
+  notAllowedRoles: string[];
+}
+
+const TABS_CONFIG: TabConfig[] = [
+  {
+    value: "company-requests",
+    label: "Company Requests",
+    notAllowedRoles: ["admin", "user"], // admin and user roles are not allowed to view company requests
+  },
+  {
+    value: "end-users",
+    label: "End Users",
+    notAllowedRoles: [],
+  },
+  {
+    value: "allocated-products",
+    label: "Allocated Products",
+    notAllowedRoles: [],
+  },
+];
+
+interface ManageNavbarProps {
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+}
+
+export const ManageNavbar: React.FC<ManageNavbarProps> = ({ activeTab, onTabChange }) => {
+  const user = useAuthStore((state) => state.user);
+  const roleName = user?.roleName.toLowerCase() || "";
+
+  // Filter out tabs that are explicitly restricted for the current user's roleName
+  const visibleTabs = TABS_CONFIG.filter(
+    (tab) => !tab.notAllowedRoles.includes(roleName)
+  );
+
+  return (
+    <div className="bg-[#D5E9E9] border-b border-gray-200 px-4 py-4 sm:px-8 sm:py-5 flex flex-wrap gap-4 sm:gap-12 select-none">
+      {visibleTabs.map((tab) => (
+        <button
+          key={tab.value}
+          onClick={() => onTabChange(tab.value)}
+          className={`text-xs sm:text-[0.8rem] tracking-wide transition-colors cursor-pointer border-none bg-transparent ${
+            activeTab === tab.value ? "text-gray-900 font-bold" : "text-[#4B737A] hover:text-gray-950"
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+};
