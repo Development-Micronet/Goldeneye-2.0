@@ -1,5 +1,7 @@
 import { apiClient } from "../../../api/apiClient";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { useLayersStore } from "../../../store/useLayersStore";
+import { useMapStore } from "../../data/store/useMapStore";
 
 /**
  * Performs backend logout via POST to auth/logout/ and clears the local auth session.
@@ -16,5 +18,11 @@ export const performLogout = async (): Promise<void> => {
   } finally {
     // Always clear credentials from local state to logout user on frontend
     useAuthStore.getState().clearAuth();
+    
+    // Clear all map layers from the store
+    useLayersStore.getState().clearLayers();
+    
+    // Reset all map options and states completely
+    useMapStore.getState().clearMapState();
   }
 };

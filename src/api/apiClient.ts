@@ -1,6 +1,8 @@
 import axios, { AxiosError } from "axios";
 import type { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../store/useAuthStore";
+import { useLayersStore } from "../store/useLayersStore";
+import { useMapStore } from "../features/data/store/useMapStore";
 
 const rawBase = import.meta.env.VITE_API_BASE_URL;
 const cleanBase = rawBase
@@ -66,8 +68,10 @@ apiClient.interceptors.response.use(
 
     // Global 401 Unauthorized handling (e.g. session expired)
     if (status === 401) {
-      console.warn("[API] Unauthorized access. Clearing local auth session.");
+      console.warn("[API] Unauthorized access. Clearing local sessions.");
       useAuthStore.getState().clearAuth();
+      useLayersStore.getState().clearLayers();
+      useMapStore.getState().clearMapState();
 
       // Optional: Redirection to login page or dispatching logout event
       // window.location.href = '/login';

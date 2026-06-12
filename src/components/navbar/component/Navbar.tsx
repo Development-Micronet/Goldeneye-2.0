@@ -18,7 +18,7 @@ export default function Navbar() {
   const { user } = useAuthStore();
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-sm font-medium transition-colors ${
+    `text-xs lg:text-sm font-medium transition-colors ${
       isActive ? "text-white " : "text-nav-inactive hover:text-white"
     }`;
 
@@ -42,21 +42,21 @@ export default function Navbar() {
   const navItems = getNavigationItems(user?.roleName);
 
   return (
-    <nav className="bg-primary px-6 md:px-8 py-2 relative z-50 shadow-md">
+    <nav className="bg-primary px-4 sm:px-6 lg:px-8 py-2 relative z-50 shadow-md">
       <div className="flex items-center justify-between">
         {/* Left: Logo & Desktop links */}
-        <div className="flex items-center gap-10">
+        <div className="flex items-center gap-4 sm:gap-6 lg:gap-10">
           <div className="flex items-center">
             {/* logo */}
             <img
               src={goldeneyeLogo}
               alt="Golden Eye Logo"
-              className="h-13 w-auto object-contain"
+              className="h-8 sm:h-10 md:h-11 lg:h-13 w-auto object-contain"
             />
           </div>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex gap-8 items-center mt-1">
+          <div className="hidden md:flex gap-3 lg:gap-6 xl:gap-8 items-center mt-1">
             {navItems.map((item) => (
               <NavLink key={item.path} to={item.path} className={linkClass}>
                 {item.label}
@@ -66,13 +66,13 @@ export default function Navbar() {
         </div>
 
         {/* Right: Search & User Profile */}
-        <div className="hidden md:flex items-center gap-15 mt-1">
+        <div className="hidden md:flex items-center gap-3 md:gap-6 lg:gap-10 xl:gap-15 mt-1">
           {/* Search bar */}
           <div className="relative">
             <input
               type="text"
               placeholder="Go to place"
-              className="bg-white text-gray-800 placeholder-gray-400 text-xs px-3 py-1.5 pr-8 rounded border border-transparent focus:outline-none w-70 font-sans"
+              className="bg-white text-gray-800 placeholder-gray-400 text-xs px-3 py-1.5 pr-8 rounded border border-transparent focus:outline-none w-32 md:w-44 lg:w-56 xl:w-70 font-sans transition-all duration-300 focus:w-40 md:focus:w-52 lg:focus:w-64 xl:focus:w-80"
             />
             <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 cursor-pointer" />
           </div>
@@ -83,7 +83,7 @@ export default function Navbar() {
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center gap-2 select-none cursor-pointer group"
             >
-              <span className="text-white text-sm font-semibold transition-opacity group-hover:opacity-90">
+              <span className="hidden lg:inline text-white text-xs lg:text-sm font-semibold transition-opacity group-hover:opacity-90">
                 {username}
               </span>
               <div className="flex items-center justify-center w-7 h-7 rounded-full border border-2 border-white text-white font-bold text-xs transition-transform group-hover:scale-105">

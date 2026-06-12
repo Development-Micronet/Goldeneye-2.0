@@ -175,13 +175,22 @@ export const LoginPage: React.FC = () => {
 
       {/* Right Column - Login Form Section */}
       <div className="w-full md:w-1/2 h-screen bg-white flex flex-col justify-between items-center py-6 px-6 md:px-16 overflow-y-auto relative">
+        {/* Mobile Logo overlay */}
+        <div className="flex md:hidden items-center justify-center mb-4 w-full flex-shrink-0 bg-primary rounded-lg p-2">
+          <img
+            src={logoImg}
+            alt="Golden Eye Logo"
+            className="w-40 h-12 object-contain"
+          />
+        </div>
+
         {/* Center Login Container */}
-        <div className="w-full max-w-[420px] my-30 flex flex-col">
-          <h2 className="text-[34px] font-semibold text-center text-gray-900 mb-10 tracking-tight">
+        <div className="w-full max-w-[420px] my-auto flex flex-col py-4">
+          <h2 className="text-2xl sm:text-[34px] font-semibold text-center text-gray-900 mb-6 sm:mb-10 tracking-tight">
             Login
           </h2>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-6">
             {/* Username Field */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
@@ -359,7 +368,7 @@ export const LoginPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-auto bg-primary hover:bg-[#1f4e57] active:scale-[0.98] text-white font-semibold px-7 py-2.5 rounded-lg text-sm shadow transition-all duration-200 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto bg-primary hover:bg-[#1f4e57] active:scale-[0.98] text-white font-semibold px-7 py-2.5 rounded-lg text-sm shadow transition-all duration-200 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
               >
                 {isPending ? "Logging in..." : "Login"}
               </button>

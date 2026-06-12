@@ -4,12 +4,71 @@ import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
 import TileWMS from "ol/source/TileWMS";
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
+import Draw, { createBox } from "ol/interaction/Draw";
+import Style from "ol/style/Style";
+import Stroke from "ol/style/Stroke";
+import Fill from "ol/style/Fill";
+import Text from "ol/style/Text";
+import Feature from "ol/Feature";
+import Polygon from "ol/geom/Polygon";
+import Point from "ol/geom/Point";
 import { defaults as defaultControls } from "ol/control";
+import type { Type } from "ol/geom/Geometry";
 import "ol/ol.css";
+import { useMapOptions } from "../../hooks/useMapOptions";
+import { toast } from "react-toastify";
+import Overlay from "ol/Overlay";
+import { getArea } from "ol/sphere";
+import { unByKey } from "ol/Observable";
+import GeoJSON from "ol/format/GeoJSON";
+import { useLayersStore } from "../../../../store/useLayersStore";
+import { useMapStore } from "../../store/useMapStore";
 
 export default function MapView() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<Map | null>(null);
+  const vectorSourceRef = useRef<VectorSource | null>(null);
+
+  const {
+    activeTool,
+    setActiveTool,
+    pointBufferDistance,
+    drawRectangleCoords,
+    setDrawRectangleCoords,
+  } = useMapOptions();
+  const layers = useLayersStore((state) => state.layers);
+  const addLayer = useLayersStore((state) => state.addLayer);
+  const drawInteractionRef = useRef<Draw | null>(null);
+  
+  const fitLayerId = useMapStore((state) => state.fitLayerId);
+  const setFitLayerId = useMapStore((state) => state.setFitLayerId);
+
+  // Zoom to / fit bounds of selected layer
+  useEffect(() => {
+    if (!fitLayerId || !mapInstance.current) return;
+    
+    const targetLayer = layers.find((l) => l.id === fitLayerId);
+    if (targetLayer) {
+      try {
+        const geojsonFormat = new GeoJSON();
+        const feature = geojsonFormat.readFeature(targetLayer.geojson) as any;
+        const geometry = feature?.getGeometry();
+        if (geometry) {
+          mapInstance.current.getView().fit(geometry, {
+            padding: [50, 50, 50, 50],
+            duration: 1000,
+          });
+        }
+      } catch (err) {
+        console.error("Error fitting layer view:", err);
+      }
+    }
+    setFitLayerId(null);
+  }, [fitLayerId, setFitLayerId, layers]);
+
+  console.log(layers);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -41,10 +100,72 @@ export default function MapView() {
       zIndex: 1,
     });
 
+    // Vector Layer for User Plotted Features
+    const vectorSource = new VectorSource();
+    vectorSourceRef.current = vectorSource;
+
+    const premiumStyleFunction = (feature: any) => {
+      const label = feature.get("label") || "";
+      const area = feature.get("area");
+      const geom = feature.getGeometry();
+
+      const styles = [
+        new Style({
+          fill: new Fill({
+            color: "rgba(44, 102, 113, 0.15)", // Theme primary color #2C6671 with 15% opacity
+          }),
+          stroke: new Stroke({
+            color: "#2C6671", // Theme primary color #2C6671
+            width: 2.5,
+          }),
+        }),
+      ];
+
+      if (label && geom) {
+        const extent = geom.getExtent();
+        const topLeftCoord = [extent[0], extent[3]]; // [minX, maxY]
+        const labelGeom = new Point(topLeftCoord);
+
+        const displayText = typeof area === "number" && area > 0
+          ? ` ${label} ( ${area.toFixed(2)} sqkm ) `
+          : label;
+
+        styles.push(
+          new Style({
+            geometry: labelGeom,
+            text: new Text({
+              text: displayText,
+              font: "bold 14px 'Inter', sans-serif",
+              fill: new Fill({
+                color: "#ffffff", // white text
+              }),
+              backgroundFill: new Fill({
+                color: "#000000", // black background
+              }),
+              padding: [4, 6, 4, 6], // padding for readability
+              overflow: true,
+              offsetX: 8,
+              offsetY: -8,
+              textAlign: "left",
+              textBaseline: "middle",
+            }),
+          })
+        );
+      }
+
+      return styles;
+    };
+
+    const vectorLayer = new VectorLayer({
+      source: vectorSource,
+      style: premiumStyleFunction,
+      zIndex: 10,
+    });
+
     // Initialize Map with EPSG:4326 projection
     const map = new Map({
       target: mapRef.current,
-      layers: [osmLayer, wmsLayer],
+      layers: [osmLayer, wmsLayer, vectorLayer],
       controls: defaultControls({ zoom: false }),
       view: new View({
         projection: "EPSG:4326",
@@ -62,10 +183,266 @@ export default function MapView() {
         mapInstance.current.setTarget(undefined);
         mapInstance.current = null;
       }
+      vectorSourceRef.current = null;
     };
   }, []);
 
-  return (
-    <div className="w-full h-full" ref={mapRef} id="map-container" />
-  );
+  // Synchronize features from the global layers store with the vector source
+  useEffect(() => {
+    const vectorSource = vectorSourceRef.current;
+    if (!vectorSource) return;
+
+    vectorSource.clear();
+
+    const geojsonFormat = new GeoJSON();
+    layers.forEach((layer) => {
+      if (layer.visible === false) return; // Skip hidden layers
+      try {
+        const feature = geojsonFormat.readFeature(layer.geojson) as any;
+        feature.setId(layer.id);
+        feature.set("label", layer.label);
+        if (layer.area !== undefined) {
+          feature.set("area", layer.area);
+        }
+        vectorSource.addFeature(feature);
+      } catch (err) {
+        console.error("Error loading layer from store:", err);
+      }
+    });
+  }, [layers]);
+
+  useEffect(() => {
+    const map = mapInstance.current;
+    const vectorSource = vectorSourceRef.current;
+    if (!map || !vectorSource) return;
+
+    // Clean up any existing draw interaction
+    if (drawInteractionRef.current) {
+      map.removeInteraction(drawInteractionRef.current);
+      drawInteractionRef.current = null;
+    }
+
+    if (!activeTool) return;
+
+    let olDrawType: Type | undefined = undefined;
+    let geometryFunction = undefined;
+    if (activeTool === "Polygon") {
+      olDrawType = "Polygon";
+    } else if (activeTool === "Point") {
+      olDrawType = "Point";
+    } else if (activeTool === "Polyline") {
+      olDrawType = "LineString";
+    } else if (activeTool === "Box") {
+      olDrawType = "Circle";
+      geometryFunction = createBox();
+    }
+
+    if (!olDrawType) return;
+
+    let tooltipElement: HTMLDivElement | null = null;
+    let tooltipOverlay: Overlay | null = null;
+    let changeListenerKey: any = null;
+
+    const createTooltip = () => {
+      tooltipElement = document.createElement("div");
+      tooltipElement.className = "ol-tooltip ol-tooltip-measure";
+      tooltipElement.style.position = "relative";
+      tooltipElement.style.backgroundColor = "rgba(44, 102, 113, 0.9)"; // primary teal
+      tooltipElement.style.color = "white";
+      tooltipElement.style.padding = "4px 8px";
+      tooltipElement.style.borderRadius = "6px";
+      tooltipElement.style.fontSize = "11px";
+      tooltipElement.style.fontWeight = "600";
+      tooltipElement.style.fontFamily = "sans-serif";
+      tooltipElement.style.whiteSpace = "nowrap";
+      tooltipElement.style.pointerEvents = "none";
+      tooltipElement.style.border = "1px solid rgba(255, 255, 255, 0.2)";
+      tooltipElement.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.15)";
+
+      tooltipOverlay = new Overlay({
+        element: tooltipElement,
+        offset: [15, 0],
+        positioning: "center-left",
+      });
+      map.addOverlay(tooltipOverlay);
+    };
+
+    const removeTooltip = () => {
+      if (tooltipOverlay) {
+        map.removeOverlay(tooltipOverlay);
+        tooltipOverlay = null;
+      }
+      if (tooltipElement) {
+        tooltipElement.remove();
+        tooltipElement = null;
+      }
+    };
+
+    const draw = new Draw({
+      type: olDrawType,
+      geometryFunction: geometryFunction,
+      freehand: false,
+    });
+
+    draw.on("drawstart", (event) => {
+      if (activeTool === "Box" || activeTool === "Polygon") {
+        createTooltip();
+
+        const sketch = event.feature;
+        const geom = sketch.getGeometry();
+        if (geom) {
+          changeListenerKey = geom.on("change", (evt: any) => {
+            const currentGeom = evt.target;
+            if (currentGeom.getType() === "Polygon") {
+              const area = getArea(currentGeom, { projection: "EPSG:4326" });
+              const coordinates = currentGeom.getCoordinates()[0];
+              if (coordinates && coordinates.length > 0) {
+                // The cursor position is the last added vertex (coordinates.length - 2)
+                const coord =
+                  coordinates[coordinates.length - 2] || coordinates[0];
+
+                if (tooltipElement && tooltipOverlay) {
+                  const areaKm = area / 1000000;
+                  tooltipElement.innerHTML = `Area: ${areaKm.toFixed(2)} km²`;
+                  tooltipOverlay.setPosition(coord);
+                }
+              }
+            }
+          });
+        }
+      }
+    });
+
+    draw.on("drawend", (event) => {
+      if (changeListenerKey) {
+        unByKey(changeListenerKey);
+        changeListenerKey = null;
+      }
+      removeTooltip();
+
+      const feature = event.feature;
+
+      if (activeTool === "Point") {
+        const geometry = feature.getGeometry();
+        if (geometry && geometry.getType() === "Point") {
+          const coordinates = (geometry as Point).getCoordinates();
+          const cx = coordinates[0];
+          const cy = coordinates[1];
+
+          // Side length B (in km) is pointBufferDistance, so center to edge is B / 2
+          const buffer = parseFloat(pointBufferDistance) || 2.25;
+          const dist = buffer / 2;
+
+          // Convert km to degrees
+          const latDeg = dist / 111.32;
+          const cosLat = Math.cos((cy * Math.PI) / 180);
+          const lonDeg = dist / (111.32 * cosLat);
+
+          // Construct square vertices: BL, BR, TR, TL, BL
+          const vertices = [
+            [
+              [cx - lonDeg, cy - latDeg],
+              [cx + lonDeg, cy - latDeg],
+              [cx + lonDeg, cy + latDeg],
+              [cx - lonDeg, cy + latDeg],
+              [cx - lonDeg, cy - latDeg],
+            ],
+          ];
+
+          const polygonGeom = new Polygon(vertices);
+          feature.setGeometry(polygonGeom);
+        }
+      }
+
+      // Serialize feature to GeoJSON and add to layers store
+      const geojsonFormat = new GeoJSON();
+      const geojson = geojsonFormat.writeFeatureObject(feature);
+
+      const geometry = feature.getGeometry();
+      let area: number | undefined = undefined;
+      if (geometry && (activeTool === "Polygon" || activeTool === "Box" || activeTool === "Point")) {
+        area = getArea(geometry, { projection: "EPSG:4326" }) / 1000000;
+      }
+
+      const newLayer = addLayer({
+        type: activeTool!,
+        geojson: geojson,
+        area: area,
+      });
+
+      toast.success(`${newLayer.label} plotted successfully`);
+
+      // Deactivate tool once drawing completes with a small timeout to prevent race condition
+      setTimeout(() => {
+        setActiveTool(null);
+      }, 50);
+    });
+
+    map.addInteraction(draw);
+    drawInteractionRef.current = draw;
+
+    return () => {
+      if (drawInteractionRef.current && mapInstance.current) {
+        mapInstance.current.removeInteraction(drawInteractionRef.current);
+        drawInteractionRef.current = null;
+      }
+      if (changeListenerKey) {
+        unByKey(changeListenerKey);
+      }
+      removeTooltip();
+    };
+  }, [activeTool, setActiveTool, pointBufferDistance]);
+
+  useEffect(() => {
+    if (!drawRectangleCoords) return;
+
+    const vectorSource = vectorSourceRef.current;
+    const map = mapInstance.current;
+    if (!vectorSource || !map) return;
+
+    const { topLeftLat, topLeftLon, bottomRightLat, bottomRightLon } =
+      drawRectangleCoords;
+
+    // Construct rectangle corners: Top-Left, Top-Right, Bottom-Right, Bottom-Left, closing Top-Left
+    // EPSG:4326 coordinates order in OpenLayers is [longitude, latitude]
+    const coords = [
+      [
+        [topLeftLon, topLeftLat], // Top-Left
+        [bottomRightLon, topLeftLat], // Top-Right
+        [bottomRightLon, bottomRightLat], // Bottom-Right
+        [topLeftLon, bottomRightLat], // Bottom-Left
+        [topLeftLon, topLeftLat], // closing Top-Left
+      ],
+    ];
+
+    const rectGeometry = new Polygon(coords);
+    const rectFeature = new Feature({
+      geometry: rectGeometry,
+      name: "Coordinate Rectangle Layer",
+    });
+
+    // Serialize to GeoJSON and add to layers store
+    const geojsonFormat = new GeoJSON();
+    const geojson = geojsonFormat.writeFeatureObject(rectFeature);
+
+    const area = getArea(rectGeometry, { projection: "EPSG:4326" }) / 1000000;
+
+    const newLayer = addLayer({
+      type: "Coordinates",
+      geojson: geojson,
+      area: area,
+    });
+
+    map.getView().fit(rectGeometry, {
+      padding: [50, 50, 50, 50],
+      duration: 1000,
+    });
+
+    toast.success(`${newLayer.label} plotted successfully from coordinates`);
+
+    // Clear state after drawing
+    setDrawRectangleCoords(null);
+  }, [drawRectangleCoords, setDrawRectangleCoords, addLayer]);
+
+  return <div className="w-full h-full" ref={mapRef} id="map-container" />;
 }
