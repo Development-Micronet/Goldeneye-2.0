@@ -1,7 +1,7 @@
 import React from "react";
 import { useAuthStore } from "../../../store/useAuthStore";
 
-export type TabType = "company-requests" | "end-users" | "allocated-products";
+export type TabType = "company-requests" | "end-users" | "allocated-products"| "provider";
 
 interface TabConfig {
   value: TabType;
@@ -25,6 +25,11 @@ const TABS_CONFIG: TabConfig[] = [
     label: "Allocated Products",
     notAllowedRoles: [],
   },
+  {
+    value:"provider",
+    label:"Provider",
+    notAllowedRoles: []
+  }
 ];
 
 interface ManageNavbarProps {
@@ -35,7 +40,7 @@ interface ManageNavbarProps {
 export const ManageNavbar: React.FC<ManageNavbarProps> = ({ activeTab, onTabChange }) => {
   const user = useAuthStore((state) => state.user);
   const roleName = user?.roleName.toLowerCase() || "";
-
+  
   // Filter out tabs that are explicitly restricted for the current user's roleName
   const visibleTabs = TABS_CONFIG.filter(
     (tab) => !tab.notAllowedRoles.includes(roleName)
