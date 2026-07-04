@@ -11,7 +11,7 @@ export interface DrawnLayer {
 
 interface LayersState {
   layers: DrawnLayer[];
-  addLayer: (layer: Omit<DrawnLayer, "label" | "id">) => DrawnLayer;
+  addLayer: (layer: Omit<DrawnLayer, "id" | "label"> & { label?: string }) => DrawnLayer;
   removeLayer: (id: string) => void;
   clearLayers: () => void;
   toggleLayerVisibility: (id: string) => void;
@@ -47,12 +47,12 @@ export const useLayersStore = create<LayersState>()((set) => ({
           }
         }
       });
-      const label = `${labelPrefix} ${maxNum + 1}`;
+      const label = layerData.label || `${labelPrefix} ${maxNum + 1}`;
 
       newLayer = {
+        ...layerData,
         id,
         label,
-        ...layerData,
       };
 
       return {

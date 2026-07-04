@@ -1,6 +1,8 @@
 import React, { useState, useRef } from "react";
 import { Paperclip, X } from "lucide-react";
 import { toast } from "react-toastify";
+import { useLayersStore } from "../../../../store/useLayersStore";
+import { parseGeospatialFile } from "../../../../utils/geospatialUtils";
 
 interface ImportPopupProps {
   onClose: () => void;
@@ -29,13 +31,45 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
     onClose();
   };
 
-  const handleConfirm = () => {
+  const addLayer = useLayersStore((state) => state.addLayer);
+
+  const handleConfirm = async () => {
     if (selectedFiles.length === 0) {
       toast.error("Please select a file to import");
       return;
     }
-    const fileNames = selectedFiles.map((f) => f.name).join(", ");
-    toast.success(`Imported successfully: ${fileNames}`);
+
+    let totalImported = 0;
+    const errors: string[] = [];
+
+    for (const file of selectedFiles) {
+      try {
+        const text = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error("Failed to read file."));
+          reader.readAsText(file);
+        });
+
+        const parsedLayers = parseGeospatialFile(text, file.name);
+        parsedLayers.forEach((layer) => {
+          addLayer(layer);
+          totalImported++;
+        });
+      } catch (err: any) {
+        console.error(`Error importing file ${file.name}:`, err);
+        errors.push(`${file.name}: ${err.message || err}`);
+      }
+    }
+
+    if (totalImported > 0) {
+      toast.success(`Successfully imported ${totalImported} layer${totalImported > 1 ? "s" : ""}.`);
+    }
+
+    if (errors.length > 0) {
+      errors.forEach((err) => toast.error(err));
+    }
+
     handleClearFile();
     onClose();
   };

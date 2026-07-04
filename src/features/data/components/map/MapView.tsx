@@ -124,7 +124,17 @@ export default function MapView() {
       if (label && geom) {
         const extent = geom.getExtent();
         const topLeftCoord = [extent[0], extent[3]]; // [minX, maxY]
-        const labelGeom = new Point(topLeftCoord);
+        
+        // Pin label to the point on the geometry closest to the top-left corner of the bounding box
+        // to ensure it is always attached to the shape rather than floating in empty space.
+        let labelCoord = topLeftCoord;
+        try {
+          labelCoord = geom.getClosestPoint(topLeftCoord);
+        } catch (e) {
+          console.error("Error getting closest point for label:", e);
+        }
+
+        const labelGeom = new Point(labelCoord);
 
         const displayText = typeof area === "number" && area > 0
           ? ` ${label} ( ${area.toFixed(2)} sqkm ) `
@@ -145,9 +155,9 @@ export default function MapView() {
               padding: [4, 6, 4, 6], // padding for readability
               overflow: true,
               offsetX: 8,
-              offsetY: -8,
+              offsetY: -10,
               textAlign: "left",
-              textBaseline: "middle",
+              textBaseline: "bottom",
             }),
           })
         );
