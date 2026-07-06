@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+coverage/
+vitest-ui/
+playwright-report/
+test-results/
+html-report/
+html/
+
+Dockerfile

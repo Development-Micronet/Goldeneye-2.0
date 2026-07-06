@@ -10,18 +10,40 @@ import ProviderTableskeleton from "./ProviderTableskeleton";
 import ProviderViewAndEdit from "./ProviderViewAndEdit";
 import { Eye } from "lucide-react";
 import Swal from "sweetalert2";
+import { useAuthStore } from "../../../../store/useAuthStore";
+import { decryptAESGCM } from "../../../../utils/dataDecrypt";
+
 
 const ProviderTable = () => {
   const queryClient = useQueryClient();
-  const query = useQuery<ProvidersResponse>({
-    queryKey: ["providers"],
-    queryFn: getListOfProviders,
-  });
-
-  const { data, isLoading, isError } = query;
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
     null,
   );
+  const { accessToken } = useAuthStore.getState();
+  const token = accessToken?.replace("Bearer ", "").trim() || "";
+
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["providers"],
+    queryFn: async () => {
+      //encrypted
+      const res = await getListOfProviders();
+
+      if (!res?.data) return [];
+
+      if (!token) throw new Error("Missing token");
+
+      const encryptedData = res.data as unknown as string;
+      
+      //decrypt
+      const decrypted = await decryptAESGCM(encryptedData, token);
+
+      return decrypted.data as ProvidersResponse["data"];
+    },
+  });
+
+  const providers = data; // always array
+
   const deleteMutation = useMutation({
     mutationFn: deleteProvider,
 
@@ -101,17 +123,14 @@ const ProviderTable = () => {
           </thead>
 
           <tbody className="bg-white">
-            {!data?.data?.length ? (
+            {providers?.length === 0 ? (
               <tr>
-                <td
-                  colSpan={6}
-                  className="border border-gray-200 px-4 py-8 text-center text-sm text-gray-500"
-                >
+                <td colSpan={6} className="text-center p-4">
                   No providers found
                 </td>
               </tr>
             ) : (
-              data.data.map((provider, index) => (
+              providers?.map((provider, index) => (
                 <tr
                   key={provider.id}
                   className="transition-all duration-150 hover:bg-gray-50"
@@ -143,7 +162,7 @@ const ProviderTable = () => {
 
                   <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
                     <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      {provider.credentials.api_key.slice(0, 20)}...
+                       {provider.credentials?.api_key?.slice(0, 20)}...
                     </code>
                   </td>
 

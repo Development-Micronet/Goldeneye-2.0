@@ -264,7 +264,7 @@ export const ManagePage: React.FC = () => {
       <div className="flex-1 p-4 sm:p-6 w-full overflow-hidden flex flex-col">
         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 shadow-sm flex-1 flex flex-col overflow-hidden">
           {/* Header of the table card */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 shrink-0">
             <h2 className="text-gray-800 text-base sm:text-lg font-semibold select-none">
               {activeTab === "company-requests" && "Manage Company Requests"}
               {activeTab === "end-users" && "Manage End User"}

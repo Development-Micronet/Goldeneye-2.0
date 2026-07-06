@@ -71,3 +71,83 @@ export default defineConfig([
   },
 ])
 ```
+
+
+# Frontend Testing Quick Guide (React + Vitest)
+
+---
+
+## 1. Test File (.test.tsx)
+```
+### File Location
+Keep test file in the same folder as the component.
+
+### Example
+ManagePage.tsx
+ManagePage.test.tsx
+```
+
+---
+
+## 2. Basic Test Example
+```js
+import "@testing-library/jest-dom/vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+
+describe("ManagePage", () => {
+  it("renders page", () => {
+    render(<ManagePage />);
+    expect(screen.getByText("Manage End User")).toBeInTheDocument();
+  });
+});
+```
+---
+
+## 3. Click Test Example
+```js
+it("switch tab", () => {
+  render(<ManagePage />);
+
+  fireEvent.click(screen.getByText("Products"));
+
+  expect(
+    screen.getByText("Allocated Products Table")
+  ).toBeInTheDocument();
+});
+```
+---
+
+## 4. Run Tests (CLI)
+```js
+Run all tests:
+npm run test
+
+Run Vitest directly:
+npx vitest
+```
+---
+
+## 5. Visual UI Mode (Test Dashboard)
+```js
+Open UI in browser:
+npx vitest --ui
+
+What you see:
+- Browser opens test dashboard
+- All test files listed
+- Click test to view results
+- Pass/fail status
+- Execution details
+```
+---
+
+
+## 7. Rules
+```js
+- One test = one behavior
+- File name must be ComponentName.test.tsx
+- Always use render() first
+- Then perform action (click/type)
+- Then assert using expect()
+```

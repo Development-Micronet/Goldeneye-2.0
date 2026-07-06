@@ -9,7 +9,8 @@ import {
   type Provider,
   getProviderById,
 } from "../../api/provider";
-
+import { decryptAESGCM } from "../../../../utils/dataDecrypt";
+import { useAuthStore } from "../../../../store/useAuthStore";
 type Props = {
   providerid: string;
   onBack: () => void;
@@ -20,10 +21,22 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
   const isValidStatus = (status: string): Status =>
     status === "Inactive" ? "Inactive" : "Active";
 
+  const { accessToken } = useAuthStore.getState();
+  const token = accessToken?.replace("Bearer ", "").trim() || "";
+
   // FETCH PROVIDER
   const { data, isLoading } = useQuery({
     queryKey: ["provider", providerid],
-    queryFn: () => getProviderById(providerid),
+    queryFn: async () => {
+      const res = await getProviderById(providerid);
+      if (!res) throw new Error("No provider data");
+
+      if (!token) throw new Error("Missing token");
+      const encryptedData = res as unknown as string;
+      const decrypted = await decryptAESGCM(encryptedData, token);
+
+      return decrypted.data as Provider;
+    },
     enabled: !!providerid,
   });
 
@@ -104,44 +117,41 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
   if (isLoading || !provider) {
     return (
       <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl border border-border shadow-xl overflow-hidden animate-pulse">
-
-        {/* Header Skeleton */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <div className="h-4 w-20 bg-gray-200 rounded" />
-          <div className="h-8 w-20 bg-gray-200 rounded-lg" />
-        </div>
-
-        {/* Body Skeleton */}
-        <div className="divide-y divide-border/60">
-
-          {/* Name */}
-          <div className="px-6 py-5 space-y-3">
-            <div className="h-3 w-24 bg-gray-200 rounded" />
-            <div className="h-10 w-full bg-gray-200 rounded-lg" />
+        <div className="w-full max-w-lg bg-white rounded-2xl border border-border shadow-xl overflow-hidden animate-pulse">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div className="h-4 w-20 bg-gray-200 rounded" />
+            <div className="h-8 w-20 bg-gray-200 rounded-lg" />
           </div>
 
-          {/* Description */}
-          <div className="px-6 py-5 space-y-3">
-            <div className="h-3 w-32 bg-gray-200 rounded" />
-            <div className="h-20 w-full bg-gray-200 rounded-lg" />
-          </div>
+          {/* Body Skeleton */}
+          <div className="divide-y divide-border/60">
+            {/* Name */}
+            <div className="px-6 py-5 space-y-3">
+              <div className="h-3 w-24 bg-gray-200 rounded" />
+              <div className="h-10 w-full bg-gray-200 rounded-lg" />
+            </div>
 
-          {/* API Key */}
-          <div className="px-6 py-5 space-y-3">
-            <div className="h-3 w-24 bg-gray-200 rounded" />
-            <div className="h-10 w-full bg-gray-200 rounded-lg" />
-          </div>
+            {/* Description */}
+            <div className="px-6 py-5 space-y-3">
+              <div className="h-3 w-32 bg-gray-200 rounded" />
+              <div className="h-20 w-full bg-gray-200 rounded-lg" />
+            </div>
 
-          {/* Status */}
-          <div className="px-6 py-5 space-y-3">
-            <div className="h-3 w-20 bg-gray-200 rounded" />
-            <div className="h-8 w-28 bg-gray-200 rounded-full" />
-          </div>
+            {/* API Key */}
+            <div className="px-6 py-5 space-y-3">
+              <div className="h-3 w-24 bg-gray-200 rounded" />
+              <div className="h-10 w-full bg-gray-200 rounded-lg" />
+            </div>
 
+            {/* Status */}
+            <div className="px-6 py-5 space-y-3">
+              <div className="h-3 w-20 bg-gray-200 rounded" />
+              <div className="h-8 w-28 bg-gray-200 rounded-full" />
+            </div>
+          </div>
         </div>
       </div>
-    </div>
     );
   }
 

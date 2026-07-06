@@ -6,11 +6,13 @@ interface CoordinateSettingsModalProps {
   onConfirm: () => void;
 }
 
-export const CoordinateSettingsModal: React.FC<CoordinateSettingsModalProps> = ({
-  onConfirm,
-}) => {
-  const setDrawRectangleCoords = useMapStore((state) => state.setDrawRectangleCoords);
-
+export const CoordinateSettingsModal: React.FC<
+  CoordinateSettingsModalProps
+> = ({ onConfirm }) => {
+  const setDrawRectangleCoords = useMapStore(
+    (state) => state.setDrawRectangleCoords,
+  );
+  const [selectedtab, setselectedtab] = useState("centercoordinates");
   const [topLeftLat, setTopLeftLat] = useState("");
   const [topLeftLon, setTopLeftLon] = useState("");
   const [bottomRightLat, setBottomRightLat] = useState("");
@@ -48,14 +50,39 @@ export const CoordinateSettingsModal: React.FC<CoordinateSettingsModalProps> = (
   };
 
   return (
-    <div className="absolute left-full top-0 ml-0 bg-white border border-gray-200 p-4 w-[250px] z-50 flex flex-col space-y-3 pointer-events-auto text-left rounded-lg shadow-xl">
+    <div className="absolute left-full top-0 ml-0 bg-white border border-gray-200 p-4 w-100 z-50 flex flex-col space-y-3 pointer-events-auto text-left rounded-lg shadow-xl">
       <div className="text-[13px] text-gray-800 font-bold border-b border-gray-100 pb-1.5 select-none">
         Draw Rectangle by Coordinates
       </div>
 
+      <div className="flex items-center space-x-2">
+        <button
+          className={`px-3 py-2 text-xs font-semibold transition-colors border-b-2 duration-200 ${
+            selectedtab === "centercoordinates"
+              ? "border-primary text-primary"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
+          onClick={() => setselectedtab("centercoordinates")}
+        >
+          Center Coordinates
+        </button>
+
+        <button
+          className={`px-3 py-2 text-xs font-semibold transition-colors border-b-2 duration-200 ${
+            selectedtab === "boundcoordinates"
+              ? "border-primary text-primary"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
+          onClick={() => setselectedtab("boundcoordinates")}
+        >
+          Bound Coordinates
+        </button>
+      </div>
       {/* Top Left Corner */}
       <div className="flex flex-col space-y-1">
-        <span className="text-[11px] font-semibold text-gray-700">Top-Left Corner (Lat, Lon):</span>
+        <span className="text-[11px] font-semibold text-gray-700">
+          Top-Left Corner (Lat, Lon):
+        </span>
         <div className="grid grid-cols-2 gap-1.5">
           <input
             type="number"
@@ -78,7 +105,9 @@ export const CoordinateSettingsModal: React.FC<CoordinateSettingsModalProps> = (
 
       {/* Bottom Right Corner */}
       <div className="flex flex-col space-y-1">
-        <span className="text-[11px] font-semibold text-gray-700">Bottom-Right Corner (Lat, Lon):</span>
+        <span className="text-[11px] font-semibold text-gray-700">
+          Bottom-Right Corner (Lat, Lon):
+        </span>
         <div className="grid grid-cols-2 gap-1.5">
           <input
             type="number"
