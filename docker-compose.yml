@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  goldeneye-frontend:
+    container_name: Goldeneye-2.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5174:5174"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev -- --host 0.0.0.0 --port 5174
+    restart: unless-stopped
