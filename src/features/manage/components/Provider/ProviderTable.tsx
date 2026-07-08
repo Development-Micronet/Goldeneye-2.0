@@ -28,7 +28,7 @@ const ProviderTable = () => {
     queryFn: async () => {
       //encrypted
       const res = await getListOfProviders();
-
+      // console.log("Encrypted response:", res);
       if (!res?.data) return [];
 
       if (!token) throw new Error("Missing token");
@@ -43,7 +43,7 @@ const ProviderTable = () => {
   });
 
   const providers = data; // always array
-
+  // console.log("Decrypted providers:", providers);
   const deleteMutation = useMutation({
     mutationFn: deleteProvider,
 
@@ -92,6 +92,7 @@ const ProviderTable = () => {
       },
     });
   };
+  
   if (isLoading) return <ProviderTableskeleton />;
   if (isError) return <div>Error loading providers.</div>;
 
@@ -132,7 +133,7 @@ const ProviderTable = () => {
             ) : (
               providers?.map((provider, index) => (
                 <tr
-                  key={provider.id}
+                  key={index}
                   className="transition-all duration-150 hover:bg-gray-50"
                 >
                   <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800 text-center font-medium">
@@ -171,15 +172,15 @@ const ProviderTable = () => {
                     <div className="flex gap-2 items-center">
                       <button
                         type="button"
-                        onClick={() => handleDelete(provider.id)}
+                        onClick={() => handleDelete(provider.provider_id)}
                         className="hover:opacity-70 transition"
                         disabled={
                           deleteMutation.isPending &&
-                          deleteMutation.variables === provider.id
+                          deleteMutation.variables === provider.provider_id
                         }
                       >
                         {deleteMutation.isPending &&
-                        deleteMutation.variables === provider.id ? (
+                        deleteMutation.variables === provider.provider_id ? (
                           <Loader2 size={16} className="animate-spin" />
                         ) : (
                           <Trash2 size={16} />
@@ -187,7 +188,7 @@ const ProviderTable = () => {
                       </button>
 
                       <button
-                        onClick={() => setSelectedProviderId(provider.id)}
+                        onClick={() => setSelectedProviderId(provider.provider_id)}
                         className="hover:opacity-70 transition"
                       >
                         <Eye size={16} />

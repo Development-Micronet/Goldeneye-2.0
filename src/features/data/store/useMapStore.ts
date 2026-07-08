@@ -1,6 +1,14 @@
 import { create } from "zustand";
 
 export type DrawTool = "Point" | "Polyline" | "Box" | "Polygon" | "Coordinates" | null;
+interface PlotCoordinates {
+  lat:number;
+  lon:number;
+  shape:"Square" | "Rectangle";
+  width:number;
+  height:number;
+  area:number;
+}
 
 export interface RectangleCoords {
   topLeftLat: number;
@@ -10,6 +18,8 @@ export interface RectangleCoords {
 }
 
 interface MapState {
+  plotCoordinates: PlotCoordinates | null;
+  setPlotCoordinates: (coords: PlotCoordinates | null) => void;
   activeTool: DrawTool;
   activeSubMenu: string | null;
   pointBufferDistance: string;
@@ -26,9 +36,11 @@ interface MapState {
   setSelectedLayerId: (id: string | null) => void;
   resetMapState: () => void;
   clearMapState: () => void;
+  
 }
 
 export const useMapStore = create<MapState>((set) => ({
+  plotCoordinates: null,
   activeTool: null,
   activeSubMenu: null,
   pointBufferDistance: "2.25",
@@ -43,6 +55,10 @@ export const useMapStore = create<MapState>((set) => ({
   setDrawRectangleCoords: (coords) => set({ drawRectangleCoords: coords }),
   setFitLayerId: (id) => set({ fitLayerId: id }),
   setSelectedLayerId: (id) => set({ selectedLayerId: id }),
+  setPlotCoordinates: (coords) =>
+  set({
+    plotCoordinates: coords,
+  }),
   resetMapState: () =>
     set({
       activeTool: null,

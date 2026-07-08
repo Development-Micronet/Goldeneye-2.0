@@ -37,18 +37,20 @@ export default function MapView() {
     pointBufferDistance,
     drawRectangleCoords,
     setDrawRectangleCoords,
+    plotCoordinates,
+    setPlotCoordinates,
   } = useMapOptions();
   const layers = useLayersStore((state) => state.layers);
   const addLayer = useLayersStore((state) => state.addLayer);
   const drawInteractionRef = useRef<Draw | null>(null);
-  
+
   const fitLayerId = useMapStore((state) => state.fitLayerId);
   const setFitLayerId = useMapStore((state) => state.setFitLayerId);
 
   // Zoom to / fit bounds of selected layer
   useEffect(() => {
     if (!fitLayerId || !mapInstance.current) return;
-    
+
     const targetLayer = layers.find((l) => l.id === fitLayerId);
     if (targetLayer) {
       try {
@@ -124,7 +126,7 @@ export default function MapView() {
       if (label && geom) {
         const extent = geom.getExtent();
         const topLeftCoord = [extent[0], extent[3]]; // [minX, maxY]
-        
+
         // Pin label to the point on the geometry closest to the top-left corner of the bounding box
         // to ensure it is always attached to the shape rather than floating in empty space.
         let labelCoord = topLeftCoord;
@@ -136,9 +138,10 @@ export default function MapView() {
 
         const labelGeom = new Point(labelCoord);
 
-        const displayText = typeof area === "number" && area > 0
-          ? ` ${label} ( ${area.toFixed(2)} sqkm ) `
-          : label;
+        const displayText =
+          typeof area === "number" && area > 0
+            ? ` ${label} ( ${area.toFixed(2)} sqkm ) `
+            : label;
 
         styles.push(
           new Style({
@@ -159,7 +162,7 @@ export default function MapView() {
               textAlign: "left",
               textBaseline: "bottom",
             }),
-          })
+          }),
         );
       }
 
@@ -370,7 +373,12 @@ export default function MapView() {
 
       const geometry = feature.getGeometry();
       let area: number | undefined = undefined;
-      if (geometry && (activeTool === "Polygon" || activeTool === "Box" || activeTool === "Point")) {
+      if (
+        geometry &&
+        (activeTool === "Polygon" ||
+          activeTool === "Box" ||
+          activeTool === "Point")
+      ) {
         area = getArea(geometry, { projection: "EPSG:4326" }) / 1000000;
       }
 
@@ -454,5 +462,53 @@ export default function MapView() {
     setDrawRectangleCoords(null);
   }, [drawRectangleCoords, setDrawRectangleCoords, addLayer]);
 
+  useEffect(() => {
+    if (!plotCoordinates || !mapInstance.current) return;
+
+    const { lat, lon, width, height, shape, area } = plotCoordinates;
+
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+
+    const latOffset = halfHeight / 111.32;
+
+    const lonOffset = halfWidth / (111.32 * Math.cos((lat * Math.PI) / 180));
+
+    const geometry = new Polygon([
+      [
+        [lon - lonOffset, lat - latOffset],
+        [lon + lonOffset, lat - latOffset],
+        [lon + lonOffset, lat + latOffset],
+        [lon - lonOffset, lat + latOffset],
+        [lon - lonOffset, lat - latOffset],
+      ],
+    ]);
+
+    const feature = new Feature({
+      geometry,
+    });
+
+    feature.set("label", shape);
+    feature.set("area", area);
+
+    const geojsonFormat = new GeoJSON();
+
+    const geojson = geojsonFormat.writeFeatureObject(feature);
+
+    const newLayer = addLayer({
+      type: "Coordinates",
+      geojson,
+      area,
+    });
+
+    toast.success(`${newLayer.label} plotted successfully`);
+
+    mapInstance.current.getView().fit(geometry, {
+      padding: [50, 50, 50, 50],
+      duration: 1000,
+    });
+
+    setPlotCoordinates(null);
+  }, [plotCoordinates, addLayer, setPlotCoordinates]);
   return <div className="w-full h-full" ref={mapRef} id="map-container" />;
 }

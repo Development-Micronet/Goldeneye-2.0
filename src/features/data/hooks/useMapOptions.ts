@@ -7,7 +7,10 @@ export function useMapOptions() {
   const resetMapState = useMapStore((state) => state.resetMapState);
   const drawRectangleCoords = useMapStore((state) => state.drawRectangleCoords);
   const setDrawRectangleCoords = useMapStore((state) => state.setDrawRectangleCoords);
-
+   const plotCoordinates = useMapStore((state) => state.plotCoordinates);
+  const setPlotCoordinates = useMapStore(
+    (state) => state.setPlotCoordinates
+  );
   return {
     activeTool,
     setActiveTool,
@@ -15,5 +18,7 @@ export function useMapOptions() {
     resetMapState,
     drawRectangleCoords,
     setDrawRectangleCoords,
+    plotCoordinates,
+    setPlotCoordinates,
   };
 }
