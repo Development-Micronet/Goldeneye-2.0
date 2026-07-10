@@ -1,7 +1,7 @@
 import React from "react";
 import { useAuthStore } from "../../../store/useAuthStore";
 
-export type TabType = "company-requests" | "end-users" | "allocated-products"| "provider";
+export type TabType = "company-requests" | "end-users" | "allocated-products"| "provider & Contracts" | "subscription";
 
 interface TabConfig {
   value: TabType;
@@ -26,9 +26,14 @@ const TABS_CONFIG: TabConfig[] = [
     notAllowedRoles: [],
   },
   {
-    value:"provider",
-    label:"Provider",
+    value:"provider & Contracts",
+    label:"Provider & Contracts",
     notAllowedRoles: []
+  },
+  {
+    value:"subscription",
+    label:"Subscription",
+    notAllowedRoles: ["admin", "user"], // admin and user roles are not allowed to view subscription
   }
 ];
 

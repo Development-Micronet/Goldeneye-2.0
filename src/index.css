@@ -40,3 +40,8 @@
   scrollbar-width: thin;
   scrollbar-color: #c2dadc transparent;
 }
+
+button{
+  cursor: pointer;
+
+}
