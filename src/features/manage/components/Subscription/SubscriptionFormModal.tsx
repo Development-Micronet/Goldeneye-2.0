@@ -33,6 +33,16 @@ const initialForm: CreateSubscriptionDto = {
   serviceInfo: "",
 };
 
+const isValidUrl = (url: string): boolean => {
+  try {
+    const parsedUrl = new URL(url);
+
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 const SubscriptionFormModal = ({
   open,
   onClose,
@@ -43,8 +53,7 @@ const SubscriptionFormModal = ({
   const { accessToken } = useAuthStore.getState();
   const token = accessToken?.replace("Bearer ", "").trim() || "";
 
-  const [formData, setFormData] =
-    useState<CreateSubscriptionDto>(initialForm);
+  const [formData, setFormData] = useState<CreateSubscriptionDto>(initialForm);
 
   useEffect(() => {
     if (subscription) {
@@ -71,10 +80,7 @@ const SubscriptionFormModal = ({
 
       const encryptedData = res.data as unknown as string;
 
-      const decrypted = await decryptAESGCM(
-        encryptedData,
-        token
-      );
+      const decrypted = await decryptAESGCM(encryptedData, token);
 
       return decrypted.data as Provider[];
     },
@@ -108,7 +114,7 @@ const SubscriptionFormModal = ({
    */
   const updateMutation = useMutation({
     mutationFn: (data: CreateSubscriptionDto) =>
-     updateSubscriptionById(subscription!.subscriptionId, data),
+      updateSubscriptionById(subscription!.subscriptionId, data),
 
     onSuccess: () => {
       toast.success("Subscription updated successfully");
@@ -125,8 +131,7 @@ const SubscriptionFormModal = ({
     },
   });
 
-  const isLoading =
-    createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = () => {
     if (formData.providerNames.length === 0) {
@@ -141,6 +146,11 @@ const SubscriptionFormModal = ({
 
     if (!formData.url.trim()) {
       toast.error("URL is required");
+      return;
+    }
+
+    if (!isValidUrl(formData.url.trim())) {
+      toast.error("Please enter a valid URL");
       return;
     }
 
@@ -161,16 +171,12 @@ const SubscriptionFormModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
       <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl overflow-hidden">
-
         {/* Header */}
 
         <div className="flex justify-between items-center border-b px-6 py-4">
-
           <div>
             <h2 className="text-lg font-semibold">
-              {subscription
-                ? "Edit Subscription"
-                : "Create Subscription"}
+              {subscription ? "Edit Subscription" : "Create Subscription"}
             </h2>
 
             <p className="text-sm text-gray-500">
@@ -183,19 +189,15 @@ const SubscriptionFormModal = ({
           <button onClick={onClose}>
             <X />
           </button>
-
         </div>
 
         {/* Body */}
 
         <div className="space-y-5 p-6">
-
           {/* Provider */}
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Provider
-            </label>
+            <label className="block text-sm font-medium mb-2">Provider</label>
 
             <select
               className="w-full border rounded-lg p-2.5"
@@ -210,10 +212,7 @@ const SubscriptionFormModal = ({
               <option value="">Select Provider</option>
 
               {providers.map((provider) => (
-                <option
-                  key={provider.provider_id}
-                  value={provider.name}
-                >
+                <option key={provider.provider_id} value={provider.name}>
                   {provider.name}
                 </option>
               ))}
@@ -223,9 +222,7 @@ const SubscriptionFormModal = ({
           {/* Type */}
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Type
-            </label>
+            <label className="block text-sm font-medium mb-2">Type</label>
 
             <input
               className="w-full border rounded-lg p-2.5"
@@ -243,9 +240,7 @@ const SubscriptionFormModal = ({
           {/* URL */}
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              URL
-            </label>
+            <label className="block text-sm font-medium mb-2">URL</label>
 
             <input
               className="w-full border rounded-lg p-2.5"
@@ -280,17 +275,12 @@ const SubscriptionFormModal = ({
               }
             />
           </div>
-
         </div>
 
         {/* Footer */}
 
         <div className="flex justify-end gap-3 border-t px-6 py-4">
-
-          <button
-            onClick={onClose}
-            className="border rounded-lg px-4 py-2"
-          >
+          <button onClick={onClose} className="border rounded-lg px-4 py-2">
             Cancel
           </button>
 
@@ -302,12 +292,10 @@ const SubscriptionFormModal = ({
             {isLoading
               ? "Saving..."
               : subscription
-              ? "Update Subscription"
-              : "Create Subscription"}
+                ? "Update Subscription"
+                : "Create Subscription"}
           </button>
-
         </div>
-
       </div>
     </div>
   );
