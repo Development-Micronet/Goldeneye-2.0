@@ -170,24 +170,27 @@ const SubscriptionFormModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl overflow-hidden">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-white shadow-xl">
         {/* Header */}
 
-        <div className="flex justify-between items-center border-b px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
-            <h2 className="text-lg font-semibold">
+            <h2 className="font-mona text-base font-semibold text-gray-900">
               {subscription ? "Edit Subscription" : "Create Subscription"}
             </h2>
 
-            <p className="text-sm text-gray-500">
+            <p className="mt-0.5 text-xs text-text-secondary">
               {subscription
                 ? "Update subscription details"
                 : "Create a new subscription"}
             </p>
           </div>
 
-          <button onClick={onClose}>
-            <X />
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-text-secondary hover:bg-gray-100 hover:text-gray-900 transition"
+          >
+            <X size={16} />
           </button>
         </div>
 
@@ -197,10 +200,12 @@ const SubscriptionFormModal = ({
           {/* Provider */}
 
           <div>
-            <label className="block text-sm font-medium mb-2">Provider</label>
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-text-secondary">
+              Provider
+            </label>
 
             <select
-              className="w-full border rounded-lg p-2.5"
+              className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:bg-primary/5 focus:ring-2 focus:ring-primary/10"
               value={formData.providerNames[0] || ""}
               onChange={(e) =>
                 setFormData({
@@ -222,10 +227,12 @@ const SubscriptionFormModal = ({
           {/* Type */}
 
           <div>
-            <label className="block text-sm font-medium mb-2">Type</label>
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-text-secondary">
+              Type
+            </label>
 
             <input
-              className="w-full border rounded-lg p-2.5"
+              className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:bg-primary/5 focus:ring-2 focus:ring-primary/10"
               placeholder="Premium"
               value={formData.type}
               onChange={(e) =>
@@ -240,10 +247,12 @@ const SubscriptionFormModal = ({
           {/* URL */}
 
           <div>
-            <label className="block text-sm font-medium mb-2">URL</label>
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-text-secondary">
+              URL
+            </label>
 
             <input
-              className="w-full border rounded-lg p-2.5"
+              className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:bg-primary/5 focus:ring-2 focus:ring-primary/10"
               placeholder="https://api.example.com"
               value={formData.url}
               onChange={(e) =>
@@ -258,13 +267,13 @@ const SubscriptionFormModal = ({
           {/* Service Info */}
 
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-text-secondary">
               Service Info
             </label>
 
             <textarea
               rows={4}
-              className="w-full border rounded-lg p-2.5 resize-none"
+              className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm outline-none resize-none transition focus:border-primary focus:bg-primary/5 focus:ring-2 focus:ring-primary/10"
               placeholder="Enter service information..."
               value={formData.serviceInfo}
               onChange={(e) =>
@@ -279,15 +288,19 @@ const SubscriptionFormModal = ({
 
         {/* Footer */}
 
-        <div className="flex justify-end gap-3 border-t px-6 py-4">
-          <button onClick={onClose} className="border rounded-lg px-4 py-2">
+        <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+          <button
+            onClick={onClose}
+            disabled={isLoading}
+            className="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:bg-gray-50 transition"
+          >
             Cancel
           </button>
 
           <button
             disabled={isLoading}
             onClick={handleSubmit}
-            className="bg-primary text-white rounded-lg px-5 py-2"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition disabled:opacity-50"
           >
             {isLoading
               ? "Saving..."
