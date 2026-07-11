@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Edit2, Save, X, Loader2, Eye, EyeOff } from "lucide-react";
-import { type Status, type UpdateProviderPayload } from "../../api/provider";
+import { Edit2, Save, X, Loader2 } from "lucide-react";
+import { type UpdateProviderPayload } from "../../api/provider";
 
 import {
   UpdateProviderById,
@@ -18,11 +18,9 @@ type Props = {
 
 const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
   const queryClient = useQueryClient();
-  const isValidStatus = (status: string): Status =>
-    status === "Inactive" ? "Inactive" : "Active";
-
   const { accessToken } = useAuthStore.getState();
   const token = accessToken?.replace("Bearer ", "").trim() || "";
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // FETCH PROVIDER
   const { data, isLoading } = useQuery({
@@ -41,34 +39,41 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
   });
 
   const provider: Provider | undefined = data;
-  const [showKey, setShowKey] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const emptyForm: UpdateProviderDto = {
     name: "",
     description: "",
-    status: "Active",
-    credentials: {
-      api_key: "",
-    },
+    is_active: true,
   };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        onBack();
+      }
+    };
 
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onBack]);
   const [formData, setFormData] = useState<UpdateProviderDto>(emptyForm);
   const isUnchanged =
     provider &&
     formData.name === provider.name &&
     formData.description === provider.description &&
-    formData.status === provider.status &&
-    formData.credentials.api_key === provider.credentials?.api_key;
+    formData.is_active === provider.is_active;
   const openEditor = () => {
     if (!provider) return;
 
     setFormData({
       name: provider.name ?? "",
       description: provider.description ?? "",
-      status: isValidStatus(provider.status),
-      credentials: {
-        api_key: provider.credentials?.api_key ?? "",
-      },
+      is_active: provider.is_active,
     });
 
     setIsEditing(true);
@@ -96,7 +101,7 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
     if (!provider) return;
 
     updateMutation.mutate({
-      id: provider.id,
+      id: provider.provider_id,
       data: formData,
     });
   };
@@ -108,10 +113,7 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
     setFormData({
       name: provider.name ?? "",
       description: provider.description ?? "",
-      status: isValidStatus(provider.status),
-      credentials: {
-        api_key: provider.credentials?.api_key ?? "",
-      },
+      is_active: provider.is_active,
     });
   };
   if (isLoading || !provider) {
@@ -132,16 +134,10 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
               <div className="h-10 w-full bg-gray-200 rounded-lg" />
             </div>
 
-            {/* Description */}
+            {/* description */}
             <div className="px-6 py-5 space-y-3">
               <div className="h-3 w-32 bg-gray-200 rounded" />
               <div className="h-20 w-full bg-gray-200 rounded-lg" />
-            </div>
-
-            {/* API Key */}
-            <div className="px-6 py-5 space-y-3">
-              <div className="h-3 w-24 bg-gray-200 rounded" />
-              <div className="h-10 w-full bg-gray-200 rounded-lg" />
             </div>
 
             {/* Status */}
@@ -157,7 +153,10 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
 
   return (
     <div className="fixed inset-0 z-9999 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl border border-border shadow-xl overflow-hidden font-inter">
+      <div
+        ref={modalRef}
+        className="w-full max-w-lg bg-white rounded-2xl border border-border shadow-xl overflow-hidden font-inter"
+      >
         {/* Header */}
 
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -165,7 +164,7 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
             onClick={onBack}
             className="flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition"
           >
-            <ArrowLeft size={16} />
+            <X size={16} />
             Back
           </button>
 
@@ -273,11 +272,11 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
             )}
           </div>
 
-          {/* Description */}
+          {/* description */}
 
           <div className="px-6 py-5">
             <p className="text-xs uppercase tracking-wide text-text-secondary mb-2">
-              Description
+              description
             </p>
 
             {isEditing ? (
@@ -299,46 +298,7 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
             )}
           </div>
 
-          {/* API Key */}
-
-          <div className="px-6 py-5">
-            <p className="text-xs uppercase tracking-wide text-text-secondary mb-2">
-              API Key
-            </p>
-
-            {isEditing ? (
-              <input
-                className={`${inputStyles} font-mono`}
-                value={formData.credentials.api_key}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    credentials: {
-                      api_key: e.target.value,
-                    },
-                  })
-                }
-              />
-            ) : (
-              <div className="flex items-center gap-3">
-                <code className="font-mono text-sm text-primary break-all">
-                  {showKey
-                    ? provider.credentials?.api_key || "—"
-                    : "••••••••••••••••••••••••"}
-                </code>
-
-                <button
-                  onClick={() => setShowKey(!showKey)}
-                  className="text-primary hover:opacity-80 transition"
-                >
-                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            )}
-          </div>
-
           {/* Status */}
-
           <div className="px-6 py-5">
             <p className="text-xs uppercase tracking-wide text-text-secondary mb-2">
               Status
@@ -347,11 +307,11 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
             {isEditing ? (
               <select
                 className={inputStyles}
-                value={formData.status}
+                value={formData.is_active ? "Active" : "Inactive"}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    status: e.target.value as Status,
+                    is_active: e.target.value === "Active",
                   })
                 }
               >
@@ -359,16 +319,29 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
                 <option value="Inactive">Inactive</option>
               </select>
             ) : (
-              <span
-                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
-                  provider.status === "Active"
-                    ? "bg-primary/10 text-primary"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-current" />
-                {provider.status}
-              </span>
+              <div className="space-y-2">
+                <span
+                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
+                    provider.is_active
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      provider.is_active ? "bg-emerald-500" : "bg-gray-400"
+                    }`}
+                  />
+
+                  {provider.is_active ? "Active" : "Inactive"}
+                </span>
+
+                <p className="text-xs text-text-secondary">
+                  {provider.is_active
+                    ? "Provider is active and available for use."
+                    : "Provider is inactive and currently unavailable."}
+                </p>
+              </div>
             )}
           </div>
         </div>

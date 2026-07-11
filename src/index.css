@@ -3,6 +3,7 @@
 
 @theme {
   --color-primary: #2C6671;
+  --color-primary-100: #F0FDFD;
   --color-nav-inactive: #B8B8B8;
   --color-white: #FFFFFF;
   --color-text-muted: #4B5563; /* Res | IncAng */

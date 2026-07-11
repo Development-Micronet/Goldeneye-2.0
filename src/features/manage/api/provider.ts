@@ -3,14 +3,14 @@ import { apiClient } from "../../../api/apiClient";
 export interface ProviderCredentials {
   api_key: string;
 }
-export type Status = "Active" | "Inactive";
+export type Status = true | false;
 export interface Provider {
-  id: string;
+   provider_id: string;
   name: string;
-  description: string;
-  status: string;
-  credentials: ProviderCredentials;
-  api_key_expires_at: string | null;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ProvidersResponse {
@@ -27,18 +27,14 @@ export interface ProviderCredentials {
 export interface CreateProviderDto {
   name: string;
   description: string;
-  credentials: ProviderCredentials;
-  status: "Active" | "Inactive";
+  is_active: boolean;
 }
 
 
 export interface UpdateProviderDto {
   name: string;
   description: string;
-  status: Status;
-  credentials: {
-    api_key: string;
-  };
+  is_active: boolean;
 }
 
 export type UpdateProviderPayload = {

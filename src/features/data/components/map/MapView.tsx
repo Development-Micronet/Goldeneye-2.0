@@ -39,6 +39,8 @@ export default function MapView() {
     setDrawRectangleCoords,
     plotCoordinates,
     setPlotCoordinates,
+     plotBoundCoordinates,
+  setPlotBoundCoordinates,
   } = useMapOptions();
   const layers = useLayersStore((state) => state.layers);
   const addLayer = useLayersStore((state) => state.addLayer);
@@ -510,5 +512,70 @@ export default function MapView() {
 
     setPlotCoordinates(null);
   }, [plotCoordinates, addLayer, setPlotCoordinates]);
+
+  useEffect(() => {
+  if (!plotBoundCoordinates || !mapInstance.current) return;
+
+  const {
+    upperLeft,
+    lowerRight,
+    area,
+  } = plotBoundCoordinates;
+
+
+  // Polygon coordinates order: [longitude, latitude]
+  const coords = [
+    [
+      [upperLeft.lon, upperLeft.lat],       // Top Left
+      [lowerRight.lon, upperLeft.lat],      // Top Right
+      [lowerRight.lon, lowerRight.lat],     // Bottom Right
+      [upperLeft.lon, lowerRight.lat],      // Bottom Left
+      [upperLeft.lon, upperLeft.lat],       // Close polygon
+    ],
+  ];
+
+
+  const geometry = new Polygon(coords);
+
+
+  const feature = new Feature({
+    geometry,
+  });
+
+
+  feature.set("label", "Bound Coordinates");
+  feature.set("area", area);
+
+
+  const geojsonFormat = new GeoJSON();
+
+  const geojson = geojsonFormat.writeFeatureObject(feature);
+
+
+  const newLayer = addLayer({
+    type: "Bound Coordinates",
+    geojson,
+    area,
+  });
+
+
+  toast.success(
+    `${newLayer.label} plotted successfully`
+  );
+
+
+  mapInstance.current.getView().fit(geometry, {
+    padding: [50, 50, 50, 50],
+    duration: 1000,
+  });
+
+
+  setPlotBoundCoordinates(null);
+
+}, [
+  plotBoundCoordinates,
+  addLayer,
+  setPlotBoundCoordinates,
+]);
   return <div className="w-full h-full" ref={mapRef} id="map-container" />;
 }

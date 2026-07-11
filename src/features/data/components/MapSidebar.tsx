@@ -152,7 +152,7 @@ export default function MapSidebar({
       <div
         className={`absolute top-0 h-full bg-white shadow-2xl border-r border-gray-200 z-30 flex flex-col transition-all duration-300 ease-in-out ${
           activeIndex !== null
-            ? "right-[50px] sm:right-full w-[calc(100vw-50px)] sm:w-[320px] md:w-[360px] lg:w-[400px] opacity-100 pointer-events-auto"
+            ? "right-[50px] sm:right-full w-[calc(100vw-50px)] sm:w-[320px] md:w-[360px] lg:w-[600px] opacity-100 pointer-events-auto"
             : "right-full w-0 opacity-0 pointer-events-none overflow-hidden border-none"
         }`}
       >

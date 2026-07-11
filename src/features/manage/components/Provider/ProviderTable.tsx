@@ -13,15 +13,13 @@ import Swal from "sweetalert2";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../utils/dataDecrypt";
 
-
 const ProviderTable = () => {
   const queryClient = useQueryClient();
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
     null,
   );
-  const { accessToken } = useAuthStore.getState();
+  const { accessToken } = useAuthStore();
   const token = accessToken?.replace("Bearer ", "").trim() || "";
-
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["providers"],
@@ -34,7 +32,7 @@ const ProviderTable = () => {
       if (!token) throw new Error("Missing token");
 
       const encryptedData = res.data as unknown as string;
-      
+
       //decrypt
       const decrypted = await decryptAESGCM(encryptedData, token);
 
@@ -42,8 +40,8 @@ const ProviderTable = () => {
     },
   });
 
-  const providers = data; // always array
-  // console.log("Decrypted providers:", providers);
+  const providers = data ?? [];// always array
+  console.log("Decrypted providers:", providers);
   const deleteMutation = useMutation({
     mutationFn: deleteProvider,
 
@@ -92,7 +90,7 @@ const ProviderTable = () => {
       },
     });
   };
-  
+
   if (isLoading) return <ProviderTableskeleton />;
   if (isError) return <div>Error loading providers.</div>;
 
@@ -115,16 +113,13 @@ const ProviderTable = () => {
                 Status
               </th>
               <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
-                API Key
-              </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
                 Action
               </th>
             </tr>
           </thead>
 
           <tbody className="bg-white">
-            {providers?.length === 0 ? (
+            {providers.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-center p-4">
                   No providers found
@@ -145,26 +140,19 @@ const ProviderTable = () => {
                   </td>
 
                   <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                    {provider.description}
+                    {provider.description || "-"}
                   </td>
 
                   <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
                     <div className="flex items-center select-none">
                       <span
                         className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${
-                          provider.status === "Active"
-                            ? "bg-[#10B981]"
-                            : "bg-[#F59E0B]"
+                          provider.is_active ? "bg-[#10B981]" : "bg-[#F59E0B]"
                         }`}
                       />
-                      <span>{provider.status}</span>
-                    </div>
-                  </td>
 
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                    <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                       {provider.credentials?.api_key?.slice(0, 20)}...
-                    </code>
+                      <span>{provider.is_active ? "Active" : "Inactive"}</span>
+                    </div>
                   </td>
 
                   {/* ACTION */}
@@ -188,7 +176,9 @@ const ProviderTable = () => {
                       </button>
 
                       <button
-                        onClick={() => setSelectedProviderId(provider.provider_id)}
+                        onClick={() =>
+                          setSelectedProviderId(provider.provider_id)
+                        }
                         className="hover:opacity-70 transition"
                       >
                         <Eye size={16} />

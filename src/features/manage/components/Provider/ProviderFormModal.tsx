@@ -1,11 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  createProvider,
-  type CreateProviderDto,
-  type Status,
-} from "../../api/provider";
+import { createProvider, type CreateProviderDto } from "../../api/provider";
 import { toast } from "react-toastify";
 type ProviderFormModalProps = {
   open: boolean;
@@ -14,14 +10,11 @@ type ProviderFormModalProps = {
 
 const ProviderFormModal = ({ open, onClose }: ProviderFormModalProps) => {
   const queryClient = useQueryClient();
-
+  const modalRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<CreateProviderDto>({
     name: "",
     description: "",
-    status: "Active",
-    credentials: {
-      api_key: "",
-    },
+    is_active: true,
   });
 
   const createMutation = useMutation({
@@ -35,24 +28,38 @@ const ProviderFormModal = ({ open, onClose }: ProviderFormModalProps) => {
       setFormData({
         name: "",
         description: "",
-        status: "Active",
-        credentials: {
-          api_key: "",
-        },
+        is_active: true,
       });
 
       onClose();
     },
   });
+  useEffect(() => {
+    if (!open) return;
 
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open, onClose]);
   const handleSubmit = () => {
     if (!formData.name.trim()) {
       toast.error("Provider name is required");
       return;
     }
 
-    if (!formData.credentials.api_key.trim()) {
-      toast.error("API key is required");
+    if (!formData.description.trim()) {
+      toast.error("Provider description is required");
       return;
     }
 
@@ -63,7 +70,10 @@ const ProviderFormModal = ({ open, onClose }: ProviderFormModalProps) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-white shadow-xl">
+      <div
+        ref={modalRef}
+        className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-white shadow-xl"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
@@ -71,7 +81,7 @@ const ProviderFormModal = ({ open, onClose }: ProviderFormModalProps) => {
               Create Provider
             </h2>
             <p className="mt-0.5 text-xs text-text-secondary">
-              Add a new provider configuration
+              Add a new provider 
             </p>
           </div>
 
@@ -126,47 +136,69 @@ const ProviderFormModal = ({ open, onClose }: ProviderFormModalProps) => {
             />
           </div>
 
-          {/* API Key */}
-          <div>
-            <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-text-secondary">
-              API Key
-            </label>
-
-            <input
-              type="text"
-              placeholder="Enter API key"
-              value={formData.credentials.api_key}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  credentials: {
-                    api_key: e.target.value,
-                  },
-                })
-              }
-              className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm font-mono outline-none transition focus:border-primary focus:bg-primary/5 focus:ring-2 focus:ring-primary/10"
-            />
-          </div>
-
           {/* Status */}
           <div>
-            <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-text-secondary">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-secondary">
               Status
             </label>
 
-            <select
-              value={formData.status}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  status: e.target.value as Status,
-                })
-              }
-              className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:bg-primary/5 focus:ring-2 focus:ring-primary/10"
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+            <div className="relative">
+              <select
+                value={formData.is_active ? "Active" : "Inactive"}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    is_active: e.target.value === "Active",
+                  })
+                }
+                className="
+        w-full appearance-none rounded-lg 
+        border border-border 
+        bg-white 
+        px-3 py-2.5 pr-10
+        text-sm font-medium text-gray-700
+        outline-none
+        transition-all
+        hover:border-primary/40
+        focus:border-primary
+        focus:bg-primary/5
+        focus:ring-2 focus:ring-primary/10
+      "
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+
+              {/* Custom arrow */}
+              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                <svg
+                  className="h-4 w-4 text-gray-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            {/* Status preview */}
+            <div className="mt-2 flex items-center gap-2 text-xs text-text-secondary">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  formData.is_active ? "bg-emerald-500" : "bg-gray-400"
+                }`}
+              />
+
+              <span>
+                {formData.is_active
+                  ? "Provider is active"
+                  : "Provider is inactive"}
+              </span>
+            </div>
           </div>
 
           {/* Error */}
