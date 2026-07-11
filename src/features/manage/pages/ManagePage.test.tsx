@@ -25,6 +25,7 @@ vi.mock("../components/ManageNavbar", () => ({
         Products
       </button>
       <button onClick={() => onTabChange("provider")}>Provider</button>
+      <button onClick={() => onTabChange("subscription")}>Subscription</button>
     </div>
   ),
 }));
@@ -50,6 +51,16 @@ vi.mock("../components/Provider/ProviderTable", () => ({
 
 vi.mock("../components/Provider/ProviderFormModal", () => ({
   default: ({ open }: any) => (open ? <div>Provider Modal</div> : null),
+}));
+
+vi.mock("../components/Subscription/SubscriptionFormModal", () => ({
+  default: ({ open, onClose }: any) =>
+    open ? (
+      <div>
+        <h2>Subscription Modal</h2>
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
 }));
 
 // ------------------------
@@ -111,6 +122,20 @@ describe("ManagePage", () => {
 
     expect(screen.getByText("Provider Modal")).toBeInTheDocument();
   });
+
+  it("opens and closes the subscription modal from the add action", () => {
+    render(<ManagePage />);
+
+    fireEvent.click(screen.getByText("Subscription"));
+    fireEvent.click(screen.getByRole("button", { name: /add subscription/i }));
+
+    expect(screen.getByText("Subscription Modal")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /close/i }));
+
+    expect(screen.queryByText("Subscription Modal")).not.toBeInTheDocument();
+  });
+
   it("debug page UI", () => {
     render(<ManagePage />);
     screen.debug(); // 👈 THIS prints HTML in terminal

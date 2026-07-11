@@ -10,11 +10,14 @@ import type { Customer } from "../api/customers";
 import { useAuthStore } from "../../../store/useAuthStore";
 import ProviderTable from "../components/Provider/ProviderTable";
 import ProviderFormModal from "../components/Provider/ProviderFormModal";
+import SubscriptionFormModal from "../components/Subscription/SubscriptionFormModal";
+import SubscriptionList from "../components/Subscription/SubscriptionList";
 
 export const ManagePage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const roleName = user?.roleName.toLowerCase() || "";
   const [showProviderModalform, setshowProviderModalform] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Set default active tab dynamically based on user role
   const [activeTab, setActiveTab] = useState<TabType>(
@@ -199,8 +202,10 @@ export const ManagePage: React.FC = () => {
           },
         ]);
       }
-    } else if (activeTab === "provider") {
+    } else if (activeTab === "provider & Contracts") {
       setshowProviderModalform(true);
+    } else if (activeTab === "subscription") {
+      setShowSubscriptionModal(true);
     }
   };
 
@@ -269,7 +274,8 @@ export const ManagePage: React.FC = () => {
               {activeTab === "company-requests" && "Manage Company Requests"}
               {activeTab === "end-users" && "Manage End User"}
               {activeTab === "allocated-products" && "Manage Allocated Product"}
-              {activeTab === "provider" && "Manage Providers"}
+              {activeTab === "provider & Contracts" && "Manage Providers"}
+              {activeTab === "subscription" && "Manage Subscriptions"}
             </h2>
 
             <button
@@ -279,8 +285,10 @@ export const ManagePage: React.FC = () => {
               {activeTab === "company-requests" && "Add Request"}
               {activeTab === "end-users" && "Add User"}
               {activeTab === "allocated-products" && "Allocate Product"}
-              {activeTab === "provider" && "Add Provider"}
+              {activeTab === "provider & Contracts" && "Add Provider"} 
+              {activeTab === "subscription" && "Add Subscription"}
             </button>
+            
           </div>
 
           {/* Render Active Table Component */}
@@ -306,13 +314,20 @@ export const ManagePage: React.FC = () => {
               onDelete={handleDeleteProduct}
             />
           )}
-          {activeTab === "provider" && <ProviderTable />}
+          {activeTab === "provider & Contracts" && <ProviderTable />}
+          {activeTab === "subscription" && <SubscriptionList />}
         </div>
       </div>
       {showProviderModalform && (
         <ProviderFormModal
           open={showProviderModalform}
           onClose={() => setshowProviderModalform(false)}
+        />
+      )}
+      {activeTab === "subscription" && (
+        <SubscriptionFormModal
+          open={showSubscriptionModal}
+          onClose={() => setShowSubscriptionModal(false)}
         />
       )}
     </div>
