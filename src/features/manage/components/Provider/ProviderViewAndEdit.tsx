@@ -14,9 +14,14 @@ import { useAuthStore } from "../../../../store/useAuthStore";
 type Props = {
   providerid: string;
   onBack: () => void;
+  startInEditMode?: boolean;
 };
 
-const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
+const ProviderViewAndEdit = ({
+  providerid,
+  onBack,
+  startInEditMode = false,
+}: Props) => {
   const queryClient = useQueryClient();
   const { accessToken } = useAuthStore.getState();
   const token = accessToken?.replace("Bearer ", "").trim() || "";
@@ -79,6 +84,18 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
     setIsEditing(true);
   };
 
+  useEffect(() => {
+  if (provider && startInEditMode) {
+    setFormData({
+      name: provider.name ?? "",
+      description: provider.description ?? "",
+      is_active: provider.is_active,
+    });
+
+    setIsEditing(true);
+  }
+}, [provider, startInEditMode]);
+
   const inputStyles =
     "w-full px-3 py-2 text-sm rounded-lg bg-primary/5 border border-primary/15 focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition";
 
@@ -106,16 +123,16 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
     });
   };
   const handleCancel = () => {
-    if (!provider) return;
+  if (!provider) return;
 
-    setIsEditing(false);
+  setFormData({
+    name: provider.name ?? "",
+    description: provider.description ?? "",
+    is_active: provider.is_active,
+  });
 
-    setFormData({
-      name: provider.name ?? "",
-      description: provider.description ?? "",
-      is_active: provider.is_active,
-    });
-  };
+  onBack(); // Close the modal
+};
   if (isLoading || !provider) {
     return (
       <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">

@@ -12,6 +12,7 @@ import { Eye } from "lucide-react";
 import Swal from "sweetalert2";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../utils/dataDecrypt";
+import ProviderAccordion from "./ProviderAccordion";
 
 const ProviderTable = () => {
   const queryClient = useQueryClient();
@@ -97,105 +98,19 @@ const ProviderTable = () => {
   return (
     <>
       <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
-        <table className="min-w-full border-collapse border border-gray-200">
-          <thead>
-            <tr className="bg-white select-none">
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700 w-16">
-                Sr. No.
-              </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
-                Provider Name
-              </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
-                Description
-              </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
-                Status
-              </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
-                Action
-              </th>
-            </tr>
-          </thead>
-
-          <tbody className="bg-white">
-            {providers.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center p-4">
-                  No providers found
-                </td>
-              </tr>
-            ) : (
-              providers?.map((provider, index) => (
-                <tr
-                  key={index}
-                  className="transition-all duration-150 hover:bg-gray-50"
-                >
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800 text-center font-medium">
-                    {index + 1}
-                  </td>
-
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800 font-medium">
-                    {provider.name}
-                  </td>
-
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                    {provider.description || "-"}
-                  </td>
-
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                    <div className="flex items-center select-none">
-                      <span
-                        className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${
-                          provider.is_active ? "bg-[#10B981]" : "bg-[#F59E0B]"
-                        }`}
-                      />
-
-                      <span>{provider.is_active ? "Active" : "Inactive"}</span>
-                    </div>
-                  </td>
-
-                  {/* ACTION */}
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                    <div className="flex gap-2 items-center">
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(provider.provider_id)}
-                        className="hover:opacity-70 transition"
-                        disabled={
-                          deleteMutation.isPending &&
-                          deleteMutation.variables === provider.provider_id
-                        }
-                      >
-                        {deleteMutation.isPending &&
-                        deleteMutation.variables === provider.provider_id ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={16} />
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          setSelectedProviderId(provider.provider_id)
-                        }
-                        className="hover:opacity-70 transition"
-                      >
-                        <Eye size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <ProviderAccordion
+    providers={providers}
+    deleteMutation={deleteMutation}
+    handleDelete={handleDelete}
+    setSelectedProviderId={setSelectedProviderId}
+/>
       </div>
       {selectedProviderId && (
         <ProviderViewAndEdit
-          providerid={selectedProviderId}
-          onBack={() => setSelectedProviderId(null)}
-        />
+  providerid={selectedProviderId}
+  onBack={() => setSelectedProviderId("")}
+  startInEditMode={true}
+/>
       )}
     </>
   );
