@@ -20,8 +20,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-
-// 👇 ADD THIS
 import { configDefaults } from "vitest/config";
 
 export default defineConfig({
@@ -30,14 +28,17 @@ export default defineConfig({
   server: {
     host: true,
     port: 5174,
+    allowedHosts: [
+      "goldeneye.ind.in",
+      "www.goldeneye.ind.in",
+    ],
   },
 
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/test/setup.ts",
-     reporters: ["default", "html"],
-    // optional but recommended
+    reporters: ["default", "html"],
     exclude: [...configDefaults.exclude],
   },
 });

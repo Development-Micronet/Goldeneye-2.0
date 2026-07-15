@@ -1,30 +1,57 @@
-import React from "react";
-import { useAuthStore } from "../../../store/useAuthStore";
-import { performLogout } from "../../auth/api/logout";
+import { useState } from "react";
+import { ArrowRightIcon, ArrowDownIcon } from "@heroicons/react/24/outline";
 
-export const DashboardPage: React.FC = () => {
-  const { user } = useAuthStore();
+import { DashboardCards } from "../components/DashboardCards";
+import { CompanyTable } from "../components/CompanyTable";
+import { UserTable } from "../components/UserTable";
+
+import { useCompanies } from "../hooks/useCompanies";
+import { useCompanyUsers } from "../hooks/useCompanyUsers";
+
+import type { Company } from "../api/dashboard";
+
+export const DashboardPage = () => {
+  const [selectedCompany, setSelectedCompany] =
+    useState<Company | null>(null);
+
+  const { data: companies = [], isLoading: companiesLoading } =
+    useCompanies();
+
+  const { data: users = [], isLoading: usersLoading } =
+    useCompanyUsers(selectedCompany?.schema_name ?? "");
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-6">
-      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 text-center max-w-sm w-full">
-        <h1 className="text-2xl font-bold text-gray-800 mb-3">
-          Golden Eye Dashboard
-        </h1>
-        <p className="text-sm text-gray-500 mb-2">
-          Successfully Authenticated! Welcome to the secure portal.
-        </p>
-        {user && (
-          <div className="text-xs text-gray-400 mb-6">
-            Logged in as: <span className="font-semibold text-gray-655">{user.user}</span> ({user.roleName})
+    <div className="h-full overflow-y-auto bg-[#f5f7fb] p-5">
+      <DashboardCards
+        companies={companies}
+        users={users}
+        selectedCompany={selectedCompany}
+      />
+
+      <div className="relative mt-5 flex flex-col gap-5 xl:flex-row items-center xl:items-start">
+        <div className="flex-1  min-w-0 w-full">
+          <CompanyTable
+            companies={companies}
+            isLoading={companiesLoading}
+            onSelectCompany={setSelectedCompany}
+          />
+        </div>
+
+        {selectedCompany && (
+          <div className="flex items-center justify-center shrink-0 z-10 my-2 xl:my-0 xl:absolute xl:left-1/2 xl:top-[265px] xl:-translate-x-1/2 xl:-translate-y-1/2 bg-white rounded-full p-2 shadow-md border border-gray-100">
+            <ArrowRightIcon className="hidden xl:block h-6 w-6 text-red-500" />
+            <ArrowDownIcon className="block xl:hidden h-6 w-6 text-red-500" />
           </div>
         )}
-        <button
-          onClick={() => performLogout()}
-          className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition-all cursor-pointer"
-        >
-          Logout
-        </button>
+
+        <div className="flex-1 min-w-0 w-full">
+          <UserTable
+            users={users}
+            isLoading={usersLoading}
+            companyName={selectedCompany?.company_name ?? ""}
+            schemaName={selectedCompany?.schema_name ?? ""}
+          />
+        </div>
       </div>
     </div>
   );
