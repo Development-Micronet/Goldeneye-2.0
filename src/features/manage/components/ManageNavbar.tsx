@@ -20,11 +20,11 @@ const TABS_CONFIG: TabConfig[] = [
     label: "End Users",
     notAllowedRoles: [],
   },
-  {
-    value: "allocated-products",
-    label: "Allocated Products",
-    notAllowedRoles: [],
-  },
+  // {
+  //   value: "allocated-products",
+  //   label: "Allocated Products",
+  //   notAllowedRoles: [],
+  // },
   {
     value:"provider & Contracts",
     label:"Provider & Contracts",
