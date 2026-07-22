@@ -43,7 +43,7 @@ vi.mock("../components/AllocatedProductsTable", () => ({
   AllocatedProductsTable: () => <div>Allocated Products Table</div>,
 }));
 
-vi.mock("../components/Provider/ProviderTable", () => ({
+vi.mock("../components/Provider/ProviderMain", () => ({
   default: () => <div>Provider Table</div>,
 }));
 

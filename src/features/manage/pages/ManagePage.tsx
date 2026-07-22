@@ -8,7 +8,7 @@ import {
 } from "../components/AllocatedProductsTable";
 import type { Customer } from "../api/customers";
 import { useAuthStore } from "../../../store/useAuthStore";
-import ProviderTable from "../components/Provider/ProviderTable";
+import ProviderMain from "../components/Provider/ProviderMain";
 import ProviderFormModal from "../components/Provider/ProviderFormModal";
 import SubscriptionFormModal from "../components/Subscription/SubscriptionFormModal";
 import SubscriptionList from "../components/Subscription/SubscriptionList";
@@ -306,7 +306,7 @@ export const ManagePage: React.FC = () => {
               No allocated products data.
             </div>
           )}
-          {activeTab === "provider & Contracts" && <ProviderTable />}
+          {activeTab === "provider & Contracts" && <ProviderMain />}
           {activeTab === "subscription" && <SubscriptionList />}
         </div>
       </div>

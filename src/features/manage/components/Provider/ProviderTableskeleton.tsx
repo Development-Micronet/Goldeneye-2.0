@@ -1,4 +1,4 @@
-const ProviderTableskeleton = () => {
+const ProviderSkeleton = () => {
   return (
     <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
       <table className="min-w-full border-collapse border border-gray-200">
@@ -55,4 +55,4 @@ const ProviderTableskeleton = () => {
   );
 };
 
-export default ProviderTableskeleton;
+export default ProviderSkeleton;

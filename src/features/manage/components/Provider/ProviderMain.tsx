@@ -5,14 +5,14 @@ import {
   type ProvidersResponse,
 } from "../../api/provider";
 import { useState } from "react";
-import ProviderTableskeleton from "./ProviderTableskeleton";
+import ProviderSkeleton from "./ProviderTableskeleton"
 import ProviderViewAndEdit from "./ProviderViewAndEdit";
 import Swal from "sweetalert2";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../utils/dataDecrypt";
 import ProviderAccordion from "./ProviderAccordion";
 
-const ProviderTable = () => {
+const ProviderMain = () => {
   const queryClient = useQueryClient();
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
     null,
@@ -90,7 +90,8 @@ const ProviderTable = () => {
     });
   };
 
-  if (isLoading) return <ProviderTableskeleton />;
+  // if (isLoading) return <ProviderMainskeleton />;
+  if (isLoading) return <ProviderSkeleton />;
   if (isError) return <div>Error loading providers.</div>;
 
   return (
@@ -114,4 +115,4 @@ const ProviderTable = () => {
   );
 };
 
-export default ProviderTable;
+export default ProviderMain;
