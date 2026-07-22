@@ -21,6 +21,8 @@ const ProviderFormModal = ({ open, onClose }: ProviderFormModalProps) => {
     mutationFn: createProvider,
 
     onSuccess: () => {
+      toast.success("Provider created successfully.");
+
       queryClient.invalidateQueries({
         queryKey: ["providers"],
       });
@@ -32,6 +34,10 @@ const ProviderFormModal = ({ open, onClose }: ProviderFormModalProps) => {
       });
 
       onClose();
+    },
+
+    onError: () => {
+      toast.error("Failed to create provider");
     },
   });
   useEffect(() => {
@@ -81,7 +87,7 @@ const ProviderFormModal = ({ open, onClose }: ProviderFormModalProps) => {
               Create Provider
             </h2>
             <p className="mt-0.5 text-xs text-text-secondary">
-              Add a new provider 
+              Add a new provider
             </p>
           </div>
 

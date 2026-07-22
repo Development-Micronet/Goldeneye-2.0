@@ -5,10 +5,8 @@ import {
   type ProvidersResponse,
 } from "../../api/provider";
 import { useState } from "react";
-import { Trash2, Loader2 } from "lucide-react";
 import ProviderTableskeleton from "./ProviderTableskeleton";
 import ProviderViewAndEdit from "./ProviderViewAndEdit";
-import { Eye } from "lucide-react";
 import Swal from "sweetalert2";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../utils/dataDecrypt";

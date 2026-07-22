@@ -4,7 +4,7 @@ import { CompanyRequestsTable } from "../components/CompanyRequestsTable";
 import { EndUsersTable } from "../components/EndUsersTable";
 import type { Customer } from "../api/customers";
 import { useAuthStore } from "../../../store/useAuthStore";
-import ProviderTable from "../components/Provider/ProviderTable";
+import ProviderTable from "../components/Provider/ProviderMain";
 import ProviderFormModal from "../components/Provider/ProviderFormModal";
 import SubscriptionFormModal from "../components/Subscription/SubscriptionFormModal";
 import SubscriptionList from "../components/Subscription/SubscriptionList";

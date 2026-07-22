@@ -2,7 +2,7 @@ import { useState } from "react";
 import * as Accordion from "@radix-ui/react-accordion";
 import ContractsTable from "../Contracts/ContractsTable";
 import ContractFormModal from "../Contracts/ContractsFormModal";
-import { ChevronDown, Plus, Trash2,  Edit2, Loader2 } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Edit2, Loader2 } from "lucide-react";
 
 type Props = {
   providers: any[];
@@ -135,7 +135,6 @@ export default function ProviderAccordion({
                   <table className="min-w-full border border-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="border p-3 text-left">Sr.</th>
                         <th className="border p-3 text-left">Provider Name</th>
                         <th className="border p-3 text-left">Description</th>
                         <th className="border p-3 text-left">Status</th>
@@ -145,8 +144,6 @@ export default function ProviderAccordion({
 
                     <tbody>
                       <tr>
-                        <td className="border p-3">1</td>
-
                         <td className="border p-3">{provider.name}</td>
 
                         <td className="border p-3">
@@ -167,18 +164,18 @@ export default function ProviderAccordion({
                         </td>
 
                         <td className="border p-3">
-  <div className="flex justify-center">
-    <button
-      onClick={() =>
-        setSelectedProviderId(provider.provider_id)
-      }
-      className="rounded-md p-2 text-blue-600 hover:bg-blue-100 transition"
-      title="Edit Provider"
-    >
-      <Edit2 size={17} />
-    </button>
-  </div>
-</td>
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() =>
+                                setSelectedProviderId(provider.provider_id)
+                              }
+                              className="rounded-md p-2 text-blue-600 hover:bg-blue-100 transition"
+                              title="Edit Provider"
+                            >
+                              <Edit2 size={17} />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     </tbody>
                   </table>

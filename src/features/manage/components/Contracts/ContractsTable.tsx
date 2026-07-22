@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
-import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 
 import ContractsTableSkeleton from "./ContractsTableSkeleton";
@@ -30,62 +29,62 @@ export default function ContractsTable({ providerId, providerName }: Props) {
     queryFn: getListOfContracts,
   });
   console.log("Selected Provider ID:", providerId);
-console.log("Selected Provider Name:", providerName);
+  console.log("Selected Provider Name:", providerName);
   console.log("Contracts API Response:", data);
 
-const deleteMutation = useMutation({
-  mutationFn: deleteContract,
+  const deleteMutation = useMutation({
+    mutationFn: deleteContract,
 
-  onSuccess: () => {
-    queryClient.invalidateQueries({
-      queryKey: ["contracts"],
-    });
-  },
-
-  onError: (error) => {
-    console.error("Delete contract failed:", error);
-  },
-});
-
-const handleDelete = async (id: string) => {
-  const result = await Swal.fire({
-    title: "Delete Contract?",
-    text: "This action cannot be undone.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#ef4444",
-    cancelButtonColor: "#6b7280",
-    confirmButtonText: "Yes, delete it",
-    cancelButtonText: "Cancel",
-    reverseButtons: true,
-  });
-
-  if (!result.isConfirmed) return;
-
-  deleteMutation.mutate(id, {
     onSuccess: () => {
-      Swal.fire({
-        title: "Deleted!",
-        text: "Contract has been deleted successfully.",
-        icon: "success",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-
       queryClient.invalidateQueries({
         queryKey: ["contracts"],
       });
     },
 
-    onError: () => {
-      Swal.fire({
-        title: "Error",
-        text: "Failed to delete contract.",
-        icon: "error",
-      });
+    onError: (error) => {
+      console.error("Delete contract failed:", error);
     },
   });
-};
+
+  const handleDelete = async (id: string) => {
+    const result = await Swal.fire({
+      title: "Delete Contract?",
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete it",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        Swal.fire({
+          title: "Deleted!",
+          text: "Contract has been deleted successfully.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["contracts"],
+        });
+      },
+
+      onError: () => {
+        Swal.fire({
+          title: "Error",
+          text: "Failed to delete contract.",
+          icon: "error",
+        });
+      },
+    });
+  };
 
   if (isLoading) {
     return <ContractsTableSkeleton />;
@@ -100,16 +99,16 @@ const handleDelete = async (id: string) => {
   }
 
   const rawContracts = Array.isArray(data?.data) ? data.data : [];
-      console.log("Raw Contracts:", rawContracts);
+  console.log("Raw Contracts:", rawContracts);
 
-const contracts = rawContracts.filter((contract: Contract) => {
-  console.log("----------------------------");
-  console.log("Contract Provider:", contract.provider);
-  console.log("Selected Provider:", providerId);
-  console.log("Equal:", contract.provider === providerId);
+  const contracts = rawContracts.filter((contract: Contract) => {
+    console.log("----------------------------");
+    console.log("Contract Provider:", contract.provider);
+    console.log("Selected Provider:", providerId);
+    console.log("Equal:", contract.provider === providerId);
 
-  return contract.provider === providerId;
-});
+    return contract.provider === providerId;
+  });
 
   if (!contracts.length) {
     return (

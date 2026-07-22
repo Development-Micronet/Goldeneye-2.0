@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import type { FieldErrors } from "react-hook-form";
 import { X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 import {
   createContract,
@@ -86,7 +86,7 @@ export default function ContractFormModal({
     mutationFn: createContract,
 
     onSuccess: () => {
-      toast.success("✅ Contract created successfully.");
+      toast.success("Contract created successfully.");
 
       queryClient.invalidateQueries({
         queryKey: ["contracts"],
