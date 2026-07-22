@@ -1,13 +1,23 @@
-import MapView from "../components/map/MapView";
-import MapSidebar from "../components/MapSidebar";
+import FilterToolbar from "../components/FilterToolbar";
 import LeftSidebar from "../components/LeftSidebar";
+import MapSidebar from "../components/MapSidebar";
+import ZoomSidebar from "../components/ZoomSidebar";
+import MapView from "../components/map/MapView";
+import { ArchiveProductDetails } from "../components/sidebar/component/ArchiveProductDetails";
+import { useArchiveInfoStore } from "../hooks/useArchiveInfoStore";
 
 export const DataPage = () => {
+  const { infoProduct, setInfoProduct } = useArchiveInfoStore();
   return (
-    <div className="w-full h-full relative bg-gray-100 overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden bg-gray-100">
       <MapView />
       <LeftSidebar />
       <MapSidebar />
+      <ZoomSidebar />
+      <FilterToolbar />
+      {infoProduct && (
+        <ArchiveProductDetails product={infoProduct} onClose={() => setInfoProduct(null)} />
+      )}
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { apiClient } from "../../../api/apiClient";
 
 export interface Subscription {
@@ -44,21 +43,16 @@ export type UpdateSubscriptionPayload = {
 /**
  * Get List of Subscriptions
  */
-export const getListOfSubscriptions =
-  async (): Promise<SubscriptionsResponse> => {
-    const { data } = await apiClient.get<SubscriptionsResponse>(
-      "products/subscriptions/"
-    );
+export const getListOfSubscriptions = async (): Promise<SubscriptionsResponse> => {
+  const { data } = await apiClient.get<SubscriptionsResponse>("products/subscriptions/");
 
-    return data;
-  };
+  return data;
+};
 
 /**
  * Get Subscription By Id
  */
-export const getSubscriptionById = async (
-  subscriptionId: string
-): Promise<Subscription> => {
+export const getSubscriptionById = async (subscriptionId: string): Promise<Subscription> => {
   return apiClient
     .get(`products/subscriptions/${subscriptionId}/`)
     .then((response) => response.data.data);
@@ -68,12 +62,9 @@ export const getSubscriptionById = async (
  * Create Subscription
  */
 export const createSubscription = async (
-  subscriptionData: CreateSubscriptionDto
+  subscriptionData: CreateSubscriptionDto,
 ): Promise<Subscription> => {
-  const { data } = await apiClient.post<Subscription>(
-    "products/subscriptions/",
-    subscriptionData
-  );
+  const { data } = await apiClient.post<Subscription>("products/subscriptions/", subscriptionData);
 
   return data;
 };
@@ -83,23 +74,16 @@ export const createSubscription = async (
  */
 export const updateSubscriptionById = async (
   subscriptionId: string,
-  subscriptionData: UpdateSubscriptionDto
+  subscriptionData: UpdateSubscriptionDto,
 ): Promise<Subscription> => {
   return apiClient
-    .put(
-      `products/subscriptions/${subscriptionId}/`,
-      subscriptionData
-    )
+    .put(`products/subscriptions/${subscriptionId}/`, subscriptionData)
     .then((response) => response.data);
 };
 
 /**
  * Delete Subscription
  */
-export const deleteSubscription = async (
-  subscriptionId: string
-): Promise<void> => {
-  await apiClient.delete(
-    `products/subscriptions/${subscriptionId}/`
-  );
+export const deleteSubscription = async (subscriptionId: string): Promise<void> => {
+  await apiClient.delete(`products/subscriptions/${subscriptionId}/`);
 };

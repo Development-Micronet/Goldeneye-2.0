@@ -1,13 +1,13 @@
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { RegisterCompanyPage } from "../features/auth/pages/RegisterCompanyPage";
-import { useAuthStore } from "../store/useAuthStore";
-import MainLayout from "../layouts/MainLayout";
 import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
 import { DataPage } from "../features/data/pages/DataPage";
 import { ManagePage } from "../features/manage/pages/ManagePage";
 import { QuotationPage } from "../features/quotation/pages/QuotationPage";
+import MainLayout from "../layouts/MainLayout";
+import { useAuthStore } from "../store/useAuthStore";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

@@ -1,7 +1,8 @@
 import React from "react";
 import { useAuthStore } from "../../../store/useAuthStore";
 
-export type TabType = "company-requests" | "end-users" | "allocated-products"| "provider & Contracts" | "subscription";
+export type TabType =
+  "company-requests" | "end-users" | "allocated-products" | "provider & Contracts" | "subscription";
 
 interface TabConfig {
   value: TabType;
@@ -26,15 +27,15 @@ const TABS_CONFIG: TabConfig[] = [
     notAllowedRoles: [],
   },
   {
-    value:"provider & Contracts",
-    label:"Provider & Contracts",
-    notAllowedRoles: []
+    value: "provider & Contracts",
+    label: "Provider & Contracts",
+    notAllowedRoles: [],
   },
   {
-    value:"subscription",
-    label:"Subscription",
+    value: "subscription",
+    label: "Subscription",
     notAllowedRoles: ["admin", "user"], // admin and user roles are not allowed to view subscription
-  }
+  },
 ];
 
 interface ManageNavbarProps {
@@ -45,20 +46,19 @@ interface ManageNavbarProps {
 export const ManageNavbar: React.FC<ManageNavbarProps> = ({ activeTab, onTabChange }) => {
   const user = useAuthStore((state) => state.user);
   const roleName = user?.roleName.toLowerCase() || "";
-  
   // Filter out tabs that are explicitly restricted for the current user's roleName
-  const visibleTabs = TABS_CONFIG.filter(
-    (tab) => !tab.notAllowedRoles.includes(roleName)
-  );
+  const visibleTabs = TABS_CONFIG.filter((tab) => !tab.notAllowedRoles.includes(roleName));
 
   return (
-    <div className="bg-[#D5E9E9] border-b border-gray-200 px-4 py-4 sm:px-8 sm:py-5 flex flex-wrap gap-4 sm:gap-12 select-none">
+    <div className="flex flex-wrap gap-4 border-b border-gray-200 bg-[#D5E9E9] px-4 py-4 select-none sm:gap-12 sm:px-8 sm:py-5">
       {visibleTabs.map((tab) => (
         <button
           key={tab.value}
           onClick={() => onTabChange(tab.value)}
-          className={`text-xs sm:text-[0.8rem] tracking-wide transition-colors cursor-pointer border-none bg-transparent ${
-            activeTab === tab.value ? "text-gray-900 font-bold" : "text-[#4B737A] hover:text-gray-950"
+          className={`cursor-pointer border-none bg-transparent text-xs tracking-wide transition-colors sm:text-[0.8rem] ${
+            activeTab === tab.value
+              ? "font-bold text-gray-900"
+              : "text-[#4B737A] hover:text-gray-950"
           }`}
         >
           {tab.label}

@@ -1,10 +1,10 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import SubscriptionList from "./SubscriptionList";
 import Swal from "sweetalert2";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useQuery } from "@tanstack/react-query";
 import { deleteSubscription } from "../../api/subscription";
+import SubscriptionList from "./SubscriptionList";
 
 const deleteSubscriptionMock = vi.fn();
 const invalidateQueriesMock = vi.fn();
@@ -98,9 +98,7 @@ describe("SubscriptionList", () => {
 
     render(<SubscriptionList />);
 
-    await user.click(
-      screen.getByRole("button", { name: /delete subscription sub-1/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /delete subscription sub-1/i }));
 
     await waitFor(() => {
       expect(deleteSubscriptionMock).toHaveBeenCalledWith("sub-1");

@@ -9,7 +9,7 @@ import { useMapStore } from "../../data/store/useMapStore";
  */
 export const performLogout = async (): Promise<void> => {
   const refreshToken = useAuthStore.getState().refreshToken;
-  
+
   try {
     // Send POST request to auth/logout/ endpoint
     await apiClient.post("auth/logout/", { refresh: refreshToken });
@@ -18,10 +18,10 @@ export const performLogout = async (): Promise<void> => {
   } finally {
     // Always clear credentials from local state to logout user on frontend
     useAuthStore.getState().clearAuth();
-    
+
     // Clear all map layers from the store
     useLayersStore.getState().clearLayers();
-    
+
     // Reset all map options and states completely
     useMapStore.getState().clearMapState();
   }

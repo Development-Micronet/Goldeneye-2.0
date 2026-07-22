@@ -6,22 +6,21 @@ export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-6">
-      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 text-center max-w-sm w-full">
-        <h1 className="text-2xl font-bold text-gray-800 mb-3">
-          Golden Eye Dashboard
-        </h1>
-        <p className="text-sm text-gray-500 mb-2">
+    <div className="flex h-full flex-col items-center justify-center p-6">
+      <div className="w-full max-w-sm rounded-xl border border-gray-100 bg-white p-8 text-center shadow-lg">
+        <h1 className="mb-3 text-2xl font-bold text-gray-800">Golden Eye Dashboard</h1>
+        <p className="mb-2 text-sm text-gray-500">
           Successfully Authenticated! Welcome to the secure portal.
         </p>
         {user && (
-          <div className="text-xs text-gray-400 mb-6">
-            Logged in as: <span className="font-semibold text-gray-655">{user.user}</span> ({user.roleName})
+          <div className="mb-6 text-xs text-gray-400">
+            Logged in as: <span className="text-gray-655 font-semibold">{user.user}</span> (
+            {user.roleName})
           </div>
         )}
         <button
           onClick={() => performLogout()}
-          className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition-all cursor-pointer"
+          className="w-full cursor-pointer rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white shadow transition-all hover:bg-red-700"
         >
           Logout
         </button>

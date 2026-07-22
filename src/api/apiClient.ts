@@ -1,8 +1,8 @@
 import axios, { AxiosError } from "axios";
 import type { AxiosInstance, InternalAxiosRequestConfig } from "axios";
+import { useMapStore } from "../features/data/store/useMapStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useLayersStore } from "../store/useLayersStore";
-import { useMapStore } from "../features/data/store/useMapStore";
 
 const rawBase = import.meta.env.VITE_API_BASE_URL;
 const cleanBase = rawBase
@@ -10,11 +10,9 @@ const cleanBase = rawBase
   .replace(/\/+$/, "")
   .replace(/\/api$/, "");
 const [host, port] = cleanBase.split(":");
-
 const isHttps = rawBase.startsWith("https://");
 const protocol = isHttps ? "https" : "http";
 const useNipIo = !isHttps; // only for http .nip.io should be added
-
 const DEFAULT_API_BASE_URL = `${protocol}://${cleanBase}/api/`;
 
 export const apiClient: AxiosInstance = axios.create({

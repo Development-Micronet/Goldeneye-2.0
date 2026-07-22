@@ -23,10 +23,10 @@ export const useLayersStore = create<LayersState>()((set) => ({
   addLayer: (layerData) => {
     let newLayer: DrawnLayer;
     set((state) => {
-      const id = typeof crypto !== "undefined" && crypto.randomUUID 
-        ? crypto.randomUUID() 
-        : Math.random().toString(36).substring(2, 9);
-
+      const id =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : Math.random().toString(36).substring(2, 9);
       const typeLabelMap: Record<string, string> = {
         Box: "Rectangle",
         Coordinates: "Rectangle",
@@ -34,9 +34,8 @@ export const useLayersStore = create<LayersState>()((set) => ({
         Polyline: "Polyline",
         Polygon: "Polygon",
       };
-      
       const labelPrefix = typeLabelMap[layerData.type] || layerData.type;
-      
+
       let maxNum = 0;
       state.layers.forEach((l) => {
         if (l.label.startsWith(labelPrefix + " ")) {
@@ -68,9 +67,7 @@ export const useLayersStore = create<LayersState>()((set) => ({
   clearLayers: () => set({ layers: [] }),
   toggleLayerVisibility: (id) =>
     set((state) => ({
-      layers: state.layers.map((l) =>
-        l.id === id ? { ...l, visible: l.visible === false } : l
-      ),
+      layers: state.layers.map((l) => (l.id === id ? { ...l, visible: l.visible === false } : l)),
     })),
   updateLayerLabel: (id, label) =>
     set((state) => ({

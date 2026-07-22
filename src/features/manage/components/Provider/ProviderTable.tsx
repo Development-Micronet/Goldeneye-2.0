@@ -1,26 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  getListOfProviders,
-  deleteProvider,
-  type ProvidersResponse,
-} from "../../api/provider";
-import { useState } from "react";
-import { Trash2, Loader2 } from "lucide-react";
-import ProviderTableskeleton from "./ProviderTableskeleton";
-import ProviderViewAndEdit from "./ProviderViewAndEdit";
-import { Eye } from "lucide-react";
 import Swal from "sweetalert2";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Trash2 } from "lucide-react";
+import { Eye } from "lucide-react";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../utils/dataDecrypt";
+import { type ProvidersResponse, deleteProvider, getListOfProviders } from "../../api/provider";
+import ProviderTableskeleton from "./ProviderTableskeleton";
+import ProviderViewAndEdit from "./ProviderViewAndEdit";
 
 const ProviderTable = () => {
   const queryClient = useQueryClient();
-  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
-    null,
-  );
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const { accessToken } = useAuthStore();
   const token = accessToken?.replace("Bearer ", "").trim() || "";
-
   const { data, isLoading, isError } = useQuery({
     queryKey: ["providers"],
     queryFn: async () => {
@@ -32,16 +25,13 @@ const ProviderTable = () => {
       if (!token) throw new Error("Missing token");
 
       const encryptedData = res.data as unknown as string;
-
       //decrypt
       const decrypted = await decryptAESGCM(encryptedData, token);
 
       return decrypted.data as ProvidersResponse["data"];
     },
   });
-
-  const providers = data ?? [];// always array
-  console.log("Decrypted providers:", providers);
+  const providers = data ?? []; // always array
   const deleteMutation = useMutation({
     mutationFn: deleteProvider,
 
@@ -55,7 +45,6 @@ const ProviderTable = () => {
       console.error("Delete failed:", error);
     },
   });
-
   const handleDelete = async (providerId: string) => {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -96,23 +85,23 @@ const ProviderTable = () => {
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
+      <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
         <table className="min-w-full border-collapse border border-gray-200">
           <thead>
             <tr className="bg-white select-none">
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700 w-16">
+              <th className="w-16 border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
                 Sr. No.
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
+              <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
                 Provider Name
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
+              <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
                 Description
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
+              <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
                 Status
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
+              <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
                 Action
               </th>
             </tr>
@@ -121,32 +110,29 @@ const ProviderTable = () => {
           <tbody className="bg-white">
             {providers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center p-4">
+                <td colSpan={6} className="p-4 text-center">
                   No providers found
                 </td>
               </tr>
             ) : (
               providers?.map((provider, index) => (
-                <tr
-                  key={index}
-                  className="transition-all duration-150 hover:bg-gray-50"
-                >
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800 text-center font-medium">
+                <tr key={index} className="transition-all duration-150 hover:bg-gray-50">
+                  <td className="border border-gray-200 px-3 py-3 text-center text-xs font-medium text-gray-800 sm:px-4 sm:text-sm">
                     {index + 1}
                   </td>
 
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800 font-medium">
+                  <td className="border border-gray-200 px-3 py-3 text-xs font-medium text-gray-800 sm:px-4 sm:text-sm">
                     {provider.name}
                   </td>
 
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
+                  <td className="border border-gray-200 px-3 py-3 text-xs text-gray-800 sm:px-4 sm:text-sm">
                     {provider.description || "-"}
                   </td>
 
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
+                  <td className="border border-gray-200 px-3 py-3 text-xs text-gray-800 sm:px-4 sm:text-sm">
                     <div className="flex items-center select-none">
                       <span
-                        className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${
+                        className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${
                           provider.is_active ? "bg-[#10B981]" : "bg-[#F59E0B]"
                         }`}
                       />
@@ -156,12 +142,12 @@ const ProviderTable = () => {
                   </td>
 
                   {/* ACTION */}
-                  <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                    <div className="flex gap-2 items-center">
+                  <td className="border border-gray-200 px-3 py-3 text-xs text-gray-800 sm:px-4 sm:text-sm">
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => handleDelete(provider.provider_id)}
-                        className="hover:opacity-70 transition"
+                        className="transition hover:opacity-70"
                         disabled={
                           deleteMutation.isPending &&
                           deleteMutation.variables === provider.provider_id
@@ -176,10 +162,8 @@ const ProviderTable = () => {
                       </button>
 
                       <button
-                        onClick={() =>
-                          setSelectedProviderId(provider.provider_id)
-                        }
-                        className="hover:opacity-70 transition"
+                        onClick={() => setSelectedProviderId(provider.provider_id)}
+                        className="transition hover:opacity-70"
                       >
                         <Eye size={16} />
                       </button>

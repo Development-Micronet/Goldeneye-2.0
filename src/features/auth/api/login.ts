@@ -1,9 +1,9 @@
-import { useMutation } from '@tanstack/react-query'
-import { apiClient } from '../../../api/apiClient'
+import { useMutation } from "@tanstack/react-query";
+import { apiClient } from "../../../api/apiClient";
 
 export interface LoginCredentials {
-  username: string
-  password: string
+  username: string;
+  password: string;
 }
 
 export interface UserData {
@@ -32,12 +32,12 @@ export interface LoginResponse {
 }
 
 const loginUser = async (credentials: LoginCredentials): Promise<LoginResponse> => {
-  const { data } = await apiClient.post<LoginResponse>('auth/login/', credentials)
-  return data
-}
+  const { data } = await apiClient.post<LoginResponse>("auth/login/", credentials);
+  return data;
+};
 
 export const useLoginMutation = () => {
   return useMutation<LoginResponse, Error, LoginCredentials>({
     mutationFn: loginUser,
-  })
-}
+  });
+};

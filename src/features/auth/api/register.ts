@@ -26,10 +26,7 @@ const registerCompany = async (
   payload: RegisterCompanyPayload,
 ): Promise<RegisterCompanyResponse> => {
   // Since apiClient base URL is /api/, this will request api/tenants/register/
-  const { data } = await apiClient.post<RegisterCompanyResponse>(
-    "tenants/register/",
-    payload,
-  );
+  const { data } = await apiClient.post<RegisterCompanyResponse>("tenants/register/", payload);
   return data;
 };
 

@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { toast } from "react-toastify";
-import { useMapOptions } from "../../hooks/useMapOptions";
 import * as turf from "@turf/turf";
-import CenterCoordinates from "./ui/CenterCoordinates";
+import { toast } from "react-toastify";
+import { useState } from "react";
+import { useMapOptions } from "../../hooks/useMapOptions";
 import BoundCoordinates from "./ui/BoundCoordinates";
+import CenterCoordinates from "./ui/CenterCoordinates";
 
 interface CoordinateSettingsModalProps {
   onConfirm: () => void;
@@ -18,11 +18,8 @@ interface DMS {
   direction: string;
 }
 
-export const CoordinateSettingsModal: React.FC<
-  CoordinateSettingsModalProps
-> = ({ onConfirm }) => {
+export const CoordinateSettingsModal: React.FC<CoordinateSettingsModalProps> = ({ onConfirm }) => {
   const { setPlotCoordinates, setPlotBoundCoordinates } = useMapOptions();
-
   const [selectedTab, setselectedTab] = useState<Tab>("centercoordinates");
   const [latitude, setLatitude] = useState<string>("");
   const [longitude, setLongitude] = useState<string>("");
@@ -35,7 +32,6 @@ export const CoordinateSettingsModal: React.FC<
     latitude: "",
     longitude: "",
   });
-
   const [lowerRight, setLowerRight] = useState({
     latitude: "",
     longitude: "",
@@ -44,7 +40,6 @@ export const CoordinateSettingsModal: React.FC<
   const rectWidth = Number(width);
   const rectHeight = Number(height);
   const decimalRegex = /^-?\d*\.?\d*$/;
-
   const convertToDMS = (value: number, type: CoordinateType): DMS => {
     const abs = Math.abs(value);
 
@@ -83,7 +78,6 @@ export const CoordinateSettingsModal: React.FC<
   };
   const getDMS = (value: string, type: CoordinateType) =>
     value ? convertToDMS(Number(value), type) : null;
-
   const handlePlot = () => {
     if (!latitude.trim() || !longitude.trim()) {
       toast.error("Please enter latitude and longitude.");
@@ -166,16 +160,10 @@ export const CoordinateSettingsModal: React.FC<
 
     const ulLat = Number(upperLeft.latitude);
     const ulLon = Number(upperLeft.longitude);
-
     const lrLat = Number(lowerRight.latitude);
     const lrLon = Number(lowerRight.longitude);
 
-    if (
-      Number.isNaN(ulLat) ||
-      Number.isNaN(ulLon) ||
-      Number.isNaN(lrLat) ||
-      Number.isNaN(lrLon)
-    ) {
+    if (Number.isNaN(ulLat) || Number.isNaN(ulLon) || Number.isNaN(lrLat) || Number.isNaN(lrLon)) {
       toast.error("Enter valid bound coordinates.");
       return;
     }
@@ -192,16 +180,12 @@ export const CoordinateSettingsModal: React.FC<
 
     // Validate rectangle direction
     if (ulLat < lrLat) {
-      toast.error(
-        "Upper Left latitude must be greater than Lower Right latitude.",
-      );
+      toast.error("Upper Left latitude must be greater than Lower Right latitude.");
       return;
     }
 
     if (ulLon > lrLon) {
-      toast.error(
-        "Upper Left longitude must be less than Lower Right longitude.",
-      );
+      toast.error("Upper Left longitude must be less than Lower Right longitude.");
       return;
     }
 
@@ -242,16 +226,10 @@ export const CoordinateSettingsModal: React.FC<
   const calculateBoundArea = () => {
     const ulLat = Number(upperLeft.latitude);
     const ulLon = Number(upperLeft.longitude);
-
     const lrLat = Number(lowerRight.latitude);
     const lrLon = Number(lowerRight.longitude);
 
-    if (
-      Number.isNaN(ulLat) ||
-      Number.isNaN(ulLon) ||
-      Number.isNaN(lrLat) ||
-      Number.isNaN(lrLon)
-    ) {
+    if (Number.isNaN(ulLat) || Number.isNaN(ulLon) || Number.isNaN(lrLat) || Number.isNaN(lrLon)) {
       return 0;
     }
 
@@ -264,22 +242,17 @@ export const CoordinateSettingsModal: React.FC<
         [ulLon, ulLat],
       ],
     ]);
-
     const area = turf.area(polygon) / 1000000; // m² to km²
 
     return Number(area.toFixed(2));
   };
   const area = shapeType === "Square" ? side * side : rectWidth * rectHeight;
-
   const latitudeDMS = getDMS(latitude, "lat");
   const longitudeDMS = getDMS(longitude, "long");
-
   const upperLeftLatDMS = getDMS(upperLeft.latitude, "lat");
   const upperLeftLonDMS = getDMS(upperLeft.longitude, "long");
-
   const lowerRightLatDMS = getDMS(lowerRight.latitude, "lat");
   const lowerRightLonDMS = getDMS(lowerRight.longitude, "long");
-
   const isValidBound: boolean =
     !!upperLeft.latitude &&
     !!upperLeft.longitude &&
@@ -287,7 +260,6 @@ export const CoordinateSettingsModal: React.FC<
     !!lowerRight.longitude &&
     Number(upperLeft.latitude) >= Number(lowerRight.latitude) &&
     Number(upperLeft.longitude) <= Number(lowerRight.longitude);
-
   const isValidCenterBuffer =
     latitude.trim() !== "" &&
     longitude.trim() !== "" &&
@@ -299,20 +271,17 @@ export const CoordinateSettingsModal: React.FC<
     Number(longitude) <= 180 &&
     (shapeType === "Square"
       ? sideLength.trim() !== "" && Number(sideLength) > 0
-      : width.trim() !== "" &&
-        height.trim() !== "" &&
-        Number(width) > 0 &&
-        Number(height) > 0);
+      : width.trim() !== "" && height.trim() !== "" && Number(width) > 0 && Number(height) > 0);
 
   return (
-    <div className="absolute left-full top-0 ml-0 bg-white border border-gray-200 p-4 w-120 z-50 flex flex-col space-y-3 pointer-events-auto text-left rounded-lg shadow-xl">
-      <div className="text-[13px] text-gray-800 font-bold border-b border-gray-100 pb-1.5 select-none">
+    <div className="pointer-events-auto absolute top-20 left-full z-50 ml-0 flex w-120 flex-col space-y-3 rounded-lg border border-gray-200 bg-white p-4 text-left shadow-xl">
+      <div className="border-b border-gray-100 pb-1.5 text-[13px] font-bold text-gray-800 select-none">
         Draw Rectangle by Coordinates
       </div>
 
       <div className="flex items-center space-x-2">
         <button
-          className={`px-3 py-2 text-xs font-semibold transition-colors border-b-2 duration-200 ${
+          className={`border-b-2 px-3 py-2 text-xs font-semibold transition-colors duration-200 ${
             selectedTab === "centercoordinates"
               ? "border-primary text-primary"
               : "border-transparent text-gray-600 hover:text-gray-900"
@@ -323,7 +292,7 @@ export const CoordinateSettingsModal: React.FC<
         </button>
 
         <button
-          className={`px-3 py-2 text-xs font-semibold transition-colors border-b-2 duration-200 ${
+          className={`border-b-2 px-3 py-2 text-xs font-semibold transition-colors duration-200 ${
             selectedTab === "boundcoordinates"
               ? "border-primary text-primary"
               : "border-transparent text-gray-600 hover:text-gray-900"

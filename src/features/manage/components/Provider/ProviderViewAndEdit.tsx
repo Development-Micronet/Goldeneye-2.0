@@ -1,16 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit2, Save, X, Loader2 } from "lucide-react";
+import { Edit2, Loader2, Save, X } from "lucide-react";
+import { useAuthStore } from "../../../../store/useAuthStore";
+import { decryptAESGCM } from "../../../../utils/dataDecrypt";
 import { type UpdateProviderPayload } from "../../api/provider";
-
 import {
+  type Provider,
   UpdateProviderById,
   type UpdateProviderDto,
-  type Provider,
   getProviderById,
 } from "../../api/provider";
-import { decryptAESGCM } from "../../../../utils/dataDecrypt";
-import { useAuthStore } from "../../../../store/useAuthStore";
+
 type Props = {
   providerid: string;
   onBack: () => void;
@@ -21,7 +21,6 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
   const { accessToken } = useAuthStore.getState();
   const token = accessToken?.replace("Bearer ", "").trim() || "";
   const modalRef = useRef<HTMLDivElement>(null);
-
   // FETCH PROVIDER
   const { data, isLoading } = useQuery({
     queryKey: ["provider", providerid],
@@ -37,7 +36,6 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
     },
     enabled: !!providerid,
   });
-
   const provider: Provider | undefined = data;
   const [isEditing, setIsEditing] = useState(false);
   const emptyForm: UpdateProviderDto = {
@@ -47,10 +45,7 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
   };
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         onBack();
       }
     };
@@ -78,13 +73,10 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
 
     setIsEditing(true);
   };
-
   const inputStyles =
     "w-full px-3 py-2 text-sm rounded-lg bg-primary/5 border border-primary/15 focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition";
-
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: UpdateProviderPayload) =>
-      UpdateProviderById(id, data),
+    mutationFn: ({ id, data }: UpdateProviderPayload) => UpdateProviderById(id, data),
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["provider", providerid] });
@@ -96,7 +88,6 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
       console.error(err);
     },
   });
-
   const handleSave = () => {
     if (!provider) return;
 
@@ -118,32 +109,32 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
   };
   if (isLoading || !provider) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="w-full max-w-lg bg-white rounded-2xl border border-border shadow-xl overflow-hidden animate-pulse">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 p-4 backdrop-blur-sm">
+        <div className="border-border w-full max-w-lg animate-pulse overflow-hidden rounded-2xl border bg-white shadow-xl">
           {/* Header Skeleton */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-            <div className="h-4 w-20 bg-gray-200 rounded" />
-            <div className="h-8 w-20 bg-gray-200 rounded-lg" />
+          <div className="border-border flex items-center justify-between border-b px-6 py-4">
+            <div className="h-4 w-20 rounded bg-gray-200" />
+            <div className="h-8 w-20 rounded-lg bg-gray-200" />
           </div>
 
           {/* Body Skeleton */}
-          <div className="divide-y divide-border/60">
+          <div className="divide-border/60 divide-y">
             {/* Name */}
-            <div className="px-6 py-5 space-y-3">
-              <div className="h-3 w-24 bg-gray-200 rounded" />
-              <div className="h-10 w-full bg-gray-200 rounded-lg" />
+            <div className="space-y-3 px-6 py-5">
+              <div className="h-3 w-24 rounded bg-gray-200" />
+              <div className="h-10 w-full rounded-lg bg-gray-200" />
             </div>
 
             {/* description */}
-            <div className="px-6 py-5 space-y-3">
-              <div className="h-3 w-32 bg-gray-200 rounded" />
-              <div className="h-20 w-full bg-gray-200 rounded-lg" />
+            <div className="space-y-3 px-6 py-5">
+              <div className="h-3 w-32 rounded bg-gray-200" />
+              <div className="h-20 w-full rounded-lg bg-gray-200" />
             </div>
 
             {/* Status */}
-            <div className="px-6 py-5 space-y-3">
-              <div className="h-3 w-20 bg-gray-200 rounded" />
-              <div className="h-8 w-28 bg-gray-200 rounded-full" />
+            <div className="space-y-3 px-6 py-5">
+              <div className="h-3 w-20 rounded bg-gray-200" />
+              <div className="h-8 w-28 rounded-full bg-gray-200" />
             </div>
           </div>
         </div>
@@ -152,17 +143,17 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
   }
 
   return (
-    <div className="fixed inset-0 z-9999 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/20 p-4 backdrop-blur-sm">
       <div
         ref={modalRef}
-        className="w-full max-w-lg bg-white rounded-2xl border border-border shadow-xl overflow-hidden font-inter"
+        className="border-border font-inter w-full max-w-lg overflow-hidden rounded-2xl border bg-white shadow-xl"
       >
         {/* Header */}
 
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="border-border flex items-center justify-between border-b px-6 py-4">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition"
+            className="text-text-secondary hover:text-primary flex items-center gap-2 text-sm transition"
           >
             <X size={16} />
             Back
@@ -173,19 +164,7 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
               onClick={() => {
                 openEditor();
               }}
-              className="
-                px-3 py-1.5
-                rounded-lg
-                bg-primary
-                text-white
-                text-sm
-                font-medium
-                hover:opacity-90
-                transition
-                flex
-                items-center
-                gap-2
-              "
+              className="bg-primary flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
             >
               <Edit2 size={14} />
               Edit
@@ -195,18 +174,7 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
               <button
                 onClick={handleSave}
                 disabled={updateMutation.isPending || isUnchanged}
-                className="
-                  px-3 py-1.5
-                  rounded-lg
-                  bg-primary
-                  text-white
-                  text-sm
-                  font-medium
-                  disabled:opacity-50
-                  flex
-                  items-center
-                  gap-2
-                "
+                className="bg-primary flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
               >
                 {updateMutation.isPending ? (
                   <>
@@ -223,19 +191,7 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
 
               <button
                 onClick={handleCancel}
-                className="
-                  px-3 py-1.5
-                  rounded-lg
-                  border
-                  border-border
-                  text-sm
-                  text-text-muted
-                  hover:bg-gray-50
-                  transition
-                  flex
-                  items-center
-                  gap-2
-                "
+                className="border-border text-text-muted flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition hover:bg-gray-50"
               >
                 <X size={14} />
                 Cancel
@@ -246,13 +202,11 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
 
         {/* Body */}
 
-        <div className="divide-y divide-border/60">
+        <div className="divide-border/60 divide-y">
           {/* Name */}
 
           <div className="px-6 py-5">
-            <p className="text-xs uppercase tracking-wide text-text-secondary mb-2">
-              Name
-            </p>
+            <p className="text-text-secondary mb-2 text-xs tracking-wide uppercase">Name</p>
 
             {isEditing ? (
               <input
@@ -266,18 +220,14 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
                 }
               />
             ) : (
-              <p className="text-sm text-gray-900 font-medium">
-                {provider.name}
-              </p>
+              <p className="text-sm font-medium text-gray-900">{provider.name}</p>
             )}
           </div>
 
           {/* description */}
 
           <div className="px-6 py-5">
-            <p className="text-xs uppercase tracking-wide text-text-secondary mb-2">
-              description
-            </p>
+            <p className="text-text-secondary mb-2 text-xs tracking-wide uppercase">description</p>
 
             {isEditing ? (
               <textarea
@@ -292,17 +242,13 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
                 }
               />
             ) : (
-              <p className="text-sm text-text-muted leading-6">
-                {provider.description || "—"}
-              </p>
+              <p className="text-text-muted text-sm leading-6">{provider.description || "—"}</p>
             )}
           </div>
 
           {/* Status */}
           <div className="px-6 py-5">
-            <p className="text-xs uppercase tracking-wide text-text-secondary mb-2">
-              Status
-            </p>
+            <p className="text-text-secondary mb-2 text-xs tracking-wide uppercase">Status</p>
 
             {isEditing ? (
               <select
@@ -321,14 +267,14 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
             ) : (
               <div className="space-y-2">
                 <span
-                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
                     provider.is_active
                       ? "bg-emerald-50 text-emerald-700"
                       : "bg-gray-100 text-gray-600"
                   }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${
+                    className={`h-2 w-2 rounded-full ${
                       provider.is_active ? "bg-emerald-500" : "bg-gray-400"
                     }`}
                   />
@@ -336,7 +282,7 @@ const ProviderViewAndEdit = ({ providerid, onBack }: Props) => {
                   {provider.is_active ? "Active" : "Inactive"}
                 </span>
 
-                <p className="text-xs text-text-secondary">
+                <p className="text-text-secondary text-xs">
                   {provider.is_active
                     ? "Provider is active and available for use."
                     : "Provider is inactive and currently unavailable."}

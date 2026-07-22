@@ -1,9 +1,9 @@
 import {
-  pointIcon,
-  polylineIcon,
-  polygonIcon,
-  selectionIcon,
   coordinateIcon,
+  pointIcon,
+  polygonIcon,
+  polylineIcon,
+  selectionIcon,
 } from "../../../../assets";
 
 export interface DrawOption {
@@ -15,9 +15,39 @@ export interface DrawOption {
 }
 
 export const DRAW_OPTIONS: DrawOption[] = [
-  { id: "point", label: "Point", icon: pointIcon, hasSettings: true, toolName: "Point" },
-  { id: "polyline", label: "Polyline", icon: polylineIcon, hasSettings: true, toolName: "Polyline" },
-  { id: "box", label: "Box/Rectangle", icon: selectionIcon, hasSettings: false, toolName: "Box" },
-  { id: "polygon", label: "Polygon", icon: polygonIcon, hasSettings: false, toolName: "Polygon" },
-  { id: "coordinates", label: "Coordinates", icon: coordinateIcon, hasSettings: true, toolName: "Coordinates" },
+  {
+    id: "point",
+    label: "Point",
+    icon: pointIcon,
+    hasSettings: true,
+    toolName: "Point",
+  },
+  {
+    id: "polyline",
+    label: "Polyline",
+    icon: polylineIcon,
+    hasSettings: true,
+    toolName: "Polyline",
+  },
+  {
+    id: "box",
+    label: "Box/Rectangle",
+    icon: selectionIcon,
+    hasSettings: false,
+    toolName: "Box",
+  },
+  {
+    id: "polygon",
+    label: "Polygon",
+    icon: polygonIcon,
+    hasSettings: false,
+    toolName: "Polygon",
+  },
+  {
+    id: "coordinates",
+    label: "Coordinates",
+    icon: coordinateIcon,
+    hasSettings: true,
+    toolName: "Coordinates",
+  },
 ];

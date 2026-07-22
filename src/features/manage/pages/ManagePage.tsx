@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import { ManageNavbar, type TabType } from "../components/ManageNavbar";
-import { CompanyRequestsTable } from "../components/CompanyRequestsTable";
-import { EndUsersTable, type EndUser } from "../components/EndUsersTable";
-import {
-  AllocatedProductsTable,
-  type AllocatedProduct,
-} from "../components/AllocatedProductsTable";
-import type { Customer } from "../api/customers";
 import { useAuthStore } from "../../../store/useAuthStore";
-import ProviderTable from "../components/Provider/ProviderTable";
+import type { Customer } from "../api/customers";
+import {
+  type AllocatedProduct,
+  AllocatedProductsTable,
+} from "../components/AllocatedProductsTable";
+import { CompanyRequestsTable } from "../components/CompanyRequestsTable";
+import { type EndUser, EndUsersTable } from "../components/EndUsersTable";
+import { ManageNavbar, type TabType } from "../components/ManageNavbar";
 import ProviderFormModal from "../components/Provider/ProviderFormModal";
+import ProviderTable from "../components/Provider/ProviderTable";
 import SubscriptionFormModal from "../components/Subscription/SubscriptionFormModal";
 import SubscriptionList from "../components/Subscription/SubscriptionList";
 
@@ -18,12 +18,10 @@ export const ManagePage: React.FC = () => {
   const roleName = user?.roleName.toLowerCase() || "";
   const [showProviderModalform, setshowProviderModalform] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-
   // Set default active tab dynamically based on user role
   const [activeTab, setActiveTab] = useState<TabType>(
     roleName === "superadmin" ? "company-requests" : "end-users",
   );
-
   // State hooks for endUsers and allocatedProducts mock datasets
   const [endUsers, setEndUsers] = useState<EndUser[]>([
     {
@@ -118,10 +116,7 @@ export const ManagePage: React.FC = () => {
       time: "29 Apr 2026 11:27",
     },
   ]);
-
-  const [allocatedProducts, setAllocatedProducts] = useState<
-    AllocatedProduct[]
-  >([
+  const [allocatedProducts, setAllocatedProducts] = useState<AllocatedProduct[]>([
     {
       id: 1,
       productName: "Satellite Imagery BaseMap",
@@ -147,7 +142,6 @@ export const ManagePage: React.FC = () => {
       time: "17 Nov 2025",
     },
   ]);
-
   // Add Item Action Handlers
   const handleAddItem = () => {
     if (activeTab === "company-requests") {
@@ -182,9 +176,7 @@ export const ManagePage: React.FC = () => {
     } else if (activeTab === "allocated-products") {
       const productName = prompt("Enter Product Name:");
       const user = prompt("Enter User Name:");
-      const license = prompt(
-        "Enter License Type (e.g. Enterprise, Trial, Developer):",
-      );
+      const license = prompt("Enter License Type (e.g. Enterprise, Trial, Developer):");
       if (productName && user && license) {
         setAllocatedProducts((prev) => [
           ...prev,
@@ -208,52 +200,37 @@ export const ManagePage: React.FC = () => {
       setShowSubscriptionModal(true);
     }
   };
-
   // Edit Action Handlers
   const handleEditRequest = (customer: Customer) => {
     alert(
       `Editing customer profile: ${customer.name}\nUsername: ${customer.userName}\nStatus: ${customer.status}`,
     );
   };
-
   const handleEditUser = (usr: EndUser) => {
     const newStatus = prompt("Enter status (Approved / Pending):", usr.status);
     if (newStatus === "Approved" || newStatus === "Pending") {
-      setEndUsers((prev) =>
-        prev.map((u) => (u.id === usr.id ? { ...u, status: newStatus } : u)),
-      );
+      setEndUsers((prev) => prev.map((u) => (u.id === usr.id ? { ...u, status: newStatus } : u)));
     }
   };
-
   const handleEditProduct = (prod: AllocatedProduct) => {
-    const newStatus = prompt(
-      "Enter status (Active / Pending / Expired):",
-      prod.status,
-    );
-    if (
-      newStatus === "Active" ||
-      newStatus === "Pending" ||
-      newStatus === "Expired"
-    ) {
+    const newStatus = prompt("Enter status (Active / Pending / Expired):", prod.status);
+    if (newStatus === "Active" || newStatus === "Pending" || newStatus === "Expired") {
       setAllocatedProducts((prev) =>
         prev.map((p) => (p.id === prod.id ? { ...p, status: newStatus } : p)),
       );
     }
   };
-
   // Delete Action Handlers
   const handleDeleteRequest = (id: number) => {
     if (confirm(`Are you sure you want to delete customer ID ${id}?`)) {
       alert("Delete action triggered for backend client ID: " + id);
     }
   };
-
   const handleDeleteUser = (id: number) => {
     if (confirm("Are you sure you want to delete this user?")) {
       setEndUsers((prev) => prev.filter((u) => u.id !== id));
     }
   };
-
   const handleDeleteProduct = (id: number) => {
     if (confirm("Are you sure you want to delete this product allocation?")) {
       setAllocatedProducts((prev) => prev.filter((p) => p.id !== id));
@@ -261,16 +238,16 @@ export const ManagePage: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-50/50 font-sans overflow-hidden">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-gray-50/50 font-sans">
       {/* Top sub-navigation - EXACT same teal background color */}
       <ManageNavbar activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Main card area with padding */}
-      <div className="flex-1 p-4 sm:p-6 w-full overflow-hidden flex flex-col">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 shadow-sm flex-1 flex flex-col overflow-hidden">
+      <div className="flex w-full flex-1 flex-col overflow-hidden p-4 sm:p-6">
+        <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
           {/* Header of the table card */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 shrink-0">
-            <h2 className="text-gray-800 text-base sm:text-lg font-semibold select-none">
+          <div className="mb-6 flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-base font-semibold text-gray-800 select-none sm:text-lg">
               {activeTab === "company-requests" && "Manage Company Requests"}
               {activeTab === "end-users" && "Manage End User"}
               {activeTab === "allocated-products" && "Manage Allocated Product"}
@@ -280,31 +257,23 @@ export const ManagePage: React.FC = () => {
 
             <button
               onClick={handleAddItem}
-              className="bg-primary hover:bg-[#1f4e57] text-white px-4 py-1.5 sm:px-5 rounded-full text-[11px] sm:text-xs font-medium transition-colors shadow-sm cursor-pointer select-none active:scale-[0.98] self-start sm:self-center"
+              className="bg-primary cursor-pointer self-start rounded-full px-4 py-1.5 text-[11px] font-medium text-white shadow-sm transition-colors select-none hover:bg-[#1f4e57] active:scale-[0.98] sm:self-center sm:px-5 sm:text-xs"
             >
               {activeTab === "company-requests" && "Add Request"}
               {activeTab === "end-users" && "Add User"}
               {activeTab === "allocated-products" && "Allocate Product"}
-              {activeTab === "provider & Contracts" && "Add Provider"} 
+              {activeTab === "provider & Contracts" && "Add Provider"}
               {activeTab === "subscription" && "Add Subscription"}
             </button>
-            
           </div>
 
           {/* Render Active Table Component */}
           {activeTab === "company-requests" && (
-            <CompanyRequestsTable
-              onEdit={handleEditRequest}
-              onDelete={handleDeleteRequest}
-            />
+            <CompanyRequestsTable onEdit={handleEditRequest} onDelete={handleDeleteRequest} />
           )}
 
           {activeTab === "end-users" && (
-            <EndUsersTable
-              users={endUsers}
-              onEdit={handleEditUser}
-              onDelete={handleDeleteUser}
-            />
+            <EndUsersTable users={endUsers} onEdit={handleEditUser} onDelete={handleDeleteUser} />
           )}
 
           {activeTab === "allocated-products" && (

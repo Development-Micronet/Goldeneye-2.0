@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
-import { Paperclip, X } from "lucide-react";
 import { toast } from "react-toastify";
+import React, { useRef, useState } from "react";
+import { Paperclip, X } from "lucide-react";
 import { useLayersStore } from "../../../../store/useLayersStore";
 import { parseGeospatialFile } from "../../../../utils/geospatialUtils";
 
@@ -12,27 +12,22 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setSelectedFiles(Array.from(e.target.files));
     }
   };
-
   const handleClearFile = () => {
     setSelectedFiles([]);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
-
   const handleCancel = () => {
     handleClearFile();
     onClose();
   };
-
   const addLayer = useLayersStore((state) => state.addLayer);
-
   const handleConfirm = async () => {
     if (selectedFiles.length === 0) {
       toast.error("Please select a file to import");
@@ -50,7 +45,6 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
           reader.onerror = () => reject(new Error("Failed to read file."));
           reader.readAsText(file);
         });
-
         const parsedLayers = parseGeospatialFile(text, file.name);
         parsedLayers.forEach((layer) => {
           addLayer(layer);
@@ -73,16 +67,13 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
     handleClearFile();
     onClose();
   };
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
-
   const handleDragLeave = () => {
     setIsDragging(false);
   };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -100,20 +91,18 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
           toast.warning("Some files were skipped due to unsupported file type");
         }
       } else {
-        toast.error(
-          "Invalid file type. Allowed: .shp, .kml, .kmz, .json, .geojson",
-        );
+        toast.error("Invalid file type. Allowed: .shp, .kml, .kmz, .json, .geojson");
       }
     }
   };
 
   return (
-    <div className="absolute left-full -top-12 ml-3 w-[calc(100vw-70px)] max-w-[360px] sm:w-[340px] md:w-[360px] bg-white border border-gray-200 shadow-2xl px-5 py-3 z-50 flex flex-col space-y-2 pointer-events-auto text-left">
+    <div className="pointer-events-auto absolute -top-12 left-full z-50 ml-3 flex w-[calc(100vw-70px)] max-w-[360px] flex-col space-y-2 border border-gray-200 bg-white px-5 py-3 text-left shadow-2xl sm:w-[340px] md:w-[360px]">
       <div className="flex flex-col text-left">
-        <span className="text-gray-500 text-xs sm:text-[12px] leading-relaxed ">
+        <span className="text-xs leading-relaxed text-gray-500 sm:text-[12px]">
           (Allowed File Types: .shp, .kml, .kmz, .json, .geojson)
         </span>
-        <span className="text-gray-700 text-xs sm:text-[12px] leading-relaxed">
+        <span className="text-xs leading-relaxed text-gray-700 sm:text-[12px]">
           Shapefile with Projection WGS84 EPSG:4326
         </span>
       </div>
@@ -124,10 +113,10 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`flex items-center border rounded-lg overflow-hidden h-10 sm:h-11 transition-all bg-white cursor-pointer ${
+        className={`flex h-10 cursor-pointer items-center overflow-hidden rounded-lg border bg-white transition-all sm:h-11 ${
           isDragging
-            ? "border-dashed border-primary bg-primary/5"
-            : "border-gray-200 hover:border-gray-300 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
+            ? "border-primary bg-primary/5 border-dashed"
+            : "focus-within:border-primary focus-within:ring-primary border-gray-200 focus-within:ring-1 hover:border-gray-300"
         }`}
       >
         <input
@@ -139,7 +128,7 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
           multiple
         />
         {selectedFiles.length > 0 ? (
-          <div className="flex-1 px-3 py-2 text-left text-xs sm:text-sm text-gray-700 font-medium select-none overflow-hidden text-ellipsis whitespace-nowrap flex items-center justify-between">
+          <div className="flex flex-1 items-center justify-between overflow-hidden px-3 py-2 text-left text-xs font-medium text-ellipsis whitespace-nowrap text-gray-700 select-none sm:text-sm">
             <span className="truncate">
               {selectedFiles.length === 1
                 ? selectedFiles[0].name
@@ -150,34 +139,34 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
                 e.stopPropagation();
                 handleClearFile();
               }}
-              className="p-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         ) : (
-          <div className="flex-1 px-3 py-2 text-left text-xs sm:text-sm text-gray-400 select-none overflow-hidden text-ellipsis whitespace-nowrap">
+          <div className="flex-1 overflow-hidden px-3 py-2 text-left text-xs text-ellipsis whitespace-nowrap text-gray-400 select-none sm:text-sm">
             Search File From Folder
           </div>
         )}
-        <div className="bg-primary/5 h-full px-3.5 flex items-center justify-center border-l border-gray-200 transition-colors hover:bg-primary/10">
-          <Paperclip className="w-4 h-4 text-primary" />
+        <div className="bg-primary/5 hover:bg-primary/10 flex h-full items-center justify-center border-l border-gray-200 px-3.5 transition-colors">
+          <Paperclip className="text-primary h-4 w-4" />
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-3 mt-1 justify-start">
+      <div className="mt-1 flex items-center justify-start gap-3">
         <button
           type="button"
           onClick={handleCancel}
-          className="border border-primary text-primary bg-white hover:bg-primary/5 rounded-full px-5 py-1.5 sm:py-2 text-xs sm:text-[12px] font-semibold transition-all cursor-pointer focus:outline-none"
+          className="border-primary text-primary hover:bg-primary/5 cursor-pointer rounded-full border bg-white px-5 py-1.5 text-xs font-semibold transition-all focus:outline-none sm:py-2 sm:text-[12px]"
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={handleConfirm}
-          className="bg-primary text-white hover:bg-primary/90 rounded-full px-7 py-1.5 sm:py-2 text-xs sm:text-[12px] font-semibold transition-all cursor-pointer focus:outline-none"
+          className="bg-primary hover:bg-primary/90 cursor-pointer rounded-full px-7 py-1.5 text-xs font-semibold text-white transition-all focus:outline-none sm:py-2 sm:text-[12px]"
         >
           Confirm
         </button>

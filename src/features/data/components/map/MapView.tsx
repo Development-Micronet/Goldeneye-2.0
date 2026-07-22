@@ -1,36 +1,51 @@
-import { useEffect, useRef } from "react";
+import { toast } from "react-toastify";
+import { useEffect, useRef, useState } from "react";
+import { useLayersStore } from "../../../../store/useLayersStore";
+import useBaseMapStore from "../../hooks/useBaseMapStore";
+import { useMapOptions } from "../../hooks/useMapOptions";
+import useZoomStore from "../../hooks/useZoomStore";
+import { useMapStore } from "../../store/useMapStore";
+import { useArchiveProductStore } from "../sidebar/store/useArchiveProductStore";
+import Feature from "ol/Feature";
 import Map from "ol/Map";
+import { unByKey } from "ol/Observable";
+import Overlay from "ol/Overlay";
 import View from "ol/View";
+import { defaults as defaultControls } from "ol/control";
+import { easeOut } from "ol/easing";
+import { getHeight, getWidth } from "ol/extent";
+import { isEmpty } from "ol/extent";
+import GeoJSON from "ol/format/GeoJSON";
+import type { Type } from "ol/geom/Geometry";
+import Point from "ol/geom/Point";
+import Polygon from "ol/geom/Polygon";
+import Draw, { createBox } from "ol/interaction/Draw";
+import ImageLayer from "ol/layer/Image";
 import TileLayer from "ol/layer/Tile";
+import VectorLayer from "ol/layer/Vector";
+import "ol/ol.css";
+import { transformExtent } from "ol/proj";
+import ImageStatic from "ol/source/ImageStatic";
 import OSM from "ol/source/OSM";
 import TileWMS from "ol/source/TileWMS";
-import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
-import Draw, { createBox } from "ol/interaction/Draw";
-import Style from "ol/style/Style";
-import Stroke from "ol/style/Stroke";
-import Fill from "ol/style/Fill";
-import Text from "ol/style/Text";
-import Feature from "ol/Feature";
-import Polygon from "ol/geom/Polygon";
-import Point from "ol/geom/Point";
-import { defaults as defaultControls } from "ol/control";
-import type { Type } from "ol/geom/Geometry";
-import "ol/ol.css";
-import { useMapOptions } from "../../hooks/useMapOptions";
-import { toast } from "react-toastify";
-import Overlay from "ol/Overlay";
+import XYZ from "ol/source/XYZ";
 import { getArea } from "ol/sphere";
-import { unByKey } from "ol/Observable";
-import GeoJSON from "ol/format/GeoJSON";
-import { useLayersStore } from "../../../../store/useLayersStore";
-import { useMapStore } from "../../store/useMapStore";
+import Fill from "ol/style/Fill";
+import Stroke from "ol/style/Stroke";
+import Style from "ol/style/Style";
+import Text from "ol/style/Text";
+import * as turf from "@turf/turf";
+import { useArchiveHoverStore } from "../../hooks/useArchiveHoverStore";
+import { usePinnedProductStore } from "../../hooks/usePinnedProductStore";
+import { useSelectedAOIStore } from "../../hooks/useSelectedAOIStore";
 
 export default function MapView() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<Map | null>(null);
   const vectorSourceRef = useRef<VectorSource | null>(null);
-
+  const hoverSourceRef = useRef<VectorSource | null>(null);
+  const pinSourceRef = useRef<VectorSource | null>(null);
   const {
     activeTool,
     setActiveTool,
@@ -39,16 +54,21 @@ export default function MapView() {
     setDrawRectangleCoords,
     plotCoordinates,
     setPlotCoordinates,
-     plotBoundCoordinates,
-  setPlotBoundCoordinates,
+    plotBoundCoordinates,
+    setPlotBoundCoordinates,
   } = useMapOptions();
+  const setSelectedAOI = useSelectedAOIStore((state) => state.setSelectedAOI);
+  const { flyToProduct, setFlyToProduct } = useMapStore();
   const layers = useLayersStore((state) => state.layers);
   const addLayer = useLayersStore((state) => state.addLayer);
   const drawInteractionRef = useRef<Draw | null>(null);
-
+  const { activeLayer } = useBaseMapStore();
   const fitLayerId = useMapStore((state) => state.fitLayerId);
   const setFitLayerId = useMapStore((state) => state.setFitLayerId);
-
+  const { zoom } = useZoomStore();
+  const { visibleProducts } = useArchiveProductStore();
+  const hoveredProduct = useArchiveHoverStore((state) => state.hoveredProduct);
+  const { pinnedProducts } = usePinnedProductStore();
   // Zoom to / fit bounds of selected layer
   useEffect(() => {
     if (!fitLayerId || !mapInstance.current) return;
@@ -72,7 +92,19 @@ export default function MapView() {
     setFitLayerId(null);
   }, [fitLayerId, setFitLayerId, layers]);
 
-  console.log(layers);
+  // console.log(layers);
+
+  useEffect(() => {
+    if (!mapInstance.current) return;
+
+    const view = mapInstance.current.getView();
+
+    view.animate({
+      zoom,
+      duration: 500,
+      easing: easeOut,
+    });
+  }, [zoom]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -81,12 +113,10 @@ export default function MapView() {
     const origin = [78.9629, 20.5937];
     const minZoom = 2;
     const maxZoom = 19;
-
     // Base Layer: OpenStreetMap
     const osmLayer = new TileLayer({
       source: new OSM(),
     });
-
     // WMS Layer: India Shapefile Boundary
     const wmsLayer = new TileLayer({
       properties: { label: "India Shapefile WMS Layer" },
@@ -103,7 +133,6 @@ export default function MapView() {
       }),
       zIndex: 1,
     });
-
     // Vector Layer for User Plotted Features
     const vectorSource = new VectorSource();
     vectorSourceRef.current = vectorSource;
@@ -112,7 +141,6 @@ export default function MapView() {
       const label = feature.get("label") || "";
       const area = feature.get("area");
       const geom = feature.getGeometry();
-
       const styles = [
         new Style({
           fill: new Fill({
@@ -139,11 +167,8 @@ export default function MapView() {
         }
 
         const labelGeom = new Point(labelCoord);
-
         const displayText =
-          typeof area === "number" && area > 0
-            ? ` ${label} ( ${area.toFixed(2)} sqkm ) `
-            : label;
+          typeof area === "number" && area > 0 ? ` ${label} ( ${area.toFixed(2)} sqkm ) ` : label;
 
         styles.push(
           new Style({
@@ -170,17 +195,44 @@ export default function MapView() {
 
       return styles;
     };
-
     const vectorLayer = new VectorLayer({
       source: vectorSource,
       style: premiumStyleFunction,
       zIndex: 10,
     });
+    const hoverSource = new VectorSource();
+    const pinSource = new VectorSource();
+
+    hoverSourceRef.current = hoverSource;
+    pinSourceRef.current = pinSource;
+
+    const hoverLayer = new VectorLayer({
+      source: hoverSource,
+
+      zIndex: 2000,
+
+      style: new Style({
+        stroke: new Stroke({
+          color: "#ff9800",
+          width: 3,
+        }),
+
+        fill: new Fill({
+          color: "rgba(255,152,0,0.25)",
+        }),
+      }),
+    });
+
+    const pinLayer = new VectorLayer({
+      source: pinSource,
+
+      zIndex: 2000,
+    });
 
     // Initialize Map with EPSG:4326 projection
     const map = new Map({
       target: mapRef.current,
-      layers: [osmLayer, wmsLayer, vectorLayer],
+      layers: [osmLayer, wmsLayer, vectorLayer, hoverLayer, pinLayer],
       controls: defaultControls({ zoom: false }),
       view: new View({
         projection: "EPSG:4326",
@@ -281,7 +333,6 @@ export default function MapView() {
       });
       map.addOverlay(tooltipOverlay);
     };
-
     const removeTooltip = () => {
       if (tooltipOverlay) {
         map.removeOverlay(tooltipOverlay);
@@ -292,7 +343,6 @@ export default function MapView() {
         tooltipElement = null;
       }
     };
-
     const draw = new Draw({
       type: olDrawType,
       geometryFunction: geometryFunction,
@@ -313,8 +363,7 @@ export default function MapView() {
               const coordinates = currentGeom.getCoordinates()[0];
               if (coordinates && coordinates.length > 0) {
                 // The cursor position is the last added vertex (coordinates.length - 2)
-                const coord =
-                  coordinates[coordinates.length - 2] || coordinates[0];
+                const coord = coordinates[coordinates.length - 2] || coordinates[0];
 
                 if (tooltipElement && tooltipOverlay) {
                   const areaKm = area / 1000000;
@@ -343,16 +392,13 @@ export default function MapView() {
           const coordinates = (geometry as Point).getCoordinates();
           const cx = coordinates[0];
           const cy = coordinates[1];
-
           // Side length B (in km) is pointBufferDistance, so center to edge is B / 2
           const buffer = parseFloat(pointBufferDistance) || 2.25;
           const dist = buffer / 2;
-
           // Convert km to degrees
           const latDeg = dist / 111.32;
           const cosLat = Math.cos((cy * Math.PI) / 180);
           const lonDeg = dist / (111.32 * cosLat);
-
           // Construct square vertices: BL, BR, TR, TL, BL
           const vertices = [
             [
@@ -363,7 +409,6 @@ export default function MapView() {
               [cx - lonDeg, cy - latDeg],
             ],
           ];
-
           const polygonGeom = new Polygon(vertices);
           feature.setGeometry(polygonGeom);
         }
@@ -372,14 +417,11 @@ export default function MapView() {
       // Serialize feature to GeoJSON and add to layers store
       const geojsonFormat = new GeoJSON();
       const geojson = geojsonFormat.writeFeatureObject(feature);
-
       const geometry = feature.getGeometry();
       let area: number | undefined = undefined;
       if (
         geometry &&
-        (activeTool === "Polygon" ||
-          activeTool === "Box" ||
-          activeTool === "Point")
+        (activeTool === "Polygon" || activeTool === "Box" || activeTool === "Point")
       ) {
         area = getArea(geometry, { projection: "EPSG:4326" }) / 1000000;
       }
@@ -420,9 +462,7 @@ export default function MapView() {
     const map = mapInstance.current;
     if (!vectorSource || !map) return;
 
-    const { topLeftLat, topLeftLon, bottomRightLat, bottomRightLon } =
-      drawRectangleCoords;
-
+    const { topLeftLat, topLeftLon, bottomRightLat, bottomRightLon } = drawRectangleCoords;
     // Construct rectangle corners: Top-Left, Top-Right, Bottom-Right, Bottom-Left, closing Top-Left
     // EPSG:4326 coordinates order in OpenLayers is [longitude, latitude]
     const coords = [
@@ -434,19 +474,15 @@ export default function MapView() {
         [topLeftLon, topLeftLat], // closing Top-Left
       ],
     ];
-
     const rectGeometry = new Polygon(coords);
     const rectFeature = new Feature({
       geometry: rectGeometry,
       name: "Coordinate Rectangle Layer",
     });
-
     // Serialize to GeoJSON and add to layers store
     const geojsonFormat = new GeoJSON();
     const geojson = geojsonFormat.writeFeatureObject(rectFeature);
-
     const area = getArea(rectGeometry, { projection: "EPSG:4326" }) / 1000000;
-
     const newLayer = addLayer({
       type: "Coordinates",
       geojson: geojson,
@@ -468,14 +504,10 @@ export default function MapView() {
     if (!plotCoordinates || !mapInstance.current) return;
 
     const { lat, lon, width, height, shape, area } = plotCoordinates;
-
     const halfWidth = width / 2;
     const halfHeight = height / 2;
-
     const latOffset = halfHeight / 111.32;
-
     const lonOffset = halfWidth / (111.32 * Math.cos((lat * Math.PI) / 180));
-
     const geometry = new Polygon([
       [
         [lon - lonOffset, lat - latOffset],
@@ -485,7 +517,6 @@ export default function MapView() {
         [lon - lonOffset, lat - latOffset],
       ],
     ]);
-
     const feature = new Feature({
       geometry,
     });
@@ -494,9 +525,7 @@ export default function MapView() {
     feature.set("area", area);
 
     const geojsonFormat = new GeoJSON();
-
     const geojson = geojsonFormat.writeFeatureObject(feature);
-
     const newLayer = addLayer({
       type: "Coordinates",
       geojson,
@@ -514,68 +543,305 @@ export default function MapView() {
   }, [plotCoordinates, addLayer, setPlotCoordinates]);
 
   useEffect(() => {
-  if (!plotBoundCoordinates || !mapInstance.current) return;
+    if (!plotBoundCoordinates || !mapInstance.current) return;
 
-  const {
-    upperLeft,
-    lowerRight,
-    area,
-  } = plotBoundCoordinates;
+    const { upperLeft, lowerRight, area } = plotBoundCoordinates;
+    // Polygon coordinates order: [longitude, latitude]
+    const coords = [
+      [
+        [upperLeft.lon, upperLeft.lat], // Top Left
+        [lowerRight.lon, upperLeft.lat], // Top Right
+        [lowerRight.lon, lowerRight.lat], // Bottom Right
+        [upperLeft.lon, lowerRight.lat], // Bottom Left
+        [upperLeft.lon, upperLeft.lat], // Close polygon
+      ],
+    ];
+    const geometry = new Polygon(coords);
+    const feature = new Feature({
+      geometry,
+    });
 
+    feature.set("label", "Bound Coordinates");
+    feature.set("area", area);
 
-  // Polygon coordinates order: [longitude, latitude]
-  const coords = [
-    [
-      [upperLeft.lon, upperLeft.lat],       // Top Left
-      [lowerRight.lon, upperLeft.lat],      // Top Right
-      [lowerRight.lon, lowerRight.lat],     // Bottom Right
-      [upperLeft.lon, lowerRight.lat],      // Bottom Left
-      [upperLeft.lon, upperLeft.lat],       // Close polygon
-    ],
-  ];
+    const geojsonFormat = new GeoJSON();
+    const geojson = geojsonFormat.writeFeatureObject(feature);
+    const newLayer = addLayer({
+      type: "Bound Coordinates",
+      geojson,
+      area,
+    });
 
+    toast.success(`${newLayer.label} plotted successfully`);
 
-  const geometry = new Polygon(coords);
+    mapInstance.current.getView().fit(geometry, {
+      padding: [50, 50, 50, 50],
+      duration: 1000,
+    });
 
+    setPlotBoundCoordinates(null);
+  }, [plotBoundCoordinates, addLayer, setPlotBoundCoordinates]);
 
-  const feature = new Feature({
-    geometry,
-  });
+  useEffect(() => {
+    if (!mapInstance.current) return;
 
+    let sourceUrl = "";
+    let attributions = "";
 
-  feature.set("label", "Bound Coordinates");
-  feature.set("area", area);
+    switch (activeLayer) {
+      case "Google Road Map":
+        sourceUrl = "http://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+        attributions = "Google Road Map";
+        break;
 
+      case "ESRI Imagery":
+        sourceUrl =
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+        attributions = "© Esri";
+        break;
 
-  const geojsonFormat = new GeoJSON();
+      default:
+        sourceUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+        attributions = "© OpenStreetMap contributors";
+    }
 
-  const geojson = geojsonFormat.writeFeatureObject(feature);
+    const baseLayer = mapInstance.current.getLayers().item(0) as TileLayer<XYZ>;
 
+    if (!baseLayer) return;
 
-  const newLayer = addLayer({
-    type: "Bound Coordinates",
-    geojson,
-    area,
-  });
+    const source = new XYZ({
+      url: sourceUrl,
+      attributions,
+    });
 
+    baseLayer.setSource(source);
+  }, [activeLayer]);
 
-  toast.success(
-    `${newLayer.label} plotted successfully`
-  );
+  useEffect(() => {
+    if (!mapInstance.current || !visibleProducts.length) return;
 
+    const map = mapInstance.current;
+    const imageLayers: ImageLayer<ImageStatic>[] = [];
 
-  mapInstance.current.getView().fit(geometry, {
-    padding: [50, 50, 50, 50],
-    duration: 1000,
-  });
+    visibleProducts.forEach((product) => {
+      if (!product.imageUrl || !product.geometry) return;
 
+      const feature = new GeoJSON().readFeature({
+        type: "Feature",
+        geometry: product.geometry,
+      });
 
-  setPlotBoundCoordinates(null);
+      if (Array.isArray(feature)) return;
 
-}, [
-  plotBoundCoordinates,
-  addLayer,
-  setPlotBoundCoordinates,
-]);
-  return <div className="w-full h-full" ref={mapRef} id="map-container" />;
+      const geometry = feature.getGeometry();
+      if (!geometry) return;
+
+      const imageLayer = new ImageLayer({
+        source: new ImageStatic({
+          url: product.imageUrl,
+          imageExtent: geometry.getExtent(),
+          projection: "EPSG:4326",
+        }),
+        opacity: 0.85,
+        zIndex: 20, // Images below AOI
+      });
+
+      map.addLayer(imageLayer);
+      imageLayers.push(imageLayer);
+    });
+
+    // Bring all vector layers (AOI) above image layers
+    map.getLayers().forEach((layer) => {
+      if (layer instanceof VectorLayer) {
+        layer.setZIndex(1000);
+      }
+    });
+
+    // Zoom to images
+    if (imageLayers.length) {
+      const extent = imageLayers.reduce(
+        (acc, layer) => {
+          const imageExtent = layer.getSource()?.getImageExtent();
+
+          if (imageExtent) {
+            return acc
+              ? [
+                  Math.min(acc[0], imageExtent[0]),
+                  Math.min(acc[1], imageExtent[1]),
+                  Math.max(acc[2], imageExtent[2]),
+                  Math.max(acc[3], imageExtent[3]),
+                ]
+              : imageExtent;
+          }
+
+          return acc;
+        },
+        null as number[] | null,
+      );
+
+      if (extent) {
+        map.getView().fit(extent, {
+          padding: [100, 100, 100, 100],
+          duration: 800,
+          maxZoom: 12,
+        });
+      }
+    }
+
+    return () => {
+      imageLayers.forEach((layer) => {
+        map.removeLayer(layer);
+      });
+    };
+  }, [visibleProducts]);
+
+  useEffect(() => {
+    if (!mapInstance.current || !flyToProduct?.geometry) return;
+
+    const map = mapInstance.current;
+
+    const feature = new GeoJSON().readFeature({
+      type: "Feature",
+      geometry: flyToProduct.geometry,
+    });
+
+    if (Array.isArray(feature)) return;
+
+    const geometry = feature.getGeometry();
+
+    if (!geometry) return;
+
+    map.getView().fit(geometry.getExtent(), {
+      padding: [100, 100, 100, 100],
+      duration: 800,
+      maxZoom: 16,
+    });
+
+    // clear after animation
+    setFlyToProduct(null);
+  }, [flyToProduct, setFlyToProduct]);
+
+  useEffect(() => {
+    const hoverSource = hoverSourceRef.current;
+
+    if (!hoverSource) return;
+
+    // clear old hover
+    hoverSource.clear();
+
+    if (!hoveredProduct) return;
+
+    const format = new GeoJSON();
+
+    // Product geometry
+    const productFeature = format.readFeature({
+      type: "Feature",
+      geometry: hoveredProduct.geometry,
+    });
+
+    const productGeo = format.writeFeatureObject(productFeature);
+
+    // Get AOIs
+    const aoiLayers = layers.filter((layer) =>
+      ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(layer.type),
+    );
+
+    aoiLayers.forEach((aoiLayer) => {
+      const aoiFeature = format.readFeature(aoiLayer.geojson);
+
+      const aoiGeo = format.writeFeatureObject(aoiFeature);
+
+      // AOI ∩ Image footprint
+      const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo]));
+
+      if (intersection) {
+        const commonFeature = format.readFeature(intersection);
+
+        commonFeature.setStyle(
+          new Style({
+            fill: new Fill({
+              color: "rgba(255,152,0,0.45)",
+            }),
+          }),
+        );
+
+        hoverSource.addFeature(commonFeature);
+      }
+    });
+
+    return () => {
+      hoverSource.clear();
+    };
+  }, [hoveredProduct, layers]);
+
+  useEffect(() => {
+    const source = pinSourceRef.current;
+
+    if (!source) return;
+    // remove old pins
+    source.clear();
+
+    if (pinnedProducts.length === 0) return;
+
+    const format = new GeoJSON();
+
+    const aoiLayers = layers.filter((layer) =>
+      ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(layer.type),
+    );
+
+    pinnedProducts.forEach((product) => {
+      const productFeature = format.readFeature({
+        type: "Feature",
+
+        geometry: product.geometry,
+      });
+
+      const productGeo = format.writeFeatureObject(productFeature);
+
+      aoiLayers.forEach((aoiLayer) => {
+        const aoiFeature = format.readFeature(aoiLayer.geojson);
+
+        const aoiGeo = format.writeFeatureObject(aoiFeature);
+
+        const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo]));
+
+        if (intersection) {
+          const feature = format.readFeature(intersection);
+
+          feature.set("productId", product.id);
+
+          feature.setStyle(
+            new Style({
+              fill: new Fill({
+                color: "rgba(255,204,128,0.50)",
+              }),
+            }),
+          );
+
+          source.addFeature(feature);
+        }
+      });
+    });
+
+    return () => {
+      source.clear();
+    };
+  }, [pinnedProducts, layers]);
+  
+  useEffect(() => {
+    if (!layers.length) return;
+
+    const aoiTypes = ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"];
+
+    const aoiLayers = layers.filter((layer) => aoiTypes.includes(layer.type));
+
+    if (!aoiLayers.length) return;
+
+    // latest created AOI
+    const latestAOI = aoiLayers[aoiLayers.length - 1];
+
+    // select latest AOI
+    setSelectedAOI(latestAOI.id);
+  }, [layers, setSelectedAOI]);
+  return <div className="h-full w-full" ref={mapRef} id="map-container" />;
 }

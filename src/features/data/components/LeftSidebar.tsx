@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
+import React, { useEffect, useRef, useState } from "react";
 import { drawIcon, importIcon, selectIcon } from "../../../assets";
 import { useMapStore } from "../store/useMapStore";
 import DrawPopup from "./sidebar/DrawPopup";
@@ -16,14 +16,9 @@ export default function LeftSidebar({
   activeIndex: propActiveIndex,
   setActiveIndex: propSetActiveIndex,
 }: LeftSidebarProps) {
-  const [internalActiveIndex, setInternalActiveIndex] = useState<number | null>(
-    null,
-  );
-
-  const activeIndex =
-    propActiveIndex !== undefined ? propActiveIndex : internalActiveIndex;
+  const [internalActiveIndex, setInternalActiveIndex] = useState<number | null>(null);
+  const activeIndex = propActiveIndex !== undefined ? propActiveIndex : internalActiveIndex;
   const setActiveIndex = propSetActiveIndex || setInternalActiveIndex;
-
   const { resetMapState } = useMapStore();
 
   useEffect(() => {
@@ -51,15 +46,11 @@ export default function LeftSidebar({
       tooltip: "Select",
     },
   ];
-
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        sidebarRef.current &&
-        !sidebarRef.current.contains(event.target as Node)
-      ) {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
         setActiveIndex(null);
       }
     }
@@ -81,55 +72,47 @@ export default function LeftSidebar({
   return (
     <div
       ref={sidebarRef}
-      className="absolute top-0 left-0 h-fit bg-white border border-gray-400 z-40 shadow-lg flex flex-col py-3 transition-all duration-300 ease-in-out w-[50px] sm:w-[58px] md:w-[65px]"
+      className="absolute top-0 left-0 z-40 flex h-fit w-[50px] flex-col border border-gray-400 bg-white py-3 shadow-lg transition-all duration-300 ease-in-out sm:w-[58px] md:w-[65px]"
     >
-      <ul className="flex flex-col items-center w-full select-none overflow-visible flex-1 space-y-1">
+      <ul className="flex w-full flex-1 flex-col items-center space-y-1 overflow-visible select-none">
         {sidebarItems.map((item, index) => {
           const isActive = activeIndex === index;
           return (
             <React.Fragment key={item.id}>
-              <div className="relative w-full flex justify-center">
+              <div className="relative flex w-full justify-center">
                 <div className="relative w-9 sm:w-11 md:w-12">
                   <button
                     onClick={() => handleItemClick(index)}
-                    data-tooltip-id={
-                      isActive ? undefined : "left-sidebar-tooltip"
-                    }
+                    data-tooltip-id={isActive ? undefined : "left-sidebar-tooltip"}
                     data-tooltip-content={item.tooltip}
-                    className={`flex items-center justify-center transition-all duration-200 relative focus:outline-none w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-md sm:rounded-lg ${
+                    className={`relative flex h-9 w-9 items-center justify-center rounded-md transition-all duration-200 focus:outline-none sm:h-11 sm:w-11 sm:rounded-lg md:h-12 md:w-12 ${
                       isActive
                         ? "bg-primary/20 text-primary shadow-sm"
-                        : "hover:bg-primary/10 text-gray-700 cursor-pointer"
+                        : "hover:bg-primary/10 cursor-pointer text-gray-700"
                     }`}
                   >
                     <img
                       src={item.icon}
                       alt={item.tooltip}
-                      className="w-4 h-4 md:w-4.5 md:h-4.5 object-contain flex-shrink-0"
+                      className="h-4 w-4 flex-shrink-0 object-contain md:h-4.5 md:w-4.5"
                       loading="lazy"
                     />
                   </button>
 
                   {/* Draw Option Modal/Popup */}
-                  {index === 0 && isActive && (
-                    <DrawPopup onClose={() => setActiveIndex(null)} />
-                  )}
+                  {index === 0 && isActive && <DrawPopup onClose={() => setActiveIndex(null)} />}
 
                   {/* Import Option Modal/Popup */}
-                  {index === 1 && isActive && (
-                    <ImportPopup onClose={() => setActiveIndex(null)} />
-                  )}
+                  {index === 1 && isActive && <ImportPopup onClose={() => setActiveIndex(null)} />}
 
                   {/* Select Option Modal/Popup */}
-                  {index === 2 && isActive && (
-                    <SelectPopup onClose={() => setActiveIndex(null)} />
-                  )}
+                  {index === 2 && isActive && <SelectPopup onClose={() => setActiveIndex(null)} />}
                 </div>
               </div>
 
               {/* Divider Line */}
               {index < sidebarItems.length - 1 && (
-                <div className="h-[1px] bg-primary/25 flex-shrink-0 transition-all duration-300 w-7 sm:w-9 md:w-10 my-1" />
+                <div className="bg-primary/25 my-1 h-[1px] w-7 flex-shrink-0 transition-all duration-300 sm:w-9 md:w-10" />
               )}
             </React.Fragment>
           );
@@ -140,7 +123,7 @@ export default function LeftSidebar({
       <Tooltip
         id="left-sidebar-tooltip"
         place="right"
-        className="z-50 !bg-gray-900 !text-white !text-xs !px-2.5 !py-1.5 !rounded !shadow-lg !opacity-100"
+        className="z-50 !rounded !bg-gray-900 !px-2.5 !py-1.5 !text-xs !text-white !opacity-100 !shadow-lg"
       />
     </div>
   );

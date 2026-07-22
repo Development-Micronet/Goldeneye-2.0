@@ -21,21 +21,12 @@ export async function decryptAESGCM(base64Data: string, token: string) {
 
     const nonce = raw.slice(0, 12);
     const ciphertext = raw.slice(12);
-
     // MUST match backend exactly
     const keyMaterial = await crypto.subtle.digest(
       "SHA-256",
       new TextEncoder().encode(token.trim()),
     );
-
-    const key = await crypto.subtle.importKey(
-      "raw",
-      keyMaterial,
-      "AES-GCM",
-      false,
-      ["decrypt"],
-    );
-
+    const key = await crypto.subtle.importKey("raw", keyMaterial, "AES-GCM", false, ["decrypt"]);
     const decrypted = await crypto.subtle.decrypt(
       {
         name: "AES-GCM",

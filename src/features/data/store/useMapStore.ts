@@ -1,12 +1,7 @@
 import { create } from "zustand";
+import type { SelectedArchiveProduct } from "../components/sidebar/store/useArchiveProductStore";
 
-export type DrawTool =
-  | "Point"
-  | "Polyline"
-  | "Box"
-  | "Polygon"
-  | "Coordinates"
-  | null;
+export type DrawTool = "Point" | "Polyline" | "Box" | "Polygon" | "Coordinates" | null;
 interface PlotCoordinates {
   lat: number;
   lon: number;
@@ -40,6 +35,8 @@ interface MapState {
   setPlotCoordinates: (coords: PlotCoordinates | null) => void;
   plotBoundCoordinates: PlotBoundCoordinates | null;
   setPlotBoundCoordinates: (coords: PlotBoundCoordinates | null) => void;
+  flyToProduct: SelectedArchiveProduct | null;
+  setFlyToProduct: (product: SelectedArchiveProduct | null) => void;
   activeTool: DrawTool;
   activeSubMenu: string | null;
   pointBufferDistance: string;
@@ -68,11 +65,16 @@ export const useMapStore = create<MapState>((set) => ({
   drawRectangleCoords: null,
   fitLayerId: null,
   selectedLayerId: null,
+  flyToProduct: null,
+
+  setFlyToProduct: (product) =>
+    set({
+      flyToProduct: product,
+    }),
   setActiveTool: (tool) => set({ activeTool: tool }),
   setActiveSubMenu: (subMenu) => set({ activeSubMenu: subMenu }),
   setPointBufferDistance: (distance) => set({ pointBufferDistance: distance }),
-  setPolylineBufferDistance: (distance) =>
-    set({ polylineBufferDistance: distance }),
+  setPolylineBufferDistance: (distance) => set({ polylineBufferDistance: distance }),
   setDrawRectangleCoords: (coords) => set({ drawRectangleCoords: coords }),
   setFitLayerId: (id) => set({ fitLayerId: id }),
   setSelectedLayerId: (id) => set({ selectedLayerId: id }),
@@ -80,10 +82,10 @@ export const useMapStore = create<MapState>((set) => ({
     set({
       plotCoordinates: coords,
     }),
-    setPlotBoundCoordinates: (coords) =>
-  set({
-    plotBoundCoordinates: coords,
-  }),
+  setPlotBoundCoordinates: (coords) =>
+    set({
+      plotBoundCoordinates: coords,
+    }),
   resetMapState: () =>
     set({
       activeTool: null,

@@ -1,22 +1,20 @@
-import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { Search, User, Lock, LogOut, Menu, X, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, Lock, LogOut, Menu, Search, User, X } from "lucide-react";
 import { goldeneyeLogo } from "../../../assets";
+import { performLogout } from "../../../features/auth/api/logout";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { getNavigationItems } from "../../../utils/navigation";
-import { performLogout } from "../../../features/auth/api/logout";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => {
     setIsOpen(false);
     setIsProfileOpen(false);
   };
   const { user } = useAuthStore();
-
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `text-xs lg:text-sm font-medium transition-colors ${
       isActive ? "text-white " : "text-nav-inactive hover:text-white"
@@ -37,12 +35,11 @@ export default function Navbar() {
 
   const username = user?.user || "user";
   const initial = username[0]?.toUpperCase() || "U";
-
   // Filter navigation items based on user's roleName
   const navItems = getNavigationItems(user?.roleName);
 
   return (
-    <nav className="bg-primary px-4 sm:px-6 lg:px-8 py-2 relative z-50 shadow-md">
+    <nav className="bg-primary relative z-50 px-4 py-2 shadow-md sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
         {/* Left: Logo & Desktop links */}
         <div className="flex items-center gap-4 sm:gap-6 lg:gap-10">
@@ -51,12 +48,12 @@ export default function Navbar() {
             <img
               src={goldeneyeLogo}
               alt="Golden Eye Logo"
-              className="h-8 sm:h-10 md:h-11 lg:h-13 w-auto object-contain"
+              className="h-8 w-auto object-contain sm:h-10 md:h-11 lg:h-13"
             />
           </div>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex gap-3 lg:gap-6 xl:gap-8 items-center mt-1">
+          <div className="mt-1 hidden items-center gap-3 md:flex lg:gap-6 xl:gap-8">
             {navItems.map((item) => (
               <NavLink key={item.path} to={item.path} className={linkClass}>
                 {item.label}
@@ -66,56 +63,56 @@ export default function Navbar() {
         </div>
 
         {/* Right: Search & User Profile */}
-        <div className="hidden md:flex items-center gap-3 md:gap-6 lg:gap-10 xl:gap-15 mt-1">
+        <div className="mt-1 hidden items-center gap-3 md:flex md:gap-6 lg:gap-10 xl:gap-15">
           {/* Search bar */}
           <div className="relative">
             <input
               type="text"
               placeholder="Go to place"
-              className="bg-white text-gray-800 placeholder-gray-400 text-xs px-3 py-1.5 pr-8 rounded border border-transparent focus:outline-none w-32 md:w-44 lg:w-56 xl:w-70 font-sans transition-all duration-300 focus:w-40 md:focus:w-52 lg:focus:w-64 xl:focus:w-80"
+              className="w-32 rounded border border-transparent bg-white px-3 py-1.5 pr-8 font-sans text-xs text-gray-800 placeholder-gray-400 transition-all duration-300 focus:w-40 focus:outline-none md:w-44 md:focus:w-52 lg:w-56 lg:focus:w-64 xl:w-70 xl:focus:w-80"
             />
-            <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 cursor-pointer" />
+            <Search className="absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 cursor-pointer text-gray-400" />
           </div>
 
           {/* User Profile Container with Click Trigger */}
-          <div className="relative profile-menu-container">
+          <div className="profile-menu-container relative">
             <div
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-2 select-none cursor-pointer group"
+              className="group flex cursor-pointer items-center gap-2 select-none"
             >
-              <span className="hidden lg:inline text-white text-xs lg:text-sm font-semibold transition-opacity group-hover:opacity-90">
+              <span className="hidden text-xs font-semibold text-white transition-opacity group-hover:opacity-90 lg:inline lg:text-sm">
                 {username}
               </span>
-              <div className="flex items-center justify-center w-7 h-7 rounded-full border border-2 border-white text-white font-bold text-xs transition-transform group-hover:scale-105">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-2 border-white text-xs font-bold text-white transition-transform group-hover:scale-105">
                 {initial}
               </div>
             </div>
 
             {/* Profile Dropdown Popup/Modal */}
             {isProfileOpen && (
-              <div className="absolute right-0 top-[calc(100%+12px)] bg-white rounded-xl shadow-2xl px-3 py-5 flex flex-col items-center w-64 border border-gray-100 text-gray-800 transition-all z-50">
+              <div className="absolute top-[calc(100%+12px)] right-0 z-50 flex w-64 flex-col items-center rounded-xl border border-gray-100 bg-white px-3 py-5 text-gray-800 shadow-2xl transition-all">
                 {/* Arrow */}
-                <div className="absolute -top-1.5 right-2.5 w-3.5 h-3.5 bg-white rotate-45 border-t border-l border-gray-100"></div>
+                <div className="absolute -top-1.5 right-2.5 h-3.5 w-3.5 rotate-45 border-t border-l border-gray-100 bg-white"></div>
 
                 {/* Big Avatar */}
-                <div className="flex items-center justify-center w-14 h-14 rounded-full bg-[#1b7382] text-white font-bold text-2xl mb-2 select-none">
+                <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-[#1b7382] text-2xl font-bold text-white select-none">
                   {initial}
                 </div>
 
                 {/* Username */}
-                <h4 className="text-base font-semibold text-gray-800 mb-4 select-none">
+                <h4 className="mb-4 text-base font-semibold text-gray-800 select-none">
                   {username}
                 </h4>
 
                 {/* Navigation Options */}
-                <div className="w-full flex flex-col gap-1">
-                  <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors text-left cursor-pointer border-none bg-transparent">
-                    <User className="w-4 h-4 text-gray-500" />
+                <div className="flex w-full flex-col gap-1">
+                  <button className="flex w-full cursor-pointer items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2.5 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+                    <User className="h-4 w-4 text-gray-500" />
                     Update Account
                   </button>
 
-                  <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors text-left cursor-pointer border-none bg-transparent">
-                    <Lock className="w-4 h-4 text-gray-500" />
+                  <button className="flex w-full cursor-pointer items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2.5 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+                    <Lock className="h-4 w-4 text-gray-500" />
                     Change Password
                   </button>
 
@@ -124,9 +121,9 @@ export default function Navbar() {
                       performLogout();
                       closeMenu();
                     }}
-                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors text-left cursor-pointer border-none bg-transparent"
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2.5 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
                   >
-                    <LogOut className="w-4 h-4 text-gray-500" />
+                    <LogOut className="h-4 w-4 text-gray-500" />
                     Logout
                   </button>
                 </div>
@@ -136,10 +133,10 @@ export default function Navbar() {
         </div>
 
         {/* Right: Hamburger Menu Button (Mobile Only) */}
-        <div className="md:hidden flex items-center">
+        <div className="flex items-center md:hidden">
           <button
             onClick={toggleMenu}
-            className="text-nav-inactive hover:text-white focus:outline-none transition-colors p-1"
+            className="text-nav-inactive p-1 transition-colors hover:text-white focus:outline-none"
             aria-label="Toggle Menu"
             aria-expanded={isOpen}
           >
@@ -150,58 +147,51 @@ export default function Navbar() {
 
       {/* Mobile Navigation Dropdown */}
       {isOpen && (
-        <div className="md:hidden absolute left-0 right-0 top-full bg-primary border-t border-[#1f4e57] shadow-xl z-40">
-          <div className="flex flex-col px-6 py-4 gap-4">
+        <div className="bg-primary absolute top-full right-0 left-0 z-40 border-t border-[#1f4e57] shadow-xl md:hidden">
+          <div className="flex flex-col gap-4 px-6 py-4">
             {/* Mobile Search bar */}
             <div className="relative w-full">
               <input
                 type="text"
                 placeholder="Go to place"
-                className="bg-white text-gray-800 placeholder-gray-400 text-xs px-3 py-1.5 pr-8 rounded border border-transparent focus:outline-none w-full font-sans"
+                className="w-full rounded border border-transparent bg-white px-3 py-1.5 pr-8 font-sans text-xs text-gray-800 placeholder-gray-400 focus:outline-none"
               />
-              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 cursor-pointer" />
+              <Search className="absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 cursor-pointer text-gray-400" />
             </div>
 
             {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={linkClass}
-                onClick={closeMenu}
-              >
+              <NavLink key={item.path} to={item.path} className={linkClass} onClick={closeMenu}>
                 {item.label}
               </NavLink>
             ))}
 
             {/* Mobile User Profile */}
-            <div className="border-t border-[#1f4e57] pt-3 mt-1 profile-menu-container">
+            <div className="profile-menu-container mt-1 border-t border-[#1f4e57] pt-3">
               <div
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center justify-between font-sans select-none cursor-pointer"
+                className="flex cursor-pointer items-center justify-between font-sans select-none"
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-white text-sm font-semibold">
-                    {username}
-                  </span>
-                  <div className="flex items-center justify-center w-7 h-7 rounded-full border border-2 border-white text-white font-bold text-xs">
+                  <span className="text-sm font-semibold text-white">{username}</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full border border-2 border-white text-xs font-bold text-white">
                     {initial}
                   </div>
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 text-white transition-transform duration-200 ${
+                  className={`h-4 w-4 text-white transition-transform duration-200 ${
                     isProfileOpen ? "rotate-180" : ""
                   }`}
                 />
               </div>
 
               {isProfileOpen && (
-                <div className="flex flex-col gap-2 mt-3 pl-4">
-                  <button className="flex items-center gap-3 w-full py-2 text-nav-inactive hover:text-white text-sm font-medium transition-colors text-left bg-transparent border-none cursor-pointer">
-                    <User className="w-4 h-4" />
+                <div className="mt-3 flex flex-col gap-2 pl-4">
+                  <button className="text-nav-inactive flex w-full cursor-pointer items-center gap-3 border-none bg-transparent py-2 text-left text-sm font-medium transition-colors hover:text-white">
+                    <User className="h-4 w-4" />
                     Update Account
                   </button>
-                  <button className="flex items-center gap-3 w-full py-2 text-nav-inactive hover:text-white text-sm font-medium transition-colors text-left bg-transparent border-none cursor-pointer">
-                    <Lock className="w-4 h-4" />
+                  <button className="text-nav-inactive flex w-full cursor-pointer items-center gap-3 border-none bg-transparent py-2 text-left text-sm font-medium transition-colors hover:text-white">
+                    <Lock className="h-4 w-4" />
                     Change Password
                   </button>
                   <button
@@ -209,9 +199,9 @@ export default function Navbar() {
                       performLogout();
                       closeMenu();
                     }}
-                    className="flex items-center gap-3 w-full py-2 text-nav-inactive hover:text-white text-sm font-medium transition-colors text-left bg-transparent border-none cursor-pointer"
+                    className="text-nav-inactive flex w-full cursor-pointer items-center gap-3 border-none bg-transparent py-2 text-left text-sm font-medium transition-colors hover:text-white"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="h-4 w-4" />
                     Logout
                   </button>
                 </div>

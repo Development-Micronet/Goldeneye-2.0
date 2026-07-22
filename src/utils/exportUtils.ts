@@ -53,12 +53,14 @@ export function exportLayersAsKML(layers: DrawnLayer[]) {
           <coordinates>${coords}</coordinates>
         </LineString>`;
     } else if (geom.type === "Polygon") {
-      const rings = geom.coordinates.map((ring: number[][]) => {
-        const coordsStr = ring.map((c: number[]) => `${c[0]},${c[1]},0`).join(" ");
-        return `            <LinearRing>
+      const rings = geom.coordinates
+        .map((ring: number[][]) => {
+          const coordsStr = ring.map((c: number[]) => `${c[0]},${c[1]},0`).join(" ");
+          return `            <LinearRing>
               <coordinates>${coordsStr}</coordinates>
             </LinearRing>`;
-      }).join("\n");
+        })
+        .join("\n");
       geomXml = `        <Polygon>
           <outerBoundaryIs>
 ${rings}
@@ -89,7 +91,7 @@ export function exportLayersAsCSV(layers: DrawnLayer[]) {
       layer.label,
       layer.type,
       layer.area ? layer.area.toFixed(4) : "",
-      `"${coords.replace(/"/g, '""')}"`
+      `"${coords.replace(/"/g, '""')}"`,
     ];
   });
   const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");

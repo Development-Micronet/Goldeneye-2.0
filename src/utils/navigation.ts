@@ -17,7 +17,7 @@ export const navigationItems: NavItem[] = [
   {
     label: "Manage",
     path: "/manage",
-    roles: ["superadmin","admin"], // visible only to Admin
+    roles: ["superadmin", "admin"], // visible only to Admin
   },
   {
     label: "Quotation",
@@ -36,8 +36,6 @@ export function getNavigationItems(roleName?: string): NavItem[] {
 
   return navigationItems.filter((item) => {
     if (!item.roles || item.roles.length === 0) return true;
-    return item.roles.some(
-      (role) => role.toLowerCase() === roleName.toLowerCase()
-    );
+    return item.roles.some((role) => role.toLowerCase() === roleName.toLowerCase());
   });
 }

@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAuthStore } from "../../../store/useAuthStore";
-import { Captcha } from "../components/Captcha";
-import { useLoginMutation } from "../api/login";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-
-import { logoImg, loginVideo } from "../../../assets";
+import React, { useEffect, useState } from "react";
+import { loginVideo, logoImg } from "../../../assets";
+import { useAuthStore } from "../../../store/useAuthStore";
+import { useLoginMutation } from "../api/login";
+import { Captcha } from "../components/Captcha";
 
 const safeBtoa = (str: string) => {
   try {
@@ -14,7 +13,6 @@ const safeBtoa = (str: string) => {
     return str;
   }
 };
-
 const safeAtob = (str: string) => {
   try {
     return decodeURIComponent(escape(atob(str)));
@@ -42,7 +40,6 @@ export const LoginPage: React.FC = () => {
   const [captchaInput, setCaptchaInput] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
   // CAPTCHA states
   const [captchaCode, setCaptchaCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +48,6 @@ export const LoginPage: React.FC = () => {
     password?: string;
     captcha?: string;
   }>({});
-
   const generateCaptcha = () => {
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
     let code = "";
@@ -80,8 +76,7 @@ export const LoginPage: React.FC = () => {
     setError(null);
     setValidationErrors({});
 
-    const errors: { username?: string; password?: string; captcha?: string } =
-      {};
+    const errors: { username?: string; password?: string; captcha?: string } = {};
 
     if (!username.trim()) {
       errors.username = "Username is required";
@@ -150,16 +145,12 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full overflow-hidden font-sans bg-gray-50">
+    <div className="flex min-h-screen w-full overflow-hidden bg-gray-50 font-sans">
       {/* Left Column - Video Section */}
-      <div className="hidden md:flex relative w-1/2 h-screen bg-black overflow-hidden select-none">
+      <div className="relative hidden h-screen w-1/2 overflow-hidden bg-black select-none md:flex">
         {/* Logo and Name Top Left overlay */}
-        <div className="absolute top-6 left-8 flex items-center z-10">
-          <img
-            src={logoImg}
-            alt="Golden Eye Logo"
-            className="w-48 h-14 object-contain"
-          />
+        <div className="absolute top-6 left-8 z-10 flex items-center">
+          <img src={logoImg} alt="Golden Eye Logo" className="h-14 w-48 object-contain" />
         </div>
 
         {/* Loop Background Video */}
@@ -169,36 +160,32 @@ export const LoginPage: React.FC = () => {
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-80"
+          className="absolute inset-0 h-full w-full object-cover opacity-80"
         />
       </div>
 
       {/* Right Column - Login Form Section */}
-      <div className="w-full md:w-1/2 h-screen bg-white flex flex-col justify-between items-center py-6 px-6 md:px-16 overflow-y-auto relative">
+      <div className="relative flex h-screen w-full flex-col items-center justify-between overflow-y-auto bg-white px-6 py-6 md:w-1/2 md:px-16">
         {/* Mobile Logo overlay */}
-        <div className="flex md:hidden items-center justify-center mb-4 w-full flex-shrink-0 bg-primary rounded-lg p-2">
-          <img
-            src={logoImg}
-            alt="Golden Eye Logo"
-            className="w-40 h-12 object-contain"
-          />
+        <div className="bg-primary mb-4 flex w-full flex-shrink-0 items-center justify-center rounded-lg p-2 md:hidden">
+          <img src={logoImg} alt="Golden Eye Logo" className="h-12 w-40 object-contain" />
         </div>
 
         {/* Center Login Container */}
-        <div className="w-full max-w-[420px] my-auto flex flex-col py-4">
-          <h2 className="text-2xl sm:text-[34px] font-semibold text-center text-gray-900 mb-6 sm:mb-10 tracking-tight">
+        <div className="my-auto flex w-full max-w-[420px] flex-col py-4">
+          <h2 className="mb-6 text-center text-2xl font-semibold tracking-tight text-gray-900 sm:mb-10 sm:text-[34px]">
             Login
           </h2>
 
           <form onSubmit={handleLogin} className="space-y-4 sm:space-y-6">
             {/* Username Field */}
             <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label htmlFor="username" className="text-sm  text-gray-700">
+              <div className="mb-1.5 flex items-center justify-between">
+                <label htmlFor="username" className="text-sm text-gray-700">
                   Username
                 </label>
                 {validationErrors.username && (
-                  <span className="text-xs text-red-500 font-semibold">
+                  <span className="text-xs font-semibold text-red-500">
                     {validationErrors.username}
                   </span>
                 )}
@@ -218,18 +205,18 @@ export const LoginPage: React.FC = () => {
                 }}
                 placeholder="Enter your username"
                 disabled={isPending}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 text-gray-800 placeholder-gray-400 bg-white disabled:bg-gray-100 disabled:text-gray-400"
+                className="focus:border-primary focus:ring-primary w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 transition-all duration-200 outline-none focus:ring-1 disabled:bg-gray-100 disabled:text-gray-400"
               />
             </div>
 
             {/* Password Field */}
             <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label htmlFor="password" className="text-sm  text-gray-700">
+              <div className="mb-1.5 flex items-center justify-between">
+                <label htmlFor="password" className="text-sm text-gray-700">
                   Password
                 </label>
                 {validationErrors.password && (
-                  <span className="text-xs text-red-500 font-semibold">
+                  <span className="text-xs font-semibold text-red-500">
                     {validationErrors.password}
                   </span>
                 )}
@@ -250,12 +237,12 @@ export const LoginPage: React.FC = () => {
                   }}
                   placeholder="Enter your password"
                   disabled={isPending}
-                  className="w-full border border-gray-300 rounded-lg pl-4 pr-10 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 text-gray-800 placeholder-gray-400 bg-white disabled:bg-gray-100 disabled:text-gray-400"
+                  className="focus:border-primary focus:ring-primary w-full rounded-lg border border-gray-300 bg-white py-2.5 pr-10 pl-4 text-sm text-gray-800 placeholder-gray-400 transition-all duration-200 outline-none focus:ring-1 disabled:bg-gray-100 disabled:text-gray-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-gray-400 transition-colors hover:text-gray-600 focus:outline-none"
                 >
                   {showPassword ? (
                     <svg
@@ -264,7 +251,7 @@ export const LoginPage: React.FC = () => {
                       viewBox="0 0 24 24"
                       strokeWidth={1.5}
                       stroke="currentColor"
-                      className="w-5 h-5"
+                      className="h-5 w-5"
                     >
                       <path
                         strokeLinecap="round"
@@ -279,7 +266,7 @@ export const LoginPage: React.FC = () => {
                       viewBox="0 0 24 24"
                       strokeWidth={1.5}
                       stroke="currentColor"
-                      className="w-5 h-5"
+                      className="h-5 w-5"
                     >
                       <path
                         strokeLinecap="round"
@@ -295,11 +282,11 @@ export const LoginPage: React.FC = () => {
                   )}
                 </button>
               </div>
-              <div className="flex justify-end mt-2">
+              <div className="mt-2 flex justify-end">
                 <a
                   href="#forgot"
                   onClick={(e) => e.preventDefault()}
-                  className="text-xs text-primary font-medium hover:underline hover:text-[#1f4e57]"
+                  className="text-primary text-xs font-medium hover:text-[#1f4e57] hover:underline"
                 >
                   Forgot Password?
                 </a>
@@ -308,12 +295,12 @@ export const LoginPage: React.FC = () => {
 
             {/* Captcha Field */}
             <div>
-              <div className="flex justify-between items-center mb-1.5">
+              <div className="mb-1.5 flex items-center justify-between">
                 <label htmlFor="captcha" className="text-sm text-gray-700">
                   Captcha
                 </label>
                 {validationErrors.captcha && (
-                  <span className="text-xs text-red-500 font-semibold">
+                  <span className="text-xs font-semibold text-red-500">
                     {validationErrors.captcha}
                   </span>
                 )}
@@ -334,7 +321,7 @@ export const LoginPage: React.FC = () => {
                   }}
                   placeholder="Enter Captcha"
                   disabled={isPending}
-                  className="w-1/2 border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 text-gray-800 placeholder-gray-400 bg-white disabled:bg-gray-100 disabled:text-gray-400"
+                  className="focus:border-primary focus:ring-primary w-1/2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 transition-all duration-200 outline-none focus:ring-1 disabled:bg-gray-100 disabled:text-gray-400"
                 />
                 <Captcha code={captchaCode} onRefresh={generateCaptcha} />
               </div>
@@ -342,45 +329,36 @@ export const LoginPage: React.FC = () => {
 
             {/* Remember Me Checkbox */}
             <div className="flex items-center">
-              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <label className="flex cursor-pointer items-center gap-2.5 select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   disabled={isPending}
-                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-opacity-25 disabled:opacity-50"
+                  className="text-primary focus:ring-primary focus:ring-opacity-25 h-4 w-4 rounded border-gray-300 disabled:opacity-50"
                 />
-                <span className="text-sm text-gray-700 font-medium">
-                  Remember me
-                </span>
+                <span className="text-sm font-medium text-gray-700">Remember me</span>
               </label>
             </div>
 
             {/* Validation/Error alerts */}
-            {error && (
-              <div className="text-red-500 text-xs font-semibold mt-1">
-                ⚠️ {error}
-              </div>
-            )}
+            {error && <div className="mt-1 text-xs font-semibold text-red-500">⚠️ {error}</div>}
 
             {/* Submit Button */}
             <div>
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full sm:w-auto bg-primary hover:bg-[#1f4e57] active:scale-[0.98] text-white font-semibold px-7 py-2.5 rounded-lg text-sm shadow transition-all duration-200 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+                className="bg-primary w-full cursor-pointer rounded-lg px-7 py-2.5 text-sm font-semibold text-white shadow transition-all duration-200 hover:bg-[#1f4e57] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-75 sm:w-auto"
               >
                 {isPending ? "Logging in..." : "Login"}
               </button>
             </div>
 
             {/* Register Company */}
-            <div className="text-xs text-gray-500 select-none pt-2">
+            <div className="pt-2 text-xs text-gray-500 select-none">
               Not Register?{" "}
-              <Link
-                to="/register-company"
-                className="text-primary font-semibold hover:underline"
-              >
+              <Link to="/register-company" className="text-primary font-semibold hover:underline">
                 Register Company
               </Link>
             </div>
@@ -388,8 +366,8 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* Bottom Footer Section */}
-        <div className="w-full max-w-[420px] text-center md:text-center mt-10 md:mt-0 select-none">
-          <p className="text-[10px] text-gray-400 font-semibold tracking-wide">
+        <div className="mt-10 w-full max-w-[420px] text-center select-none md:mt-0 md:text-center">
+          <p className="text-[10px] font-semibold tracking-wide text-gray-400">
             © Copyright 2025 Micronet Solutions. All Right Reserved
           </p>
         </div>

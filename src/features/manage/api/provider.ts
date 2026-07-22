@@ -5,7 +5,7 @@ export interface ProviderCredentials {
 }
 export type Status = true | false;
 export interface Provider {
-   provider_id: string;
+  provider_id: string;
   name: string;
   description: string | null;
   is_active: boolean;
@@ -30,7 +30,6 @@ export interface CreateProviderDto {
   is_active: boolean;
 }
 
-
 export interface UpdateProviderDto {
   name: string;
   description: string;
@@ -44,32 +43,28 @@ export type UpdateProviderPayload = {
 export const getListOfProviders = async (): Promise<ProvidersResponse> => {
   const { data } = await apiClient.get<ProvidersResponse>("products/providers/");
   return data;
-}
+};
 
-export const createProvider = async (
-  providerData: CreateProviderDto
-): Promise<Provider> => {
-  const { data } = await apiClient.post<Provider>(
-    "products/providers/",
-    providerData
-  );
+export const createProvider = async (providerData: CreateProviderDto): Promise<Provider> => {
+  const { data } = await apiClient.post<Provider>("products/providers/", providerData);
   return data;
-}
+};
 
 export const deleteProvider = async (providerId: string): Promise<void> => {
   await apiClient.delete(`products/providers/${providerId}/`);
-}
-
+};
 
 export const getProviderById = async (providerId: string): Promise<Provider> => {
   return apiClient.get(`products/providers/${providerId}/`).then((response) => {
     return response.data.data;
   });
-}
+};
 
-
-export const UpdateProviderById =async(ProviderId:string,providerData:UpdateProviderDto):Promise<Provider>=>{
-  return apiClient.put(`products/providers/${ProviderId}/`,providerData).then((response)=>{
-    return response.data
-  })
-}
+export const UpdateProviderById = async (
+  ProviderId: string,
+  providerData: UpdateProviderDto,
+): Promise<Provider> => {
+  return apiClient.put(`products/providers/${ProviderId}/`, providerData).then((response) => {
+    return response.data;
+  });
+};

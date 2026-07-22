@@ -17,9 +17,9 @@ If you are developing a production application, we recommend updating the config
 
 ```js
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       // Other configs...
 
@@ -34,50 +34,50 @@ export default defineConfig([
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRootDir: import.meta.dirname,
       },
       // other options...
     },
   },
-])
+]);
 ```
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js
 // eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+import reactDom from "eslint-plugin-react-dom";
+import reactX from "eslint-plugin-react-x";
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       // Other configs...
       // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
+      reactX.configs["recommended-typescript"],
       // Enable lint rules for React DOM
       reactDom.configs.recommended,
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRootDir: import.meta.dirname,
       },
       // other options...
     },
   },
-])
+]);
 ```
-
 
 # Frontend Testing Quick Guide (React + Vitest)
 
 ---
 
 ## 1. Test File (.test.tsx)
+
 ```
 ### File Location
 Keep test file in the same folder as the component.
@@ -90,10 +90,11 @@ ManagePage.test.tsx
 ---
 
 ## 2. Basic Test Example
+
 ```js
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 describe("ManagePage", () => {
   it("renders page", () => {
@@ -102,23 +103,25 @@ describe("ManagePage", () => {
   });
 });
 ```
+
 ---
 
 ## 3. Click Test Example
+
 ```js
 it("switch tab", () => {
   render(<ManagePage />);
 
   fireEvent.click(screen.getByText("Products"));
 
-  expect(
-    screen.getByText("Allocated Products Table")
-  ).toBeInTheDocument();
+  expect(screen.getByText("Allocated Products Table")).toBeInTheDocument();
 });
 ```
+
 ---
 
 ## 4. Run Tests (CLI)
+
 ```js
 Run all tests:
 npm run test
@@ -126,9 +129,11 @@ npm run test
 Run Vitest directly:
 npx vitest
 ```
+
 ---
 
 ## 5. Visual UI Mode (Test Dashboard)
+
 ```js
 Open UI in browser:
 npx vitest --ui
@@ -140,10 +145,11 @@ What you see:
 - Pass/fail status
 - Execution details
 ```
+
 ---
 
-
 ## 7. Rules
+
 ```js
 - One test = one behavior
 - File name must be ComponentName.test.tsx

@@ -1,8 +1,8 @@
+import type { DrawnLayer } from "../store/useLayersStore";
 import Feature from "ol/Feature";
 import GeoJSON from "ol/format/GeoJSON";
 import KML from "ol/format/KML";
 import { getArea } from "ol/sphere";
-import type { DrawnLayer } from "../store/useLayersStore";
 
 /**
  * Parses geospatial file content string (GeoJSON or KML) and extracts layer representation.
@@ -10,15 +10,12 @@ import type { DrawnLayer } from "../store/useLayersStore";
  * and XML string for KML.
  * Computes geodesic area in square kilometers for Polygons/MultiPolygons.
  * Extends the label from feature properties if available.
- * 
+ *
  * @param content The file content string.
  * @param fileName The name of the imported file for format detection and fallback naming.
  * @returns Array of layer data configurations ready for insertion into layers store.
  */
-export function parseGeospatialFile(
-  content: string,
-  fileName: string
-): Omit<DrawnLayer, "id">[] {
+export function parseGeospatialFile(content: string, fileName: string): Omit<DrawnLayer, "id">[] {
   const ext = "." + fileName.split(".").pop()?.toLowerCase();
   let features: Feature[] = [];
 
@@ -70,7 +67,9 @@ export function parseGeospatialFile(
       throw new Error("Failed to parse GeoJSON structure. Please check the file formatting.");
     }
   } else {
-    throw new Error(`Unsupported file type: ${ext}. Currently supporting .json, .geojson, and .kml.`);
+    throw new Error(
+      `Unsupported file type: ${ext}. Currently supporting .json, .geojson, and .kml.`,
+    );
   }
 
   if (features.length === 0) {
@@ -125,7 +124,6 @@ export function parseGeospatialFile(
       properties.title ||
       properties.id ||
       (features.length === 1 ? baseName : `${baseName}_${index + 1}`);
-
     // Standardize feature properties and structure back to GeoJSON object
     const geojson = geojsonFormatForExport.writeFeatureObject(feature);
 

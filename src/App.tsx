@@ -1,7 +1,7 @@
-import React from 'react'
-import { ToastContainer } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import { AppRoutes } from './routes'
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import React from "react";
+import { AppRoutes } from "./routes";
 
 const App: React.FC = () => {
   return (
@@ -9,7 +9,7 @@ const App: React.FC = () => {
       <AppRoutes />
       <ToastContainer position="top-right" autoClose={3000} />
     </>
-  )
-}
+  );
+};
 
-export default App
+export default App;

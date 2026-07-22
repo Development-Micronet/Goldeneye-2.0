@@ -1,7 +1,6 @@
 // import { defineConfig } from "vite";
 // import react from "@vitejs/plugin-react";
 // import tailwindcss from "@tailwindcss/vite";
-
 // // https://vite.dev/config/
 // export default defineConfig({
 //   plugins: [react(), tailwindcss()],
@@ -15,12 +14,9 @@
 //     setupFiles: "./src/test/setup.ts",
 //   }
 // });
-
-
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 // 👇 ADD THIS
 import { configDefaults } from "vitest/config";
 
@@ -36,7 +32,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/test/setup.ts",
-     reporters: ["default", "html"],
+    reporters: ["default", "html"],
     // optional but recommended
     exclude: [...configDefaults.exclude],
   },

@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { ManagePage } from "./ManagePage";
 
 // ------------------------
@@ -21,9 +21,7 @@ vi.mock("../components/ManageNavbar", () => ({
   ManageNavbar: ({ onTabChange }: any) => (
     <div>
       <button onClick={() => onTabChange("end-users")}>End Users</button>
-      <button onClick={() => onTabChange("allocated-products")}>
-        Products
-      </button>
+      <button onClick={() => onTabChange("allocated-products")}>Products</button>
       <button onClick={() => onTabChange("provider")}>Provider</button>
       <button onClick={() => onTabChange("subscription")}>Subscription</button>
     </div>
@@ -73,9 +71,7 @@ describe("ManagePage", () => {
 
     expect(screen.getByText("Manage End User")).toBeInTheDocument();
     expect(screen.getByText("End Users Table")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /add user/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add user/i })).toBeInTheDocument();
   });
 
   it("switches to Allocated Products tab", () => {
