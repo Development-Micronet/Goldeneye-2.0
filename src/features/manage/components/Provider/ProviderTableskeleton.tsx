@@ -4,17 +4,10 @@ const ProviderTableskeleton = () => {
       <table className="min-w-full border-collapse border border-gray-200">
         <thead>
           <tr className="bg-white select-none">
-<<<<<<< HEAD
-            <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
-              Sr. No.
-            </th>
-            <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
-=======
             {/* <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
               Sr. No.
             </th> */}
             <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
->>>>>>> 4798ab56ee171861f11e9355ee280e306f7e0395
               Provider Name
             </th>
             <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">

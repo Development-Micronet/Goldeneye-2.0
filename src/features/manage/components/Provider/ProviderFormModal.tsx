@@ -80,17 +80,12 @@ const ProviderFormModal = ({ open, onClose }: ProviderFormModalProps) => {
         {/* Header */}
         <div className="border-border flex items-center justify-between border-b px-6 py-4">
           <div>
-<<<<<<< HEAD
-            <h2 className="font-mona text-base font-semibold text-gray-900">Create Provider</h2>
-            <p className="text-text-secondary mt-0.5 text-xs">Add a new provider</p>
-=======
             <h2 className="font-mona text-base font-semibold text-gray-900">
               Create Provider
             </h2>
             <p className="mt-0.5 text-xs text-text-secondary">
               Add a new provider
             </p>
->>>>>>> 4798ab56ee171861f11e9355ee280e306f7e0395
           </div>
 
           <button

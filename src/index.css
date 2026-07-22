@@ -44,9 +44,6 @@
 
 button {
   cursor: pointer;
-<<<<<<< HEAD
-}
-=======
 
 }
 
@@ -80,4 +77,3 @@ button {
 .AccordionTrigger[data-state="open"] .AccordionChevron {
   transform: rotate(180deg);
 }
->>>>>>> 4798ab56ee171861f11e9355ee280e306f7e0395

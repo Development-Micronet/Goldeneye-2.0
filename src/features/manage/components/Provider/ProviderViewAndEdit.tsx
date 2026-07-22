@@ -78,8 +78,6 @@ const ProviderViewAndEdit = ({
 
     setIsEditing(true);
   };
-<<<<<<< HEAD
-=======
 
   useEffect(() => {
   if (provider && startInEditMode) {
@@ -93,7 +91,6 @@ const ProviderViewAndEdit = ({
   }
 }, [provider, startInEditMode]);
 
->>>>>>> 4798ab56ee171861f11e9355ee280e306f7e0395
   const inputStyles =
     "w-full px-3 py-2 text-sm rounded-lg bg-primary/5 border border-primary/15 focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition";
   const updateMutation = useMutation({
