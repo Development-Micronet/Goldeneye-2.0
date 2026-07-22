@@ -10,7 +10,6 @@ import type { Customer } from "../api/customers";
 import { useAuthStore } from "../../../store/useAuthStore";
 import ProviderTable from "../components/Provider/ProviderTable";
 import ProviderFormModal from "../components/Provider/ProviderFormModal";
-import ProviderTable from "../components/Provider/ProviderTable";
 import SubscriptionFormModal from "../components/Subscription/SubscriptionFormModal";
 import SubscriptionList from "../components/Subscription/SubscriptionList";
 
