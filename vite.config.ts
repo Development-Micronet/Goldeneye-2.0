@@ -15,9 +15,12 @@
 //   }
 // });
 import tailwindcss from "@tailwindcss/vite";
+<<<<<<< HEAD
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 // 👇 ADD THIS
+=======
+>>>>>>> 4798ab56ee171861f11e9355ee280e306f7e0395
 import { configDefaults } from "vitest/config";
 
 export default defineConfig({
@@ -26,6 +29,10 @@ export default defineConfig({
   server: {
     host: true,
     port: 5174,
+    allowedHosts: [
+      "goldeneye.ind.in",
+      "www.goldeneye.ind.in",
+    ],
   },
 
   test: {
@@ -33,7 +40,10 @@ export default defineConfig({
     globals: true,
     setupFiles: "./src/test/setup.ts",
     reporters: ["default", "html"],
+<<<<<<< HEAD
     // optional but recommended
+=======
+>>>>>>> 4798ab56ee171861f11e9355ee280e306f7e0395
     exclude: [...configDefaults.exclude],
   },
 });

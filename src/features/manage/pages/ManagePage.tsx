@@ -1,13 +1,14 @@
 import React, { useState } from "react";
-import { useAuthStore } from "../../../store/useAuthStore";
-import type { Customer } from "../api/customers";
-import {
-  type AllocatedProduct,
-  AllocatedProductsTable,
-} from "../components/AllocatedProductsTable";
-import { CompanyRequestsTable } from "../components/CompanyRequestsTable";
-import { type EndUser, EndUsersTable } from "../components/EndUsersTable";
 import { ManageNavbar, type TabType } from "../components/ManageNavbar";
+import { CompanyRequestsTable } from "../components/CompanyRequestsTable";
+import { EndUsersTable, type EndUser } from "../components/EndUsersTable";
+import {
+  AllocatedProductsTable,
+  type AllocatedProduct,
+} from "../components/AllocatedProductsTable";
+import type { Customer } from "../api/customers";
+import { useAuthStore } from "../../../store/useAuthStore";
+import ProviderTable from "../components/Provider/ProviderTable";
 import ProviderFormModal from "../components/Provider/ProviderFormModal";
 import ProviderTable from "../components/Provider/ProviderTable";
 import SubscriptionFormModal from "../components/Subscription/SubscriptionFormModal";
@@ -22,6 +23,7 @@ export const ManagePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>(
     roleName === "superadmin" ? "company-requests" : "end-users",
   );
+
   // State hooks for endUsers and allocatedProducts mock datasets
   const [endUsers, setEndUsers] = useState<EndUser[]>([
     {
@@ -116,7 +118,10 @@ export const ManagePage: React.FC = () => {
       time: "29 Apr 2026 11:27",
     },
   ]);
-  const [allocatedProducts, setAllocatedProducts] = useState<AllocatedProduct[]>([
+
+  const [allocatedProducts, setAllocatedProducts] = useState<
+    AllocatedProduct[]
+  >([
     {
       id: 1,
       productName: "Satellite Imagery BaseMap",
@@ -142,6 +147,7 @@ export const ManagePage: React.FC = () => {
       time: "17 Nov 2025",
     },
   ]);
+
   // Add Item Action Handlers
   const handleAddItem = () => {
     if (activeTab === "company-requests") {
@@ -176,7 +182,9 @@ export const ManagePage: React.FC = () => {
     } else if (activeTab === "allocated-products") {
       const productName = prompt("Enter Product Name:");
       const user = prompt("Enter User Name:");
-      const license = prompt("Enter License Type (e.g. Enterprise, Trial, Developer):");
+      const license = prompt(
+        "Enter License Type (e.g. Enterprise, Trial, Developer):",
+      );
       if (productName && user && license) {
         setAllocatedProducts((prev) => [
           ...prev,
@@ -206,31 +214,45 @@ export const ManagePage: React.FC = () => {
       `Editing customer profile: ${customer.name}\nUsername: ${customer.userName}\nStatus: ${customer.status}`,
     );
   };
+
   const handleEditUser = (usr: EndUser) => {
     const newStatus = prompt("Enter status (Approved / Pending):", usr.status);
     if (newStatus === "Approved" || newStatus === "Pending") {
-      setEndUsers((prev) => prev.map((u) => (u.id === usr.id ? { ...u, status: newStatus } : u)));
+      setEndUsers((prev) =>
+        prev.map((u) => (u.id === usr.id ? { ...u, status: newStatus } : u)),
+      );
     }
   };
+
   const handleEditProduct = (prod: AllocatedProduct) => {
-    const newStatus = prompt("Enter status (Active / Pending / Expired):", prod.status);
-    if (newStatus === "Active" || newStatus === "Pending" || newStatus === "Expired") {
+    const newStatus = prompt(
+      "Enter status (Active / Pending / Expired):",
+      prod.status,
+    );
+    if (
+      newStatus === "Active" ||
+      newStatus === "Pending" ||
+      newStatus === "Expired"
+    ) {
       setAllocatedProducts((prev) =>
         prev.map((p) => (p.id === prod.id ? { ...p, status: newStatus } : p)),
       );
     }
   };
+
   // Delete Action Handlers
   const handleDeleteRequest = (id: number) => {
     if (confirm(`Are you sure you want to delete customer ID ${id}?`)) {
       alert("Delete action triggered for backend client ID: " + id);
     }
   };
+
   const handleDeleteUser = (id: number) => {
     if (confirm("Are you sure you want to delete this user?")) {
       setEndUsers((prev) => prev.filter((u) => u.id !== id));
     }
   };
+
   const handleDeleteProduct = (id: number) => {
     if (confirm("Are you sure you want to delete this product allocation?")) {
       setAllocatedProducts((prev) => prev.filter((p) => p.id !== id));
@@ -250,7 +272,7 @@ export const ManagePage: React.FC = () => {
             <h2 className="text-base font-semibold text-gray-800 select-none sm:text-lg">
               {activeTab === "company-requests" && "Manage Company Requests"}
               {activeTab === "end-users" && "Manage End User"}
-              {activeTab === "allocated-products" && "Manage Allocated Product"}
+              {/* {activeTab === "allocated-products" && "Manage Allocated Product"} */}
               {activeTab === "provider & Contracts" && "Manage Providers"}
               {activeTab === "subscription" && "Manage Subscriptions"}
             </h2>
@@ -262,7 +284,7 @@ export const ManagePage: React.FC = () => {
               {activeTab === "company-requests" && "Add Request"}
               {activeTab === "end-users" && "Add User"}
               {activeTab === "allocated-products" && "Allocate Product"}
-              {activeTab === "provider & Contracts" && "Add Provider"}
+              {activeTab === "provider & Contracts" && "Add Provider"} 
               {activeTab === "subscription" && "Add Subscription"}
             </button>
           </div>
@@ -273,15 +295,17 @@ export const ManagePage: React.FC = () => {
           )}
 
           {activeTab === "end-users" && (
-            <EndUsersTable users={endUsers} onEdit={handleEditUser} onDelete={handleDeleteUser} />
+            <EndUsersTable
+              users={endUsers}
+              onEdit={handleEditUser}
+              onDelete={handleDeleteUser}
+            />
           )}
 
           {activeTab === "allocated-products" && (
-            <AllocatedProductsTable
-              products={allocatedProducts}
-              onEdit={handleEditProduct}
-              onDelete={handleDeleteProduct}
-            />
+            <div className="text-sm text-gray-500">
+              No allocated products data.
+            </div>
           )}
           {activeTab === "provider & Contracts" && <ProviderTable />}
           {activeTab === "subscription" && <SubscriptionList />}

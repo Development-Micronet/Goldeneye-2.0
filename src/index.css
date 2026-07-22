@@ -44,4 +44,40 @@
 
 button {
   cursor: pointer;
+<<<<<<< HEAD
 }
+=======
+
+}
+
+
+@keyframes slideDown {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 250ms ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 250ms ease-out;
+}
+
+.AccordionTrigger[data-state="open"] .AccordionChevron {
+  transform: rotate(180deg);
+}
+>>>>>>> 4798ab56ee171861f11e9355ee280e306f7e0395

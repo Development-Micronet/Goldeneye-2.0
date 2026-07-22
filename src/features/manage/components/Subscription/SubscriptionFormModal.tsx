@@ -155,23 +155,28 @@ const SubscriptionFormModal = ({ open, onClose, subscription }: SubscriptionForm
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
+      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl overflow-hidden">
         {/* Header */}
 
-        <div className="flex items-center justify-between border-b px-6 py-4">
+        <div className="flex justify-between items-center border-b px-6 py-4">
           <div>
-            <h2 className="text-lg font-semibold">
+            <h2 className="font-mona text-base font-semibold text-gray-900">
               {subscription ? "Edit Subscription" : "Create Subscription"}
             </h2>
 
             <p className="text-sm text-gray-500">
-              {subscription ? "Update subscription details" : "Create a new subscription"}
+              {subscription
+                ? "Update subscription details"
+                : "Create a new subscription"}
             </p>
           </div>
 
-          <button onClick={onClose}>
-            <X />
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-text-secondary hover:bg-gray-100 hover:text-gray-900 transition"
+          >
+            <X size={16} />
           </button>
         </div>
 
@@ -181,10 +186,10 @@ const SubscriptionFormModal = ({ open, onClose, subscription }: SubscriptionForm
           {/* Provider */}
 
           <div>
-            <label className="mb-2 block text-sm font-medium">Provider</label>
+            <label className="block text-sm font-medium mb-2">Provider</label>
 
             <select
-              className="w-full rounded-lg border p-2.5"
+              className="w-full border rounded-lg p-2.5"
               value={formData.providerNames[0] || ""}
               onChange={(e) =>
                 setFormData({
@@ -206,10 +211,10 @@ const SubscriptionFormModal = ({ open, onClose, subscription }: SubscriptionForm
           {/* Type */}
 
           <div>
-            <label className="mb-2 block text-sm font-medium">Type</label>
+            <label className="block text-sm font-medium mb-2">Type</label>
 
             <input
-              className="w-full rounded-lg border p-2.5"
+              className="w-full border rounded-lg p-2.5"
               placeholder="Premium"
               value={formData.type}
               onChange={(e) =>
@@ -224,10 +229,10 @@ const SubscriptionFormModal = ({ open, onClose, subscription }: SubscriptionForm
           {/* URL */}
 
           <div>
-            <label className="mb-2 block text-sm font-medium">URL</label>
+            <label className="block text-sm font-medium mb-2">URL</label>
 
             <input
-              className="w-full rounded-lg border p-2.5"
+              className="w-full border rounded-lg p-2.5"
               placeholder="https://api.example.com"
               value={formData.url}
               onChange={(e) =>
@@ -242,11 +247,13 @@ const SubscriptionFormModal = ({ open, onClose, subscription }: SubscriptionForm
           {/* Service Info */}
 
           <div>
-            <label className="mb-2 block text-sm font-medium">Service Info</label>
+            <label className="block text-sm font-medium mb-2">
+              Service Info
+            </label>
 
             <textarea
               rows={4}
-              className="w-full resize-none rounded-lg border p-2.5"
+              className="w-full border rounded-lg p-2.5 resize-none"
               placeholder="Enter service information..."
               value={formData.serviceInfo}
               onChange={(e) =>
@@ -262,14 +269,14 @@ const SubscriptionFormModal = ({ open, onClose, subscription }: SubscriptionForm
         {/* Footer */}
 
         <div className="flex justify-end gap-3 border-t px-6 py-4">
-          <button onClick={onClose} className="rounded-lg border px-4 py-2">
+          <button onClick={onClose} className="border rounded-lg px-4 py-2">
             Cancel
           </button>
 
           <button
             disabled={isLoading}
             onClick={handleSubmit}
-            className="bg-primary rounded-lg px-5 py-2 text-white"
+            className="bg-primary text-white rounded-lg px-5 py-2"
           >
             {isLoading ? "Saving..." : subscription ? "Update Subscription" : "Create Subscription"}
           </button>
