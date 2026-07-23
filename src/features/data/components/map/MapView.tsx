@@ -62,7 +62,7 @@ export default function MapView() {
   const layers = useLayersStore((state) => state.layers);
   const addLayer = useLayersStore((state) => state.addLayer);
   const drawInteractionRef = useRef<Draw | null>(null);
-    const lastVisibleProductIdsRef = useRef<string>("");
+  const lastVisibleProductIdsRef = useRef<string>("");
   const { activeLayer } = useBaseMapStore();
   const fitLayerId = useMapStore((state) => state.fitLayerId);
   const setFitLayerId = useMapStore((state) => state.setFitLayerId);
@@ -94,29 +94,28 @@ export default function MapView() {
   }, [fitLayerId, setFitLayerId, layers]);
 
   useEffect(() => {
-  const map = mapInstance.current;
-  if (!map) return;
+    const map = mapInstance.current;
+    if (!map) return;
 
-  const view = map.getView();
+    const view = map.getView();
 
-  const targetZoom = Math.min(zoom, maxZoom);
+    const targetZoom = Math.min(zoom, maxZoom);
 
-  if (view.getZoom() !== targetZoom) {
-    view.setZoom(targetZoom);
-  }
-
-}, [zoom, maxZoom]);
+    if (view.getZoom() !== targetZoom) {
+      view.setZoom(targetZoom);
+    }
+  }, [zoom, maxZoom]);
 
   // console.log(layers);
   useEffect(() => {
     if (!mapRef.current) return;
 
     // Center coordinates for India in EPSG:4326 (longitude, latitude)
-        const origin = [78.9629, 20.5937];
+    const origin = [78.9629, 20.5937];
     const minZoom = 2;
     const initialMaxZoom = 19;
     // Base Layer: OpenStreetMap
-     const osmLayer = new TileLayer({
+    const osmLayer = new TileLayer({
       properties: { label: "Base Layer" },
       source: new OSM(),
     });
@@ -461,6 +460,7 @@ export default function MapView() {
       });
 
       toast.success(`${newLayer.label} plotted successfully`);
+      setMaxZoom(18);
 
       // Deactivate tool once drawing completes with a small timeout to prevent race condition
       setTimeout(() => {
@@ -633,7 +633,7 @@ export default function MapView() {
         attributions = "© OpenStreetMap contributors";
     }
 
-     const baseLayer = mapInstance.current
+    const baseLayer = mapInstance.current
       .getLayers()
       .getArray()
       .find((l) => l.get("label") === "Base Layer") as TileLayer<XYZ> | undefined;
@@ -648,7 +648,7 @@ export default function MapView() {
     baseLayer.setSource(source);
   }, [activeLayer]);
 
- useEffect(() => {
+  useEffect(() => {
     if (!mapInstance.current || !visibleProducts.length) return;
 
     const currentIds = visibleProducts
@@ -875,15 +875,14 @@ export default function MapView() {
       source.clear();
     };
   }, [pinnedProducts, layers]);
-useEffect(() => {
-  const map = mapInstance.current;
-  if (!map) return;
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map) return;
 
-  const view = map.getView();
+    const view = map.getView();
 
-  view.setMaxZoom(maxZoom);
-
-}, [maxZoom]);
+    view.setMaxZoom(maxZoom);
+  }, [maxZoom]);
   useEffect(() => {
     if (!layers.length) return;
 

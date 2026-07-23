@@ -7,6 +7,7 @@ interface ZoomStore {
 
   setZoom: (zoom: number) => void;
   setMaxZoom: (maxZoom: number) => void;
+  resetMaxZoom: () => void;
 
   zoomIn: () => void;
   zoomOut: () => void;
@@ -45,6 +46,10 @@ const useZoomStore = create<ZoomStore>((set, get) => ({
     set((state) => ({
       zoom: Math.min(DEFAULT_ZOOM, state.maxZoom),
     })),
+  resetMaxZoom: () =>
+    set({
+      maxZoom: DEFAULT_MAX_ZOOM,
+    }),
 }));
 
 export default useZoomStore;
