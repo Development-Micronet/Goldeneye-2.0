@@ -91,7 +91,11 @@ const ZoomSidebar: React.FC = () => {
         className={`flex w-[50px] cursor-move flex-col items-center rounded-xl border border-gray-300 bg-white py-3 shadow-lg ${isAnimating ? "transition-all duration-1000 ease-out" : ""} `}
       >
         <button
-          onClick={zoomIn}
+          onClick={() => {
+            if (zoom < maxZoom) {
+              zoomIn();
+            }
+          }}
           className="hover:bg-primary/10 hover:text-primary cursor-pointer rounded-lg p-2 text-gray-700"
         >
           <FiPlus size={20} />
@@ -104,13 +108,23 @@ const ZoomSidebar: React.FC = () => {
           min={minZoom}
           max={maxZoom}
           value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
+          onChange={(e) => {
+            const value = Number(e.target.value);
+
+            if (value <= maxZoom) {
+              setZoom(value);
+            }
+          }}
           className="zoom-vertical-slider cursor-pointer"
           onMouseDown={(e) => e.stopPropagation()}
         />
 
         <button
-          onClick={zoomOut}
+          onClick={() => {
+            if (zoom > minZoom) {
+              zoomOut();
+            }
+          }}
           className="hover:bg-primary/10 hover:text-primary mt-3 rounded-lg p-2 text-gray-700"
         >
           <FiMinus size={20} />

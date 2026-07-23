@@ -176,6 +176,7 @@ export const ArchiveSearchMenu: React.FC = () => {
             },
       );
 
+      // console.log(decrypted)
       return decrypted;
     },
 
@@ -246,6 +247,8 @@ export const ArchiveSearchMenu: React.FC = () => {
 
       setproducts(null);
       setcurrentpage(1);
+      clearProducts();
+      clearPinnedProducts();
     };
   }, [queryClient, searchKey]);
 
@@ -271,7 +274,7 @@ export const ArchiveSearchMenu: React.FC = () => {
           {/* Left */}
           <div>
             <h2 className="text-sm font-semibold text-gray-900">
-              {products?.features.length ?? 0} Results
+              {products?.pagination.total_count ?? 0} Results
             </h2>
             <p className="mt-0.5 text-xs text-gray-500">Archive Products</p>
           </div>

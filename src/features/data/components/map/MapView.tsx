@@ -13,8 +13,8 @@ import Overlay from "ol/Overlay";
 import View from "ol/View";
 import { defaults as defaultControls } from "ol/control";
 import { easeOut } from "ol/easing";
-import { getHeight, getWidth } from "ol/extent";
-import { isEmpty } from "ol/extent";
+// import { getHeight, getWidth } from "ol/extent";
+// import { isEmpty } from "ol/extent";
 import GeoJSON from "ol/format/GeoJSON";
 import type { Type } from "ol/geom/Geometry";
 import Point from "ol/geom/Point";
@@ -62,10 +62,11 @@ export default function MapView() {
   const layers = useLayersStore((state) => state.layers);
   const addLayer = useLayersStore((state) => state.addLayer);
   const drawInteractionRef = useRef<Draw | null>(null);
+    const lastVisibleProductIdsRef = useRef<string>("");
   const { activeLayer } = useBaseMapStore();
   const fitLayerId = useMapStore((state) => state.fitLayerId);
   const setFitLayerId = useMapStore((state) => state.setFitLayerId);
-  const { zoom } = useZoomStore();
+  const { zoom, setZoom, setMaxZoom, maxZoom } = useZoomStore();
   const { visibleProducts } = useArchiveProductStore();
   const hoveredProduct = useArchiveHoverStore((state) => state.hoveredProduct);
   const { pinnedProducts } = usePinnedProductStore();
@@ -92,29 +93,31 @@ export default function MapView() {
     setFitLayerId(null);
   }, [fitLayerId, setFitLayerId, layers]);
 
-  // console.log(layers);
-
   useEffect(() => {
-    if (!mapInstance.current) return;
+  const map = mapInstance.current;
+  if (!map) return;
 
-    const view = mapInstance.current.getView();
+  const view = map.getView();
 
-    view.animate({
-      zoom,
-      duration: 500,
-      easing: easeOut,
-    });
-  }, [zoom]);
+  const targetZoom = Math.min(zoom, maxZoom);
 
+  if (view.getZoom() !== targetZoom) {
+    view.setZoom(targetZoom);
+  }
+
+}, [zoom, maxZoom]);
+
+  // console.log(layers);
   useEffect(() => {
     if (!mapRef.current) return;
 
     // Center coordinates for India in EPSG:4326 (longitude, latitude)
-    const origin = [78.9629, 20.5937];
+        const origin = [78.9629, 20.5937];
     const minZoom = 2;
-    const maxZoom = 19;
+    const initialMaxZoom = 19;
     // Base Layer: OpenStreetMap
-    const osmLayer = new TileLayer({
+     const osmLayer = new TileLayer({
+      properties: { label: "Base Layer" },
       source: new OSM(),
     });
     // WMS Layer: India Shapefile Boundary
@@ -239,7 +242,7 @@ export default function MapView() {
         center: origin,
         zoom: 4.9,
         minZoom: minZoom,
-        maxZoom: maxZoom,
+        maxZoom: initialMaxZoom,
       }),
     });
 
@@ -253,6 +256,31 @@ export default function MapView() {
       vectorSourceRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const view = map.getView();
+
+    const key = view.on("change:resolution", () => {
+      const currentZoom = view.getZoom();
+
+      if (currentZoom === undefined) return;
+
+      const roundedZoom = Math.round(currentZoom);
+
+      const storeZoom = useZoomStore.getState().zoom;
+
+      if (roundedZoom !== storeZoom) {
+        setZoom(roundedZoom);
+      }
+    });
+
+    return () => {
+      unByKey(key);
+    };
+  }, [setZoom]);
 
   // Synchronize features from the global layers store with the vector source
   useEffect(() => {
@@ -605,7 +633,10 @@ export default function MapView() {
         attributions = "© OpenStreetMap contributors";
     }
 
-    const baseLayer = mapInstance.current.getLayers().item(0) as TileLayer<XYZ>;
+     const baseLayer = mapInstance.current
+      .getLayers()
+      .getArray()
+      .find((l) => l.get("label") === "Base Layer") as TileLayer<XYZ> | undefined;
 
     if (!baseLayer) return;
 
@@ -617,11 +648,34 @@ export default function MapView() {
     baseLayer.setSource(source);
   }, [activeLayer]);
 
-  useEffect(() => {
+ useEffect(() => {
     if (!mapInstance.current || !visibleProducts.length) return;
+
+    const currentIds = visibleProducts
+      .map((p) => p.id)
+      .sort()
+      .join(",");
+
+    // Skip rebuild if the underlying product set hasn't actually changed
+    // (avoids re-fetching/re-flickering images on unrelated re-renders,
+    // e.g. zoom changes that produce a new array reference).
+    if (currentIds === lastVisibleProductIdsRef.current) {
+      return;
+    }
+    lastVisibleProductIdsRef.current = currentIds;
 
     const map = mapInstance.current;
     const imageLayers: ImageLayer<ImageStatic>[] = [];
+
+    const hasNonJpg = visibleProducts.some((product) => {
+      if (!product.imageUrl) return false;
+      const url = product.imageUrl.toLowerCase().split("?")[0];
+      const isJpg = url.endsWith(".jpg") || url.endsWith(".jpeg");
+      return !isJpg;
+    });
+
+    const computedMaxZoom = hasNonJpg ? 14 : 18;
+    setMaxZoom(computedMaxZoom);
 
     visibleProducts.forEach((product) => {
       if (!product.imageUrl || !product.geometry) return;
@@ -643,38 +697,32 @@ export default function MapView() {
           projection: "EPSG:4326",
         }),
         opacity: 0.85,
-        zIndex: 20, // Images below AOI
+        zIndex: 20,
       });
 
       map.addLayer(imageLayer);
       imageLayers.push(imageLayer);
     });
 
-    // Bring all vector layers (AOI) above image layers
+    // Keep AOI/vector layers above images
     map.getLayers().forEach((layer) => {
       if (layer instanceof VectorLayer) {
         layer.setZIndex(1000);
       }
     });
 
-    // Zoom to images
     if (imageLayers.length) {
       const extent = imageLayers.reduce(
         (acc, layer) => {
           const imageExtent = layer.getSource()?.getImageExtent();
-
-          if (imageExtent) {
-            return acc
-              ? [
-                  Math.min(acc[0], imageExtent[0]),
-                  Math.min(acc[1], imageExtent[1]),
-                  Math.max(acc[2], imageExtent[2]),
-                  Math.max(acc[3], imageExtent[3]),
-                ]
-              : imageExtent;
-          }
-
-          return acc;
+          if (!imageExtent) return acc;
+          if (!acc) return imageExtent;
+          return [
+            Math.min(acc[0], imageExtent[0]),
+            Math.min(acc[1], imageExtent[1]),
+            Math.max(acc[2], imageExtent[2]),
+            Math.max(acc[3], imageExtent[3]),
+          ];
         },
         null as number[] | null,
       );
@@ -682,8 +730,8 @@ export default function MapView() {
       if (extent) {
         map.getView().fit(extent, {
           padding: [100, 100, 100, 100],
-          duration: 800,
-          maxZoom: 12,
+          duration: 500,
+          maxZoom: computedMaxZoom,
         });
       }
     }
@@ -693,7 +741,7 @@ export default function MapView() {
         map.removeLayer(layer);
       });
     };
-  }, [visibleProducts]);
+  }, [visibleProducts, setMaxZoom]);
 
   useEffect(() => {
     if (!mapInstance.current || !flyToProduct?.geometry) return;
@@ -827,7 +875,15 @@ export default function MapView() {
       source.clear();
     };
   }, [pinnedProducts, layers]);
-  
+useEffect(() => {
+  const map = mapInstance.current;
+  if (!map) return;
+
+  const view = map.getView();
+
+  view.setMaxZoom(maxZoom);
+
+}, [maxZoom]);
   useEffect(() => {
     if (!layers.length) return;
 
