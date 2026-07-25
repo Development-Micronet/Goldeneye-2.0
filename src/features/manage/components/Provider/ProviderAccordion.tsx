@@ -17,82 +17,88 @@ export default function ProviderAccordion({
   handleDelete,
   setSelectedProviderId,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<
-    Record<string, "details" | "contracts">
-  >({});
+  const [activeTab, setActiveTab] = useState<Record<string, "details" | "contracts">>({});
 
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
-  const [selectedProviderIdForContract, setSelectedProviderIdForContract] =
-    useState("");
+  const [selectedProviderIdForContract, setSelectedProviderIdForContract] = useState("");
+
+  const validProviders = (providers ?? [])
+    .filter(
+      (provider): provider is Record<string, any> => !!provider && typeof provider === "object",
+    )
+    .map((provider, index) => ({
+      ...provider,
+      provider_id: provider.provider_id ?? `provider-${index}`,
+      name: provider.name ?? "Unnamed Provider",
+      description: provider.description ?? "",
+      is_active: provider.is_active ?? false,
+    }));
+
+  if (!validProviders.length) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-white p-6 text-center text-gray-500">
+        No providers available.
+      </div>
+    );
+  }
+
   return (
     <>
       <Accordion.Root type="single" collapsible className="space-y-4">
-        {providers.map((provider) => (
+        {validProviders.map((provider) => (
           <Accordion.Item
             key={provider.provider_id}
             value={provider.provider_id}
-            className="border rounded-lg overflow-hidden bg-white"
+            className="overflow-hidden rounded-lg border bg-white"
           >
             {/* Header */}
 
             <Accordion.Header>
-              <div className="flex items-center justify-between px-5 py-4 bg-cyan-50">
-                {/* Provider Name */}
-                <span className="font-semibold text-gray-800">
-                  {provider.name}
-                </span>
+              <Accordion.Trigger asChild>
+                <button className="group flex w-full items-center justify-between bg-cyan-50 px-5 py-4 transition hover:bg-cyan-100">
+                  <div className="flex items-center gap-2">
+                    <ChevronDown className="h-5 w-5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                    <span className="font-semibold text-gray-800">{provider.name}</span>
+                  </div>
 
-                <div className="flex items-center gap-3">
-                  {/* Add Contract */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-
-                      setSelectedProviderIdForContract(provider.provider_id);
-
-                      setIsContractModalOpen(true);
-                    }}
-                    className="p-2 rounded hover:bg-blue-100 text-blue-600 transition"
-                  >
-                    <Plus size={18} />
-                  </button>
-
-                  {/* Delete Provider */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(provider.provider_id);
-                    }}
-                    disabled={
-                      deleteMutation.isPending &&
-                      deleteMutation.variables === provider.provider_id
-                    }
-                    className="p-2 rounded hover:bg-red-100 text-red-600 transition"
-                  >
-                    {deleteMutation.isPending &&
-                    deleteMutation.variables === provider.provider_id ? (
-                      <Loader2 size={18} className="animate-spin" />
-                    ) : (
-                      <Trash2 size={18} />
-                    )}
-                  </button>
-
-                  {/* Details */}
-                  <Accordion.Trigger asChild>
-                    <button className="AccordionTrigger flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-white hover:bg-primary/99 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none">
-                      Details
-                      <ChevronDown className="AccordionChevron h-4 w-4 transition-transform duration-200" />
+                  <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                    {/* Add Contract */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedProviderIdForContract(provider.provider_id);
+                        setIsContractModalOpen(true);
+                      }}
+                      className="rounded p-2 text-blue-600 hover:bg-blue-100"
+                    >
+                      <Plus size={18} />
                     </button>
-                  </Accordion.Trigger>
-                </div>
-              </div>
+
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(provider.provider_id)}
+                      disabled={
+                        deleteMutation.isPending &&
+                        deleteMutation.variables === provider.provider_id
+                      }
+                      className="rounded p-2 text-red-600 hover:bg-red-100"
+                    >
+                      {deleteMutation.isPending &&
+                      deleteMutation.variables === provider.provider_id ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={18} />
+                      )}
+                    </button>
+                  </div>
+                </button>
+              </Accordion.Trigger>
             </Accordion.Header>
 
             {/* Content */}
 
-            <Accordion.Content className="overflow-hidden data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp">
+            <Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-hidden">
               <div className="p-5">
                 {/* Top Buttons */}
                 <div className="mb-4 flex gap-3">
@@ -146,17 +152,13 @@ export default function ProviderAccordion({
                       <tr>
                         <td className="border p-3">{provider.name}</td>
 
-                        <td className="border p-3">
-                          {provider.description || "-"}
-                        </td>
+                        <td className="border p-3">{provider.description || "-"}</td>
 
                         <td className="border p-3">
                           <div className="flex items-center gap-2">
                             <span
                               className={`h-2.5 w-2.5 rounded-full ${
-                                provider.is_active
-                                  ? "bg-green-500"
-                                  : "bg-yellow-500"
+                                provider.is_active ? "bg-green-500" : "bg-yellow-500"
                               }`}
                             />
                             {provider.is_active ? "Active" : "Inactive"}
@@ -166,10 +168,8 @@ export default function ProviderAccordion({
                         <td className="border p-3">
                           <div className="flex justify-center">
                             <button
-                              onClick={() =>
-                                setSelectedProviderId(provider.provider_id)
-                              }
-                              className="rounded-md p-2 text-blue-600 hover:bg-blue-100 transition"
+                              onClick={() => setSelectedProviderId(provider.provider_id)}
+                              className="rounded-md p-2 text-blue-600 transition hover:bg-blue-100"
                               title="Edit Provider"
                             >
                               <Edit2 size={17} />
@@ -184,10 +184,7 @@ export default function ProviderAccordion({
                 {/* CONTRACTS */}
 
                 {activeTab[provider.provider_id] === "contracts" && (
-                  <ContractsTable
-                    providerId={provider.provider_id}
-                    providerName={provider.name}
-                  />
+                  <ContractsTable providerId={provider.provider_id} providerName={provider.name} />
                 )}
               </div>
             </Accordion.Content>

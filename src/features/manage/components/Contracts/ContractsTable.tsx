@@ -172,7 +172,7 @@ export default function ContractsTable({ providerId, providerName }: Props) {
                     </button>
 
                     <button
-                      onClick={() => handleDelete(contract.id)}
+                      onClick={() => handleDelete(contract.contractId)}
                       className="text-teal-700 hover:text-red-600"
                     >
                       <Trash2 size={18} />
