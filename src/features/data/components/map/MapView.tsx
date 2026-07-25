@@ -39,6 +39,7 @@ import * as turf from "@turf/turf";
 import { useArchiveHoverStore } from "../../hooks/useArchiveHoverStore";
 import { usePinnedProductStore } from "../../hooks/usePinnedProductStore";
 import { useSelectedAOIStore } from "../../hooks/useSelectedAOIStore";
+import { logger } from "../../../../utils/logger";
 
 export default function MapView() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -87,11 +88,13 @@ export default function MapView() {
           });
         }
       } catch (err) {
-        console.error("Error fitting layer view:", err);
+        logger.error("Error fitting layer view:", err);
       }
     }
     setFitLayerId(null);
   }, [fitLayerId, setFitLayerId, layers]);
+
+  // logger.log(layers);
 
   useEffect(() => {
     const map = mapInstance.current;
@@ -165,7 +168,7 @@ export default function MapView() {
         try {
           labelCoord = geom.getClosestPoint(topLeftCoord);
         } catch (e) {
-          console.error("Error getting closest point for label:", e);
+          logger.error("Error getting closest point for label:", e);
         }
 
         const labelGeom = new Point(labelCoord);
@@ -300,7 +303,7 @@ export default function MapView() {
         }
         vectorSource.addFeature(feature);
       } catch (err) {
-        console.error("Error loading layer from store:", err);
+        logger.error("Error loading layer from store:", err);
       }
     });
   }, [layers]);
@@ -607,7 +610,7 @@ export default function MapView() {
       duration: 1000,
     });
 
-    setPlotBoundCoordinates(null);
+    setPlotBoundCoordinates(null);  
   }, [plotBoundCoordinates, addLayer, setPlotBoundCoordinates]);
 
   useEffect(() => {
@@ -883,6 +886,7 @@ export default function MapView() {
 
     view.setMaxZoom(maxZoom);
   }, [maxZoom]);
+
   useEffect(() => {
     if (!layers.length) return;
 

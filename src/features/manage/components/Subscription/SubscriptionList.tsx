@@ -12,6 +12,7 @@ import {
 } from "../../api/subscription";
 import SubscriptionFormModal from "./SubscriptionFormModal";
 import SubscriptionSkeleton from "./SubscriptionSkeleton";
+import { logger } from "../../../../utils/logger";
 
 type SubscriptionItem = {
   id: number;
@@ -78,7 +79,7 @@ const SubscriptionList = () => {
       queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
     },
     onError: (error) => {
-      console.error("Delete subscription failed:", error);
+      logger.error("Delete subscription failed:", error);
     },
   });
   const handleDelete = async (subscriptionId: string) => {

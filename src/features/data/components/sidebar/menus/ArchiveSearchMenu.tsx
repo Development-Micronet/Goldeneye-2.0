@@ -41,6 +41,7 @@ import {
   exportKMZ,
   exportShape,
 } from "../../../../../utils/Exportfunction";
+import { logger } from "../../../../../utils/logger";
 type SortOption =
   | "date"
   | "cloud_cover"
@@ -224,7 +225,7 @@ export const ArchiveSearchMenu: React.FC = () => {
       raw: item.properties.raw,
     })) ?? [];
 
-  // console.log("mappedProducts", products);
+  // logger.log("mappedProducts", products);
   const handleSelectAll = () => {
     const allSelected =
       mappedProducts.length > 0 && mappedProducts.every((product) => isSelected(product.id));
@@ -355,7 +356,7 @@ export const ArchiveSearchMenu: React.FC = () => {
 
                         setOpen(false);
                       } catch (error) {
-                        console.error(error);
+                        logger.error(error);
                         toast.error("Failed to export HTML.");
                       }
                     }}
@@ -379,7 +380,7 @@ export const ArchiveSearchMenu: React.FC = () => {
 
                         setOpen(false);
                       } catch (error) {
-                        console.error(error);
+                        logger.error(error);
                         toast.error("Failed to export HTML.");
                       }
                     }}
@@ -409,7 +410,7 @@ export const ArchiveSearchMenu: React.FC = () => {
 
                         setOpen(false);
                       } catch (error) {
-                        console.error("KML Export Error:", error);
+                        logger.error("KML Export Error:", error);
 
                         toast.error("Failed to export KML.");
                       }
@@ -440,7 +441,7 @@ export const ArchiveSearchMenu: React.FC = () => {
 
                         setOpen(false);
                       } catch (error) {
-                        console.error("KMZ Export Error:", error);
+                        logger.error("KMZ Export Error:", error);
 
                         toast.error("Failed to export KMZ.");
                       }

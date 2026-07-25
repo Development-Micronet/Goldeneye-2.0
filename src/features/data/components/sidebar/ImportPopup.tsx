@@ -3,6 +3,7 @@ import React, { useRef, useState } from "react";
 import { Paperclip, X } from "lucide-react";
 import { useLayersStore } from "../../../../store/useLayersStore";
 import { parseGeospatialFile } from "../../../../utils/geospatialUtils";
+import { logger } from "../../../../utils/logger";
 
 interface ImportPopupProps {
   onClose: () => void;
@@ -51,7 +52,7 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
           totalImported++;
         });
       } catch (err: any) {
-        console.error(`Error importing file ${file.name}:`, err);
+        logger.error(`Error importing file ${file.name}:`, err);
         errors.push(`${file.name}: ${err.message || err}`);
       }
     }

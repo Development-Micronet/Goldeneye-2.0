@@ -1,22 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  getListOfProviders,
-  deleteProvider,
-  type ProvidersResponse,
-} from "../../api/provider";
+import { getListOfProviders, deleteProvider, type ProvidersResponse } from "../../api/provider";
 import { useState } from "react";
-import ProviderSkeleton from "./ProviderTableskeleton"
+import ProviderSkeleton from "./ProviderTableskeleton";
 import ProviderViewAndEdit from "./ProviderViewAndEdit";
 import Swal from "sweetalert2";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../utils/dataDecrypt";
 import ProviderAccordion from "./ProviderAccordion";
+import { logger } from "../../../../utils/logger";
 
 const ProviderMain = () => {
   const queryClient = useQueryClient();
-  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
-    null,
-  );
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const { accessToken } = useAuthStore();
   const token = accessToken?.replace("Bearer ", "").trim() || "";
 
@@ -25,7 +20,7 @@ const ProviderMain = () => {
     queryFn: async () => {
       //encrypted
       const res = await getListOfProviders();
-      // console.log("Encrypted response:", res);
+      // logger.log("Encrypted response:", res);
       if (!res?.data) return [];
 
       if (!token) throw new Error("Missing token");
@@ -39,8 +34,8 @@ const ProviderMain = () => {
     },
   });
 
-  const providers = data ?? [];// always array
-  console.log("Decrypted providers:", providers);
+  const providers = data ?? []; // always array
+  logger.log("Decrypted providers:", providers);
   const deleteMutation = useMutation({
     mutationFn: deleteProvider,
 
@@ -51,7 +46,7 @@ const ProviderMain = () => {
     },
 
     onError: (error) => {
-      console.error("Delete failed:", error);
+      logger.error("Delete failed:", error);
     },
   });
 
@@ -96,20 +91,20 @@ const ProviderMain = () => {
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
+      <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
         <ProviderAccordion
-    providers={providers}
-    deleteMutation={deleteMutation}
-    handleDelete={handleDelete}
-    setSelectedProviderId={setSelectedProviderId}
-/>
+          providers={providers}
+          deleteMutation={deleteMutation}
+          handleDelete={handleDelete}
+          setSelectedProviderId={setSelectedProviderId}
+        />
       </div>
       {selectedProviderId && (
         <ProviderViewAndEdit
-  providerid={selectedProviderId}
-  onBack={() => setSelectedProviderId("")}
-  startInEditMode={true}
-/>
+          providerid={selectedProviderId}
+          onBack={() => setSelectedProviderId("")}
+          startInEditMode={true}
+        />
       )}
     </>
   );

@@ -2,15 +2,10 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
 import Swal from "sweetalert2";
-
 import ContractsTableSkeleton from "./ContractsTableSkeleton";
 import ContractsFormModal from "./ContractsFormModal";
-
-import {
-  deleteContract,
-  getListOfContracts,
-  type Contract,
-} from "../../api/contracts";
+import { deleteContract, getListOfContracts, type Contract } from "../../api/contracts";
+import { logger } from "../../../../utils/logger";
 
 type Props = {
   providerId: string;
@@ -20,17 +15,15 @@ type Props = {
 export default function ContractsTable({ providerId, providerName }: Props) {
   const queryClient = useQueryClient();
 
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(
-    null,
-  );
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["contracts"],
     queryFn: getListOfContracts,
   });
-  console.log("Selected Provider ID:", providerId);
-  console.log("Selected Provider Name:", providerName);
-  console.log("Contracts API Response:", data);
+  logger.log("Selected Provider ID:", providerId);
+  logger.log("Selected Provider Name:", providerName);
+  logger.log("Contracts API Response:", data);
 
   const deleteMutation = useMutation({
     mutationFn: deleteContract,
@@ -42,7 +35,7 @@ export default function ContractsTable({ providerId, providerName }: Props) {
     },
 
     onError: (error) => {
-      console.error("Delete contract failed:", error);
+      logger.error("Delete contract failed:", error);
     },
   });
 
@@ -99,13 +92,13 @@ export default function ContractsTable({ providerId, providerName }: Props) {
   }
 
   const rawContracts = Array.isArray(data?.data) ? data.data : [];
-  console.log("Raw Contracts:", rawContracts);
+  logger.log("Raw Contracts:", rawContracts);
 
   const contracts = rawContracts.filter((contract: Contract) => {
-    console.log("----------------------------");
-    console.log("Contract Provider:", contract.provider);
-    console.log("Selected Provider:", providerId);
-    console.log("Equal:", contract.provider === providerId);
+    logger.log("----------------------------");
+    logger.log("Contract Provider:", contract.provider);
+    logger.log("Selected Provider:", providerId);
+    logger.log("Equal:", contract.provider === providerId);
 
     return contract.provider === providerId;
   });
@@ -124,46 +117,27 @@ export default function ContractsTable({ providerId, providerName }: Props) {
         <table className="min-w-full">
           <thead className="bg-gray-50">
             <tr className="border-b">
-              <th className="px-4 py-3 text-left text-sm font-semibold">
-                Sr. No
-              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Sr. No</th>
 
-              <th className="px-4 py-3 text-left text-sm font-semibold">
-                Contract Id
-              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Contract Id</th>
 
-              <th className="px-4 py-3 text-left text-sm font-semibold">
-                Contract Name
-              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Contract Name</th>
 
-              <th className="px-4 py-3 text-left text-sm font-semibold">
-                Email
-              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
 
-              <th className="px-4 py-3 text-left text-sm font-semibold">
-                Status
-              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
 
-              <th className="px-4 py-3 text-left text-sm font-semibold">
-                Contract Type
-              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Contract Type</th>
 
-              <th className="px-4 py-3 text-left text-sm font-semibold">
-                Expires At
-              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Expires At</th>
 
-              <th className="px-4 py-3 text-center text-sm font-semibold">
-                Action
-              </th>
+              <th className="px-4 py-3 text-center text-sm font-semibold">Action</th>
             </tr>
           </thead>
 
           <tbody>
             {contracts.map((contract, index) => (
-              <tr
-                key={contract.id}
-                className="border-b last:border-none hover:bg-gray-50"
-              >
+              <tr key={contract.id} className="border-b last:border-none hover:bg-gray-50">
                 <td className="px-4 py-4">{index + 1}</td>
 
                 <td className="px-4 py-4">{contract.contractId}</td>
@@ -186,9 +160,7 @@ export default function ContractsTable({ providerId, providerName }: Props) {
 
                 <td className="px-4 py-4">{contract.contractType ?? "-"}</td>
 
-                <td className="px-4 py-4">
-                  {new Date(contract.expiresAt).toLocaleString()}
-                </td>
+                <td className="px-4 py-4">{new Date(contract.expiresAt).toLocaleString()}</td>
 
                 <td className="px-4 py-4">
                   <div className="flex justify-center gap-3">

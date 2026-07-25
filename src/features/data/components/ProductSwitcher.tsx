@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useParameter } from "../hooks/useParameter";
 import { useProductStore } from "../hooks/useproductStore";
 
+
 type ProductItem = {
   Subcategory: string;
   Description: string;
@@ -224,7 +225,7 @@ const ProductSwitcher: React.FC = () => {
     return match ? match[1] : "";
   };
 
-  // console.log(selectedItems || []);
+  // logger.log(selectedItems || []);
   return (
     <>
       <style>

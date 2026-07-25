@@ -1,6 +1,7 @@
 import { decryptAESGCM } from "../../../utils/dataDecrypt";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { apiClient } from "../../../api/apiClient";
+import { logger } from "../../../utils/logger";
 
 export type ContractStatus = "Active" | "Inactive";
 
@@ -56,51 +57,37 @@ export type UpdateContractPayload = {
 export const getListOfContracts = async (): Promise<ContractsResponse> => {
   const response = await apiClient.get("products/contracts/");
 
-  console.log("Encrypted Response:", response.data);
+  logger.log("Encrypted Response:", response.data);
 
   const token = useAuthStore.getState().accessToken!;
 
-  const decryptedData = await decryptAESGCM(
-    response.data.data,
-    token
-  );
+  const decryptedData = await decryptAESGCM(response.data.data, token);
 
-  console.log("Decrypted Contracts:", decryptedData);
+  logger.log("Decrypted Contracts:", decryptedData);
 
- return decryptedData;
+  return decryptedData;
 };
 
 /**
  * Create Contract
  */
-export const createContract = async (
-  contractData: CreateContractDto
-): Promise<Contract> => {
-  const { data } = await apiClient.post<Contract>(
-    "products/contracts/",
-    contractData
-  );
+export const createContract = async (contractData: CreateContractDto): Promise<Contract> => {
+  const { data } = await apiClient.post<Contract>("products/contracts/", contractData);
   return data;
 };
 
 /**
  * Delete Contract
  */
-export const deleteContract = async (
-  contractId: string
-): Promise<void> => {
+export const deleteContract = async (contractId: string): Promise<void> => {
   await apiClient.delete(`products/contracts/${contractId}/`);
 };
 
 /**
  * Get Contract By ID
  */
-export const getContractById = async (
-  contractId: string
-): Promise<Contract> => {
-  return apiClient
-    .get(`products/contracts/${contractId}/`)
-    .then((response) => response.data.data);
+export const getContractById = async (contractId: string): Promise<Contract> => {
+  return apiClient.get(`products/contracts/${contractId}/`).then((response) => response.data.data);
 };
 
 /**
@@ -108,7 +95,7 @@ export const getContractById = async (
  */
 export const updateContractById = async (
   contractId: string,
-  contractData: UpdateContractDto
+  contractData: UpdateContractDto,
 ): Promise<Contract> => {
   return apiClient
     .put(`products/contracts/${contractId}/`, contractData)

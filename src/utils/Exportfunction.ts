@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 import type { SelectedArchiveProduct } from "../features/data/components/sidebar/store/useArchiveProductStore";
-
+import { logger } from "./logger";
 
 interface ExportKMLPayload {
   format: "kml";
@@ -41,7 +41,7 @@ export async function exportKML({
   lang = "en",
   extraInfos = {},
 }: ExportKMLPayload) {
-  //   console.log(aoi);
+  //   logger.log(aoi);
   const payload = {
     format: "kml",
 
@@ -91,7 +91,7 @@ export async function exportKML({
   try {
     toast.info("KML export backend is not ready yet.");
   } catch (error) {
-    console.error("KML Export Error:", error);
+    logger.error("KML Export Error:", error);
   }
 }
 
@@ -313,7 +313,7 @@ style="width:112px;height:111px"
 }
 
 export function exportCSV({ items, filename = "Archive_Product.csv" }: ExportCSVPayload) {
-  //   console.log("exportCSV", items);
+  //   logger.log("exportCSV", items);
   const headers = [
     "ID",
     "Acquisition Date",
@@ -432,13 +432,13 @@ export async function exportKMZ({
   };
 
   try {
-    console.log("KMZ Payload Ready:", geojson);
+    logger.log("KMZ Payload Ready:", geojson);
 
     toast.info("KMZ export backend not done yet");
 
     return;
   } catch (error) {
-    console.error("KMZ Export Error:", error);
+    logger.error("KMZ Export Error:", error);
     toast.error("KMZ export failed");
   }
 }
@@ -498,7 +498,7 @@ export async function exportShape({
   };
 
   try {
-    console.log("Shape Export Payload Ready:", geojson);
+    logger.log("Shape Export Payload Ready:", geojson);
 
     toast.info("Shape export backend not done yet");
 
@@ -508,7 +508,7 @@ export async function exportShape({
     // POST geojson to backend
     // Backend will create .shp/.zip file
   } catch (error) {
-    console.error("Shape Export Error:", error);
+    logger.error("Shape Export Error:", error);
     toast.error("Shape export failed");
   }
 }
