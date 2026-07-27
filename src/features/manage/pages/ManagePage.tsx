@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ManageNavbar, type TabType } from "../components/ManageNavbar";
 import { CompanyRequestsTable } from "../components/CompanyRequestsTable";
 import { EndUsersTable } from "../components/EndUsersTable";
@@ -8,17 +9,31 @@ import ProviderTable from "../components/Provider/ProviderMain";
 import ProviderFormModal from "../components/Provider/ProviderFormModal";
 import SubscriptionFormModal from "../components/Subscription/SubscriptionFormModal";
 import SubscriptionList from "../components/Subscription/SubscriptionList";
+import { buildManageTabSearch, getTabFromSearch } from "../utils/manageTabs";
 
 export const ManagePage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const roleName = user?.roleName.toLowerCase() || "";
+  const location = useLocation();
+  const navigate = useNavigate();
   const [showProviderModalform, setshowProviderModalform] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
-  // Set default active tab dynamically based on user role
-  const [activeTab, setActiveTab] = useState<TabType>(
-    roleName === "superadmin" ? "company-requests" : "end-users",
+  const [activeTab, setActiveTab] = useState<TabType>(() =>
+    getTabFromSearch(location.search, roleName),
   );
+
+  useEffect(() => {
+    const tabFromUrl = getTabFromSearch(location.search, roleName);
+    if (tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [activeTab, location.search, roleName]);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    navigate({ pathname: location.pathname, search: buildManageTabSearch(tab) }, { replace: true });
+  };
 
   // Add Item Action Handlers
   const handleAddItem = () => {
@@ -48,16 +63,16 @@ export const ManagePage: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-50/50 font-sans overflow-hidden">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-gray-50/50 font-sans">
       {/* Top sub-navigation - EXACT same teal background color */}
-      <ManageNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+      <ManageNavbar activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Main card area with padding */}
-      <div className="flex-1 p-4 sm:p-6 w-full overflow-hidden flex flex-col">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 shadow-sm flex-1 flex flex-col overflow-hidden">
+      <div className="flex w-full flex-1 flex-col overflow-hidden p-4 sm:p-6">
+        <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
           {/* Header of the table card */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 shrink-0">
-            <h2 className="text-gray-800 text-base sm:text-lg font-semibold select-none">
+          <div className="mb-6 flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-base font-semibold text-gray-800 select-none sm:text-lg">
               {activeTab === "company-requests" && "Manage Company Requests"}
               {activeTab === "end-users" && "Manage End User"}
               {activeTab === "provider & Contracts" && "Manage Providers"}
@@ -67,31 +82,25 @@ export const ManagePage: React.FC = () => {
             {activeTab !== "end-users" && (
               <button
                 onClick={handleAddItem}
-                className="bg-primary hover:bg-[#1F4E57] text-white px-4 py-1.5 sm:px-5 rounded-full text-[11px] sm:text-xs font-medium transition-colors shadow-sm cursor-pointer select-none active:scale-[0.98] self-start sm:self-center"
+                className="bg-primary cursor-pointer self-start rounded-full px-4 py-1.5 text-[11px] font-medium text-white shadow-sm transition-colors select-none hover:bg-[#1F4E57] active:scale-[0.98] sm:self-center sm:px-5 sm:text-xs"
               >
                 {activeTab === "company-requests" && "Add Request"}
                 {activeTab === "provider & Contracts" && "Add Provider"}
                 {activeTab === "subscription" && "Add Subscription"}
               </button>
             )}
-
           </div>
 
           {/* Render Active Table Component */}
-          <div className="flex-1 overflow-y-auto pr-1 ">
+          <div className="flex-1 overflow-y-auto pr-1">
             {activeTab === "company-requests" && (
-              <CompanyRequestsTable
-                onEdit={handleEditRequest}
-                onDelete={handleDeleteRequest}
-              />
+              <CompanyRequestsTable onEdit={handleEditRequest} onDelete={handleDeleteRequest} />
             )}
 
             {activeTab === "end-users" && <EndUsersTable users={[]} />}
 
             {activeTab === "allocated-products" && (
-              <div className="text-sm text-gray-500">
-                No allocated products data.
-              </div>
+              <div className="text-sm text-gray-500">No allocated products data.</div>
             )}
             {activeTab === "provider & Contracts" && <ProviderTable />}
             {activeTab === "subscription" && <SubscriptionList />}

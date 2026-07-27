@@ -1,5 +1,6 @@
 import { toast } from "react-toastify";
 import type { SelectedArchiveProduct } from "../features/data/components/sidebar/store/useArchiveProductStore";
+import { apiClient } from "../api/apiClient";
 import { logger } from "./logger";
 
 interface ExportKMLPayload {
@@ -22,8 +23,8 @@ interface ExportCSVPayload {
 
 interface ExportKMZPayload {
   format: "kmz";
-  items: unknown[];
-  aoi?: unknown[] | null;
+  items: SelectedArchiveProduct[];
+  aoi?: unknown | null;
   filename?: string;
   lang?: string;
   extraInfos?: Record<string, unknown>;
@@ -34,64 +35,151 @@ interface ExportShapePayload {
   aoi?: unknown | null;
   filename?: string;
 }
+
+interface ExportPayloadBase {
+  format: "kml" | "kmz" | "shp";
+  items: Array<{
+    type: string;
+    id: string;
+    bbox?: unknown;
+    geometry: unknown;
+    properties: Record<string, unknown>;
+  }>;
+  aois: Array<{
+    label: string;
+    value: string;
+    coordinates: unknown;
+  }>;
+  filename: string;
+  lang?: string;
+  extraInfos?: Record<string, unknown>;
+}
+
+function normalizeAois(
+  aoi: unknown,
+): Array<{ label: string; value: string; coordinates: unknown }> {
+  if (Array.isArray(aoi)) {
+    return aoi.map((item, index) => ({
+      label: typeof item?.label === "string" ? item.label : `Polygon ${index + 1}`,
+      value: typeof item?.value === "string" ? item.value : `aoi_polygon_${index + 1}`,
+      coordinates: item?.coordinates,
+    }));
+  }
+
+  if (aoi && typeof aoi === "object") {
+    const geometry = (aoi as { coordinates?: unknown }).coordinates;
+    return [
+      {
+        label: "Polygon 1",
+        value: "aoi_polygon_1",
+        coordinates: geometry ?? aoi,
+      },
+    ];
+  }
+
+  return [];
+}
+
+function mapProductToExportItem(product: SelectedArchiveProduct) {
+  return {
+    type: "Feature",
+    id: product.id,
+    bbox: null,
+    geometry: product.geometry,
+    properties: {
+      name: product.name,
+      id: product.id,
+      acquisitionDate: product.raw?.acquisitionDate,
+      acquisitionIdentifier: product.raw?.acquisitionIdentifier,
+      resolution: product.raw?.resolution,
+      platform: product.raw?.platform,
+      incidenceAngle: product.raw?.incidenceAngle,
+      cloudCover: product.raw?.cloudCover,
+      imageUrl: product.imageUrl,
+      sensor: product.sensor,
+      processingLevel: product.raw?.processingLevel,
+      productType: product.raw?.productType,
+    },
+  };
+}
+
+export function buildExportPayload({
+  format,
+  items,
+  aoi = null,
+  filename,
+  lang = "en",
+  extraInfos = {},
+}: {
+  format: ExportPayloadBase["format"];
+  items: SelectedArchiveProduct[];
+  aoi?: unknown | null;
+  filename: string;
+  lang?: string;
+  extraInfos?: Record<string, unknown>;
+}) {
+  return {
+    format,
+    items: items.map(mapProductToExportItem),
+    aois: normalizeAois(aoi),
+    lang,
+    filename,
+    extraInfos,
+  } satisfies ExportPayloadBase;
+}
+
+async function postExport(payload: ExportPayloadBase) {
+  const response = await apiClient.post("products/export/", payload, {
+    responseType: "blob",
+  });
+
+  const contentDisposition =
+    response.headers["content-disposition"] || response.headers["Content-Disposition"];
+  const fileName =
+    (typeof contentDisposition === "string" &&
+      contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1]) ||
+    (typeof contentDisposition === "string" &&
+      contentDisposition.match(/filename="?([^";]+)"?/i)?.[1]) ||
+    payload.filename;
+
+  const contentTypeHeader = response.headers["content-type"];
+  const contentType =
+    typeof contentTypeHeader === "string" ? contentTypeHeader : "application/octet-stream";
+
+  const blob = new Blob([response.data], {
+    type: contentType,
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export async function exportKML({
   items,
-  aoi = [],
+  aoi = null,
   filename = "Archive_Product.kml",
   lang = "en",
   extraInfos = {},
 }: ExportKMLPayload) {
-  //   logger.log(aoi);
-  const payload = {
-    format: "kml",
-
-    items: items.map((product) => ({
-      type: "Feature",
-
-      geometry: product.geometry,
-
-      properties: {
-        acquisitionDate: product.raw?.acquisitionDate,
-
-        acquisitionIdentifier: product.raw?.acquisitionIdentifier,
-
-        resolution: product.raw?.resolution,
-
-        incidenceAngle: product.raw?.incidenceAngle,
-
-        cloudCover: product.raw?.cloudCover,
-
-        imageUrl: product.imageUrl,
-      },
-
-      id: product.id,
-    })),
-
-    aois: Array.isArray(aoi)
-      ? aoi.map((item) => ({
-          label: item.label,
-          value: item.value,
-          coordinates: item.coordinates,
-        }))
-      : [
-          {
-            label: "Polygon 1",
-            value: "aoi_polygon_1",
-            coordinates: aoi,
-          },
-        ],
-
-    lang,
-
-    filename,
-
-    extraInfos,
-  };
-
   try {
-    toast.info("KML export backend is not ready yet.");
+    const payload = buildExportPayload({
+      format: "kml",
+      items,
+      aoi,
+      filename,
+      lang,
+      extraInfos,
+    });
+    await postExport(payload);
   } catch (error) {
     logger.error("KML Export Error:", error);
+    toast.error("Failed to export KML.");
+    throw error;
   }
 }
 
@@ -375,71 +463,24 @@ export async function exportKMZ({
   items,
   aoi = null,
   filename = "Archive_Product.kmz",
+  lang = "en",
+  extraInfos = {},
 }: ExportKMZPayload) {
-  const features = [
-    ...items.map((product) => ({
-      type: "Feature",
-      geometry: product.geometry,
-      properties: {
-        name: product.name,
-        id: product.id,
-
-        acquisitionDate: product.raw?.acquisitionDate,
-        acquisitionIdentifier: product.raw?.acquisitionIdentifier,
-
-        resolution: product.raw?.resolution,
-        platform: product.raw?.platform,
-
-        incidenceAngle: product.raw?.incidenceAngle,
-        incidenceAngleAcrossTrack: product.raw?.incidenceAngleAcrossTrack,
-        incidenceAngleAlongTrack: product.raw?.incidenceAngleAlongTrack,
-
-        illuminationAzimuthAngle: product.raw?.illuminationAzimuthAngle,
-
-        illuminationElevationAngle: product.raw?.illuminationElevationAngle,
-
-        cloudCover: product.raw?.cloudCover,
-
-        imageUrl: product.imageUrl,
-
-        sensor: product.sensor,
-
-        processingLevel: product.raw?.processingLevel,
-
-        productType: product.raw?.productType,
-      },
-    })),
-
-    ...(aoi
-      ? [
-          {
-            type: "Feature",
-            geometry: {
-              type: "Polygon",
-              coordinates: Array.isArray(aoi) ? aoi : aoi.coordinates,
-            },
-            properties: {
-              name: "AOI",
-            },
-          },
-        ]
-      : []),
-  ];
-
-  const geojson = {
-    type: "FeatureCollection",
-    features,
-  };
-
   try {
-    logger.log("KMZ Payload Ready:", geojson);
+    const payload = buildExportPayload({
+      format: "kmz",
+      items,
+      aoi,
+      filename,
+      lang,
+      extraInfos,
+    });
 
-    toast.info("KMZ export backend not done yet");
-
-    return;
+    await postExport(payload);
   } catch (error) {
     logger.error("KMZ Export Error:", error);
-    toast.error("KMZ export failed");
+    toast.error("Failed to export KMZ.");
+    throw error;
   }
 }
 
@@ -448,67 +489,19 @@ export async function exportShape({
   aoi = null,
   filename = "Archive_Product.zip",
 }: ExportShapePayload) {
-  const features = [
-    ...items.map((product) => ({
-      type: "Feature",
-      geometry: product.geometry,
-      properties: {
-        name: product.name,
-        id: product.id,
-
-        acquisitionDate: product.raw?.acquisitionDate,
-        acquisitionIdentifier: product.raw?.acquisitionIdentifier,
-
-        resolution: product.raw?.resolution,
-        platform: product.raw?.platform,
-
-        incidenceAngle: product.raw?.incidenceAngle,
-
-        cloudCover: product.raw?.cloudCover,
-
-        imageUrl: product.imageUrl,
-
-        sensor: product.sensor,
-
-        processingLevel: product.raw?.processingLevel,
-
-        productType: product.raw?.productType,
-      },
-    })),
-
-    ...(aoi
-      ? [
-          {
-            type: "Feature",
-            geometry: {
-              type: "Polygon",
-              coordinates: Array.isArray(aoi) ? aoi : aoi.coordinates,
-            },
-            properties: {
-              name: "AOI",
-            },
-          },
-        ]
-      : []),
-  ];
-
-  const geojson = {
-    type: "FeatureCollection",
-    features,
-  };
-
   try {
-    logger.log("Shape Export Payload Ready:", geojson);
+    const payload = buildExportPayload({
+      format: "shp",
+      items,
+      aoi,
+      filename,
+      lang: "en",
+    });
 
-    toast.info("Shape export backend not done yet");
-
-    return;
-
-    // Future:
-    // POST geojson to backend
-    // Backend will create .shp/.zip file
+    await postExport(payload);
   } catch (error) {
     logger.error("Shape Export Error:", error);
-    toast.error("Shape export failed");
+    toast.error("Failed to export Shape.");
+    throw error;
   }
 }
