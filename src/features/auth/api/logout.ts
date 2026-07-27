@@ -25,5 +25,8 @@ export const performLogout = async (): Promise<void> => {
 
     // Reset all map options and states completely
     useMapStore.getState().clearMapState();
+
+    // Hard redirect to login page (which completely resets React Query cache & state)
+    window.location.href = "/login";
   }
 };

@@ -55,7 +55,7 @@ export interface EncryptedResponse {
  * GET /api/dashboard/tenant-superusers/
  */
 export const getTenantSuperusers = async (): Promise<EncryptedResponse> => {
-    const { data } = await apiClient.get<EncryptedResponse>("dashboard/tenant-superusers/");
+    const { data } = await apiClient.get<EncryptedResponse>("dashboard/tenant-company/");
     return data;
 };
 
@@ -65,7 +65,8 @@ export const getTenantSuperusers = async (): Promise<EncryptedResponse> => {
  */
 export const getCompanyUsers = async (schemaName: string): Promise<EncryptedResponse> => {
     const { data } = await apiClient.get<EncryptedResponse>(
-        `dashboard/tenant-superusers/${schemaName}/users/`
+        `dashboard/tenant-company/${schemaName}/users/`
+
     );
     return data;
 };
