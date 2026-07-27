@@ -10,6 +10,7 @@ interface EditUserModalProps {
     onClose: () => void;
     user: CompanyUser | null;
     onSuccess?: () => void;
+    
 }
 
 export const EditUserModal: React.FC<EditUserModalProps> = ({
