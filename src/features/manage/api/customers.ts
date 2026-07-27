@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../../../api/apiClient";
 
 export interface Customer {
@@ -26,16 +26,13 @@ export interface CustomersResponse {
   };
 }
 
-const fetchCustomers = async (): Promise<CustomersResponse> => {
-  const { data } = await apiClient.get<CustomersResponse>("tenants/customer/");
-  return data;
-};
+export interface EncryptedResponse {
+  data: string;
+}
 
-export const useCustomersQuery = () => {
-  return useQuery<CustomersResponse, Error>({
-    queryKey: ["customers"],
-    queryFn: fetchCustomers,
-  });
+export const getCustomers = async (): Promise<EncryptedResponse> => {
+  const { data } = await apiClient.get<EncryptedResponse>("tenants/customer/");
+  return data;
 };
 
 const approveCustomer = async (companyId: number): Promise<any> => {
@@ -49,6 +46,10 @@ export const useApproveCustomerMutation = () => {
     mutationFn: approveCustomer,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+
+            queryClient.invalidateQueries({ queryKey: ["companies"] });
+
+      queryClient.invalidateQueries({ queryKey: ["manage-tenant-superusers"] })
     },
   });
 };
