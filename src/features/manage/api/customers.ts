@@ -53,3 +53,22 @@ export const useApproveCustomerMutation = () => {
     },
   });
 };
+
+const deleteCustomer = async (companyId: number): Promise<any> => {
+  const { data } = await apiClient.delete(`tenants/customer/${companyId}/delete/`);
+  return data;
+};
+
+export const useDeleteCustomerMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation<any, Error, number>({
+    mutationFn: deleteCustomer,
+    onSuccess: () => {
+      // Invalidate queries to automatically refresh list data
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      queryClient.invalidateQueries({ queryKey: ["manage-tenant-superusers"] });
+    },
+  });
+};
+
