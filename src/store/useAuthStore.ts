@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 export interface User {
   user: string;
@@ -35,7 +35,10 @@ export const useAuthStore = create<AuthState>()(
       clearAuth: () => set({ accessToken: null, refreshToken: null, user: null }),
     }),
     {
-      name: "auth-storage", // localStorage key
+      name: "auth-storage",
+      // Use sessionStorage instead of localStorage so auth data clears automatically
+      // when the browser tab/session is closed, requiring re-login on next visit.
+      storage: createJSONStorage(() => sessionStorage),
     },
   ),
 );
