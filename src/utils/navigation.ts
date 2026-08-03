@@ -23,6 +23,10 @@ export const navigationItems: NavItem[] = [
     label: "Quotation",
     path: "/quotation",
   },
+  {
+    label:"Analytics",
+    path:"/analytics"
+  }
 ];
 
 /**

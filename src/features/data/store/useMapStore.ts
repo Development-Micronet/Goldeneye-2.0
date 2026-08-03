@@ -41,6 +41,7 @@ interface MapState {
   activeSubMenu: string | null;
   pointBufferDistance: string;
   polylineBufferDistance: string;
+  polygonBufferDistance: string;
   drawRectangleCoords: RectangleCoords | null;
   fitLayerId: string | null;
   selectedLayerId: string | null;
@@ -48,6 +49,7 @@ interface MapState {
   setActiveSubMenu: (subMenu: string | null) => void;
   setPointBufferDistance: (distance: string) => void;
   setPolylineBufferDistance: (distance: string) => void;
+  setPolygonBufferDistance: (distance: string) => void;
   setDrawRectangleCoords: (coords: RectangleCoords | null) => void;
   setFitLayerId: (id: string | null) => void;
   setSelectedLayerId: (id: string | null) => void;
@@ -62,6 +64,7 @@ export const useMapStore = create<MapState>((set) => ({
   activeSubMenu: null,
   pointBufferDistance: "2.25",
   polylineBufferDistance: "2.25",
+  polygonBufferDistance: "0",
   drawRectangleCoords: null,
   fitLayerId: null,
   selectedLayerId: null,
@@ -75,6 +78,7 @@ export const useMapStore = create<MapState>((set) => ({
   setActiveSubMenu: (subMenu) => set({ activeSubMenu: subMenu }),
   setPointBufferDistance: (distance) => set({ pointBufferDistance: distance }),
   setPolylineBufferDistance: (distance) => set({ polylineBufferDistance: distance }),
+  setPolygonBufferDistance: (distance) => set({ polygonBufferDistance: distance }),
   setDrawRectangleCoords: (coords) => set({ drawRectangleCoords: coords }),
   setFitLayerId: (id) => set({ fitLayerId: id }),
   setSelectedLayerId: (id) => set({ selectedLayerId: id }),
@@ -92,6 +96,7 @@ export const useMapStore = create<MapState>((set) => ({
       activeSubMenu: null,
       // pointBufferDistance: "2.25",
       // polylineBufferDistance: "2.25",
+      // polygonBufferDistance: "0",
       drawRectangleCoords: null,
       fitLayerId: null,
       selectedLayerId: null,
@@ -102,6 +107,7 @@ export const useMapStore = create<MapState>((set) => ({
       activeSubMenu: null,
       pointBufferDistance: "2.25",
       polylineBufferDistance: "2.25",
+      polygonBufferDistance: "0",
       drawRectangleCoords: null,
       fitLayerId: null,
       selectedLayerId: null,

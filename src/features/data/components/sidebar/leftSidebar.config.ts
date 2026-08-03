@@ -40,7 +40,7 @@ export const DRAW_OPTIONS: DrawOption[] = [
     id: "polygon",
     label: "Polygon",
     icon: polygonIcon,
-    hasSettings: false,
+    hasSettings: true,
     toolName: "Polygon",
   },
   {

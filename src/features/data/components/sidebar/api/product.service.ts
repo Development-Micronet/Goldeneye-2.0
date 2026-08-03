@@ -18,16 +18,16 @@ export interface ProductSearchPayload {
   start_page: number;
   items_per_page?: number;
   limit?: number;
-   sortBy:
-    | "date"
-    | "cloud_cover"
-    | "incident_angle"
-    | "+date"
-    | "+cloud_cover"
-    | "+incident_angle"
-    | "-date"
-    | "-cloud_cover"
-    | "-incident_angle";
+  sortBy:
+  | "date"
+  | "cloud_cover"
+  | "incident_angle"
+  | "+date"
+  | "+cloud_cover"
+  | "+incident_angle"
+  | "-date"
+  | "-cloud_cover"
+  | "-incident_angle";
 }
 
 export interface EncryptedResponse {
@@ -39,3 +39,9 @@ export const searchProducts = async (payload: ProductSearchPayload): Promise<Enc
 
   return response.data;
 };
+
+
+export const listofproviderandsensors = async () => {
+  const res = await apiClient.get("/products/sensors/");
+  return res.data;
+}

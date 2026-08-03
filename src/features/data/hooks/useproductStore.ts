@@ -1,53 +1,61 @@
 import { create } from "zustand";
 
-type SelectedItem = {
-  product: string;
-  resolution: string;
-  subcategory: string;
-  sensor: string;
+export type ProviderData = {
+  name: string;
+  sensors: string[];
 };
 
 interface ProductStore {
-  selectedItems: SelectedItem[];
+  providers: ProviderData[];
+  selectedProvider: string;
+  selectedSensors: string[];
 
-  addProduct: (item: SelectedItem) => void;
-  removeProduct: (subcategory: string) => void;
+  setProviders: (providers: ProviderData[]) => void;
+  setSelectedProvider: (provider: string) => void;
+  setSelectedSensors: (sensors: string[]) => void;
+  toggleSensor: (sensor: string) => void;
   clearProducts: () => void;
-  setProducts: (items: SelectedItem[]) => void;
-
-  isSelected: (subcategory: string) => boolean;
-
-  getSensors: () => string[];
 }
 
 export const useProductStore = create<ProductStore>((set, get) => ({
-  selectedItems: [],
+  providers: [],
+  selectedProvider: "airbus",
+  selectedSensors: [],
 
-  addProduct: (item) =>
-    set((state) => ({
-      selectedItems: [...state.selectedItems, item],
-    })),
+  setProviders: (providers) => {
+    const state = get();
+    // Default to "airbus" and select all its sensors by default if not set
+    const matched = providers.find((p) => p.name === "airbus");
+    const defaultSensors = matched ? matched.sensors : [];
+    set({
+      providers,
+      selectedSensors: state.selectedSensors.length > 0 ? state.selectedSensors : defaultSensors,
+    });
+  },
 
-  removeProduct: (subcategory) =>
+  setSelectedProvider: (provider) => {
+    const state = get();
+    const matched = state.providers.find((p) => p.name === provider);
+    set({
+      selectedProvider: provider,
+      selectedSensors: matched ? matched.sensors : [],
+    });
+  },
+
+  setSelectedSensors: (sensors) =>
+    set({
+      selectedSensors: sensors,
+    }),
+
+  toggleSensor: (sensor) =>
     set((state) => ({
-      selectedItems: state.selectedItems.filter((x) => x.subcategory !== subcategory),
+      selectedSensors: state.selectedSensors.includes(sensor)
+        ? state.selectedSensors.filter((s) => s !== sensor)
+        : [...state.selectedSensors, sensor],
     })),
 
   clearProducts: () =>
     set({
-      selectedItems: [],
+      selectedSensors: [],
     }),
-
-  setProducts: (items) =>
-    set({
-      selectedItems: items,
-    }),
-
-  isSelected: (subcategory) => get().selectedItems.some((x) => x.subcategory === subcategory),
-
-  getSensors: () => {
-    const sensors = get().selectedItems.map((item) => item.sensor);
-
-    return [...new Set(sensors)];
-  },
 }));

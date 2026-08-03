@@ -16,10 +16,12 @@ export const DrawPopup: React.FC<DrawPopupProps> = ({ onClose }) => {
     activeSubMenu,
     pointBufferDistance,
     polylineBufferDistance,
+    polygonBufferDistance,
     setActiveTool,
     setActiveSubMenu,
     setPointBufferDistance,
     setPolylineBufferDistance,
+    setPolygonBufferDistance,
   } = useMapStore();
   return (
     <div className="pointer-events-auto absolute -top-3 left-full z-50 ml-2 flex">
@@ -36,9 +38,8 @@ export const DrawPopup: React.FC<DrawPopupProps> = ({ onClose }) => {
                 setActiveTool(isSelected ? null : option.toolName);
                 if (onClose) onClose();
               }}
-              className={`group flex cursor-pointer items-center justify-between rounded-md px-1.5 py-1 transition-colors ${
-                isSelected ? "bg-primary/10 text-primary" : "text-gray-700 hover:bg-gray-50"
-              }`}
+              className={`group flex cursor-pointer items-center justify-between rounded-md px-1.5 py-1 transition-colors ${isSelected ? "bg-primary/10 text-primary" : "text-gray-700 hover:bg-gray-50"
+                }`}
             >
               <div className="flex items-center gap-2 sm:gap-2.5">
                 <img
@@ -95,6 +96,21 @@ export const DrawPopup: React.FC<DrawPopupProps> = ({ onClose }) => {
           onReset={() => setPolylineBufferDistance("2.25")}
           onConfirm={() => {
             toast.success(`Polyline buffer distance set to ${polylineBufferDistance} km`);
+            setActiveSubMenu(null);
+            if (onClose) onClose();
+          }}
+        />
+      )}
+
+      {/* Polygon Settings Modal */}
+      {activeSubMenu === "polygon" && (
+        <BufferSettingsModal
+          title="Buffer Distance"
+          value={polygonBufferDistance}
+          onChange={setPolygonBufferDistance}
+          onReset={() => setPolygonBufferDistance("0")}
+          onConfirm={() => {
+            toast.success(`Polygon buffer distance set to ${polygonBufferDistance} km`);
             setActiveSubMenu(null);
             if (onClose) onClose();
           }}

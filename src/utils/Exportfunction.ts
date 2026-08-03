@@ -69,17 +69,17 @@ export async function exportKML({
 
     aois: Array.isArray(aoi)
       ? aoi.map((item) => ({
-          label: item.label,
-          value: item.value,
-          coordinates: item.coordinates,
-        }))
+        label: item.label,
+        value: item.value,
+        coordinates: item.coordinates,
+      }))
       : [
-          {
-            label: "Polygon 1",
-            value: "aoi_polygon_1",
-            coordinates: aoi,
-          },
-        ],
+        {
+          label: "Polygon 1",
+          value: "aoi_polygon_1",
+          coordinates: aoi,
+        },
+      ],
 
     lang,
 
@@ -158,8 +158,8 @@ body {
 <body>
 
 ${items
-  .map(
-    (product) => `
+      .map(
+        (product) => `
 
 <div class="product">
 
@@ -282,8 +282,8 @@ style="width:112px;height:111px"
 
 
 `,
-  )
-  .join("")}
+      )
+      .join("")}
 
 
 </body>
@@ -412,17 +412,17 @@ export async function exportKMZ({
 
     ...(aoi
       ? [
-          {
-            type: "Feature",
-            geometry: {
-              type: "Polygon",
-              coordinates: Array.isArray(aoi) ? aoi : aoi.coordinates,
-            },
-            properties: {
-              name: "AOI",
-            },
+        {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: Array.isArray(aoi) ? aoi : aoi.coordinates,
           },
-        ]
+          properties: {
+            name: "AOI",
+          },
+        },
+      ]
       : []),
   ];
 
@@ -478,17 +478,17 @@ export async function exportShape({
 
     ...(aoi
       ? [
-          {
-            type: "Feature",
-            geometry: {
-              type: "Polygon",
-              coordinates: Array.isArray(aoi) ? aoi : aoi.coordinates,
-            },
-            properties: {
-              name: "AOI",
-            },
+        {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: Array.isArray(aoi) ? aoi : aoi.coordinates,
           },
-        ]
+          properties: {
+            name: "AOI",
+          },
+        },
+      ]
       : []),
   ];
 

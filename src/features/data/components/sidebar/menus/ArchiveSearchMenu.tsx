@@ -59,9 +59,9 @@ export const ArchiveSearchMenu: React.FC = () => {
   const queryClient = useQueryClient();
   const layers = useLayersStore((state) => state.layers);
   const { setFlyToProduct } = useMapStore();
-  const { selectedItems } = useProductStore();
+  const { selectedProvider, selectedSensors, setSelectedProvider } = useProductStore();
   const { accessToken } = useAuthStore();
-  const [provider, setProvider] = useState<SatelliteProvider>("airbus");
+  const provider = selectedProvider as SatelliteProvider;
   const token = accessToken?.replace("Bearer ", "").trim() || "";
   const [currentpage, setcurrentpage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>("-date");
@@ -105,14 +105,24 @@ export const ArchiveSearchMenu: React.FC = () => {
     },
   ];
 
-  const sensors = useMemo(() => {
-    return [...new Set(selectedItems.map((item) => item.sensor))];
-  }, [selectedItems]);
+  const sensors = selectedSensors;
 
   const aoi = useMemo(() => {
     const layer = layers.find((l) => l.id === selectedAOIId);
+    const geom = layer?.geojson.geometry ?? null;
+    if (!geom) return null;
 
-    return layer?.geojson.geometry ?? null;
+    // Normalize to Polygon — turf.buffer can occasionally return MultiPolygon
+    if (geom.type === "Polygon") {
+      return geom as { type: "Polygon"; coordinates: number[][][] };
+    }
+    if (geom.type === "MultiPolygon" && geom.coordinates?.length > 0) {
+      return {
+        type: "Polygon" as const,
+        coordinates: geom.coordinates[0] as number[][][],
+      };
+    }
+    return null;
   }, [layers, selectedAOIId]);
 
   const aoiKey = useMemo(() => JSON.stringify(aoi), [aoi]);
@@ -171,9 +181,9 @@ export const ArchiveSearchMenu: React.FC = () => {
         currentpage === 1
           ? decrypted
           : {
-              ...decrypted,
-              features: [...(prev?.features ?? []), ...decrypted.features],
-            },
+            ...decrypted,
+            features: [...(prev?.features ?? []), ...decrypted.features],
+          },
       );
 
       // console.log(decrypted)
@@ -482,8 +492,8 @@ export const ArchiveSearchMenu: React.FC = () => {
 
             <div className="relative">
               <select
-                value={provider}
-                onChange={(e) => setProvider(e.target.value as SatelliteProvider)}
+                value={selectedProvider}
+                onChange={(e) => setSelectedProvider(e.target.value)}
                 className="focus:border-primary focus:ring-primary/20 h-8 w-36 appearance-none rounded-md border border-gray-300 bg-white pr-8 pl-3 text-sm text-gray-700 transition outline-none hover:border-gray-400 focus:ring-2"
               >
                 <option value="airbus">Airbus</option>
@@ -532,14 +542,14 @@ export const ArchiveSearchMenu: React.FC = () => {
               onClick={handleSelectAll}
               title={
                 mappedProducts.length > 0 &&
-                mappedProducts.every((product) => isSelected(product.id))
+                  mappedProducts.every((product) => isSelected(product.id))
                   ? "Deselect All"
                   : "Select All"
               }
               className="rounded-md p-2 transition hover:bg-gray-100"
             >
               {mappedProducts.length > 0 &&
-              mappedProducts.every((product) => isSelected(product.id)) ? (
+                mappedProducts.every((product) => isSelected(product.id)) ? (
                 <CheckSquare size={17} className="text-primary" />
               ) : (
                 <Square size={17} className="text-gray-600" />

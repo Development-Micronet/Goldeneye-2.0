@@ -6,6 +6,7 @@ import pointIcon from "./LeftBar/DrawMenu/Point.png";
 import polygonIcon from "./LeftBar/DrawMenu/Polygon.png";
 import polylineIcon from "./LeftBar/DrawMenu/Polyline.png";
 import selectionIcon from "./LeftBar/DrawMenu/Selection.png";
+import RasterIcon from "./LeftBar/Raster.svg";
 import importIcon from "./LeftBar/Import.png";
 import selectIcon from "./LeftBar/Select.png";
 // Sidebar assets
@@ -23,6 +24,7 @@ import goldeneyeLogo from "./logo/goldeneyeLogo.svg";
 import reactLogo from "./react.svg";
 import loginpagevideo from "./video/loginpagevideo.mp4";
 import viteLogo from "./vite.svg";
+
 
 export {
   heroImg,
@@ -48,7 +50,7 @@ export {
   selectIcon,
   importIcon,
   drawIcon,
-
+  RasterIcon,
   // DrawMenu export
   coordinateIcon,
   pointIcon,

@@ -3,7 +3,7 @@ import { create } from "zustand";
 export interface DrawnLayer {
   id: string;
   label: string;
-  type: "Point" | "Polyline" | "Polygon" | "Box" | "Coordinates";
+  type: "Point" | "Polyline" | "Polygon" | "Box" | "Coordinates" | "Bound Coordinates";
   geojson: any; // GeoJSON feature object representation
   area?: number;
   visible?: boolean;
