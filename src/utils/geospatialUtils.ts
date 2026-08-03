@@ -3,6 +3,7 @@ import Feature from "ol/Feature";
 import GeoJSON from "ol/format/GeoJSON";
 import KML from "ol/format/KML";
 import { getArea } from "ol/sphere";
+import { logger } from "../utils/logger";
 
 /**
  * Parses geospatial file content string (GeoJSON or KML) and extracts layer representation.
@@ -104,12 +105,12 @@ export function parseGeospatialFile(content: string, fileName: string): Omit<Dra
         const calculatedArea = getArea(geometry, { projection: "EPSG:4326" });
         area = calculatedArea / 1000000;
       } catch (err) {
-        console.error("Error calculating geodesic area for imported feature:", err);
+        logger.error("Error calculating geodesic area for imported feature:", err);
       }
     }
 
     if (!type) {
-      console.warn(`Skipping unsupported geometry type during import: ${geomType}`);
+      logger.warn(`Skipping unsupported geometry type during import: ${geomType}`);
       return;
     }
 

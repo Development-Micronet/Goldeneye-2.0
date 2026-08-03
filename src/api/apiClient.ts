@@ -3,6 +3,7 @@ import type { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { useMapStore } from "../features/data/store/useMapStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useLayersStore } from "../store/useLayersStore";
+import { logger } from "../utils/logger";
 
 const rawBase = import.meta.env.VITE_API_BASE_URL;
 const cleanBase = rawBase
@@ -42,7 +43,7 @@ apiClient.interceptors.request.use(
         : `${user.schema_name}.${host}`;
       const tenantBase = port ? `${tenantHost}:${port}` : tenantHost;
       config.baseURL = `${protocol}://${tenantBase}/api/`;
-      console.log(`[Dynamic Tenant URL]: ${protocol}://${tenantBase}/api/`);
+      logger.log(`[Dynamic Tenant URL]: ${protocol}://${tenantBase}/api/`);
     } else {
       config.baseURL = DEFAULT_API_BASE_URL;
     }
@@ -66,7 +67,7 @@ apiClient.interceptors.response.use(
 
     // Global 401 Unauthorized handling (e.g. session expired)
     if (status === 401) {
-      console.warn("[API] Unauthorized access. Clearing local sessions.");
+      logger.warn("[API] Unauthorized access. Clearing local sessions.");
       useAuthStore.getState().clearAuth();
       useLayersStore.getState().clearLayers();
       useMapStore.getState().clearMapState();
@@ -80,7 +81,7 @@ apiClient.interceptors.response.use(
       (error.response?.data as any)?.message ||
       error.message ||
       "An unknown network error occurred";
-    console.error(`[API Error] [${status || "Network"}]: ${errMsg}`);
+    logger.error(`[API Error] [${status || "Network"}]: ${errMsg}`);
 
     return Promise.reject(error);
   },

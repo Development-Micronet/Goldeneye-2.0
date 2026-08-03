@@ -4,6 +4,8 @@ import type { FieldErrors } from "react-hook-form";
 import { X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { useAuthStore } from "../../../../store/useAuthStore";
+import { decryptAESGCM } from "../../../../utils/dataDecrypt";
 
 import {
   createContract,
@@ -60,6 +62,10 @@ export default function ContractFormModal({
     (provider) => provider.provider_id === resolvedProviderId,
   )?.name;
 
+
+  const { accessToken } = useAuthStore.getState();
+const token = accessToken?.replace("Bearer ", "").trim() || "";
+
   /**
    * Auto-select provider if passed
    */
@@ -97,9 +103,23 @@ export default function ContractFormModal({
       onClose();
     },
 
-    onError: () => {
-      toast.error("Failed to create contract");
-    },
+   onError: async (error: any) => {
+  try {
+    console.log("Encrypted Error:", error.response.data);
+
+    const decrypted = await decryptAESGCM(
+      error.response.data.data,
+      token
+    );
+
+    console.log("Decrypted Error:", decrypted);
+
+    toast.error(decrypted.message);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to create contract");
+  }
+},
   });
 
   const onValidationError = (errors: FieldErrors<CreateContractDto>) => {
@@ -113,7 +133,7 @@ export default function ContractFormModal({
   };
 
   const onSubmit = (data: CreateContractDto) => {
-    const providerValue = data.provider || resolvedProviderId;
+    const providerValue = data.provider || resolvedProviderId ;
     const selectedContractType =
       watch("contractType") || contract?.contractType || "";
 
@@ -130,7 +150,7 @@ export default function ContractFormModal({
       };
 
       updateMutation.mutate({
-        id: contract.id,
+        id: contract.contractId   ,
         data: updateData,
       });
     } else {

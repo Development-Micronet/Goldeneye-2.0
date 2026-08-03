@@ -1,17 +1,23 @@
-import { toast } from "react-toastify";
 import React, { useState } from "react";
-import { Check, Edit2, Trash2 } from "lucide-react";
-import { type Customer, useApproveCustomerMutation, useCustomersQuery } from "../api/customers";
+import { Trash2, Check } from "lucide-react";
+import { useCustomers } from "../hooks/useCustomers";
+import { useApproveCustomerMutation, useDeleteCustomerMutation, type Customer } from "../api/customers";
+
+import { toast } from "react-toastify";
+
 
 interface CompanyRequestsTableProps {
-  onEdit?: (customer: Customer) => void;
   onDelete?: (id: number) => void;
 }
 
-export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({ onEdit, onDelete }) => {
-  const { data, isLoading, isError, error } = useCustomersQuery();
+export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
+onDelete,
+}) => {
+  const { data: customers = [], isLoading, isError, error } = useCustomers();
   const { mutate: approveCustomer, isPending: isApproving } = useApproveCustomerMutation();
+  const { mutate: deleteCustomer, isPending: isDeleting } = useDeleteCustomerMutation();
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Pending">("All");
+
   const handleApprove = (companyId: number, companyName: string) => {
     if (confirm(`Are you sure you want to approve the request for "${companyName}"?`)) {
       const toastId = toast.loading(`Approving organization "${companyName}"...`);
@@ -40,74 +46,102 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({ onEd
     }
   };
 
+  const handleDelete = (companyId: number, companyName: string) => {
+    if (confirm(`Are you sure you want to delete the request for "${companyName}"?`)) {
+      const toastId = toast.loading(`Deleting organization "${companyName}"...`);
+      deleteCustomer(companyId, {
+        onSuccess: (res) => {
+          toast.update(toastId, {
+            render: res.message || `${companyName} request deleted successfully!`,
+            type: "success",
+            isLoading: false,
+            autoClose: 3000,
+          });
+        },
+        onError: (err) => {
+          const apiError =
+            (err as any).response?.data?.message ||
+            err.message ||
+            "Deletion failed. Please try again.";
+          toast.update(toastId, {
+            render: apiError,
+            type: "error",
+            isLoading: false,
+            autoClose: 3000,
+          });
+        },
+      });
+    }
+  };
+
+
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 select-none">
-        <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
-        <span className="mt-3 text-xs font-medium text-gray-500">Loading company requests...</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="mt-3 text-xs text-gray-500 font-medium">Loading company requests...</span>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-red-100 bg-red-50 p-4 text-xs font-semibold text-red-700 select-none">
+      <div className="p-4 bg-red-50 text-red-700 rounded-lg text-xs font-semibold border border-red-100 select-none">
         ⚠️ Failed to load company requests: {error?.message || "Unknown error occurred"}
       </div>
     );
   }
 
-  const customers = data?.data?.customers || [];
   const filteredCustomers = customers.filter((c) => {
     if (statusFilter === "All") return true;
     return c.status.toLowerCase() === statusFilter.toLowerCase();
   });
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+    <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
       {/* Status Filter Pill Buttons */}
-      <div className="flex flex-shrink-0 gap-2 border-b border-gray-100 pb-3 select-none">
+      <div className="flex gap-2 select-none border-b border-gray-100 pb-3 flex-shrink-0">
         {(["All", "Active", "Pending"] as const).map((filter) => (
           <button
             key={filter}
             onClick={() => setStatusFilter(filter)}
-            className={`cursor-pointer rounded-full border px-4 py-1.5 text-xs font-semibold transition-all ${
-              statusFilter === filter
-                ? "bg-primary border-primary text-white shadow-sm"
-                : "hover:text-gray-750 border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
-            }`}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${statusFilter === filter
+              ? "bg-primary text-white border-primary shadow-sm"
+              : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-750"
+              }`}
           >
             {filter === "All" ? "All Statuses" : filter}
           </button>
         ))}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
         <table className="min-w-full border-collapse border border-gray-200">
           <thead>
             <tr className="bg-white select-none">
-              <th className="w-16 border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
+              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700 w-16">
                 Sr. No.
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
+              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
                 Company Name
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
+              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
                 Email ID
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
+              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
                 Domain
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
+              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
                 Org Type
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
+              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
                 Status
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
+              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
                 Status Reason
               </th>
-              <th className="w-24 border border-gray-200 px-3 py-2.5 text-left text-[10px] font-bold text-gray-700 sm:px-4 sm:text-xs">
+              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700 w-24">
                 Action
               </th>
             </tr>
@@ -115,75 +149,67 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({ onEd
           <tbody className="bg-white">
             {filteredCustomers.map((c, index) => (
               <tr key={c.id}>
-                <td className="border border-gray-200 px-3 py-3 text-center text-xs font-medium text-gray-800 sm:px-4 sm:text-sm">
+                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800 text-center font-medium">
                   {index + 1}
                 </td>
-                <td className="border border-gray-200 px-3 py-3 text-xs font-medium text-gray-800 sm:px-4 sm:text-sm">
+                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800 font-medium">
                   {c.name}
                 </td>
-                <td className="border border-gray-200 px-3 py-3 text-xs text-gray-800 sm:px-4 sm:text-sm">
+                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
                   {c.email}
                 </td>
-                <td className="border border-gray-200 px-3 py-3 text-xs text-gray-800 sm:px-4 sm:text-sm">
+                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
                   {c.domainName || "—"}
                 </td>
-                <td className="border border-gray-200 px-3 py-3 text-xs text-gray-800 sm:px-4 sm:text-sm">
+                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
                   {c.type}
                 </td>
-                <td className="border border-gray-200 px-3 py-3 text-xs text-gray-800 sm:px-4 sm:text-sm">
+                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
                   <div className="flex items-center select-none">
                     <span
-                      className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${
-                        c.status === "Active" || c.status === "Approved"
-                          ? "bg-[#10B981]"
-                          : c.status === "Pending"
-                            ? "bg-[#F59E0B]"
-                            : "bg-[#EF4444]"
-                      }`}
+                      className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${c.status === "Active" || c.status === "Approved"
+                        ? "bg-[#10B981]"
+                        : c.status === "Pending"
+                          ? "bg-[#F59E0B]"
+                          : "bg-[#EF4444]"
+                        }`}
                     />
                     <span>{c.status}</span>
                   </div>
                 </td>
-                <td className="border border-gray-200 px-3 py-3 text-xs text-gray-800 sm:px-4 sm:text-sm">
+                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
                   {c.statusReason || "—"}
                 </td>
-                <td className="border border-gray-200 px-3 py-3 text-xs text-gray-800 sm:px-4 sm:text-sm">
+                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
                   <div className="flex items-center gap-4">
                     {c.status.toLowerCase() === "pending" && (
                       <button
                         onClick={() => handleApprove(c.id, c.name)}
                         disabled={isApproving}
-                        className="cursor-pointer rounded p-1 text-green-600 transition-colors hover:bg-gray-100 hover:text-green-700 disabled:opacity-50"
+                        className="p-1 hover:bg-gray-100 rounded text-green-600 hover:text-green-700 disabled:opacity-50 transition-colors cursor-pointer"
                         title="Approve Request"
                       >
-                        <Check className="h-4.5 w-4.5" />
+                        <Check className="w-4.5 h-4.5" />
                       </button>
                     )}
+
                     <button
-                      onClick={() => onEdit?.(c)}
-                      disabled={isApproving}
-                      className="text-gray-655 hover:text-primary cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 disabled:opacity-50"
-                      title="Edit Request"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete?.(c.id)}
-                      disabled={isApproving}
-                      className="text-gray-655 cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 hover:text-red-500 disabled:opacity-50"
+                      onClick={() => handleDelete(c.id, c.name)}
+                      disabled={isApproving || isDeleting}
+                      className="p-1 hover:bg-gray-100 rounded text-gray-655 hover:text-red-500 disabled:opacity-50 transition-colors cursor-pointer"
                       title="Delete Request"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
+
                   </div>
                 </td>
               </tr>
             ))}
             {filteredCustomers.length === 0 && (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-sm text-gray-400">
-                  No {statusFilter !== "All" ? statusFilter.toLowerCase() : ""} company requests
-                  found.
+                <td colSpan={8} className="text-center py-8 text-sm text-gray-400">
+                  No {statusFilter !== "All" ? statusFilter.toLowerCase() : ""} company requests found.
                 </td>
               </tr>
             )}

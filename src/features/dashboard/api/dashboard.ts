@@ -78,7 +78,7 @@ export interface EncryptedResponse {
 export const getTenantSuperusers =
   async (): Promise<EncryptedResponse> => {
     const { data } = await apiClient.get<EncryptedResponse>(
-      "dashboard/tenant-superusers/"
+      "dashboard/tenant-company/"
     );
 
     return data;
@@ -92,8 +92,37 @@ export const getCompanyUsers = async (
   schemaName: string
 ): Promise<EncryptedResponse> => {
   const { data } = await apiClient.get<EncryptedResponse>(
-    `dashboard/tenant-superusers/${schemaName}/users/`
+    `dashboard/tenant-company/${schemaName}/users/`
+
   );
 
   return data;
 };
+
+/**
+ * POST
+ * /api/tenants/register-user/
+ */
+export const registerUser = async (payload: any): Promise<any> => {
+  const { data } = await apiClient.post("tenants/register-user/", payload);
+  return data;
+};
+
+/**
+ * DELETE
+ * /api/tenants/users/{user_id}/
+ */
+export const deleteUser = async (userId: number): Promise<any> => {
+  const { data } = await apiClient.delete(`tenants/users/${userId}/`);
+  return data;
+};
+
+/**
+ * PATCH
+ * /api/tenants/users/{user_id}/
+ */
+export const updateCompanyUser = async (userId: number, payload: Partial<CompanyUser>): Promise<any> => {
+  const { data } = await apiClient.patch(`tenants/users/${userId}/`, payload);
+  return data;
+};
+

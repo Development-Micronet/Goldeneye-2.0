@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 export function base64ToArrayBuffer(base64: string) {
   base64 = base64.replace(/-/g, "+").replace(/_/g, "/");
 
@@ -38,7 +40,7 @@ export async function decryptAESGCM(base64Data: string, token: string) {
 
     return JSON.parse(new TextDecoder().decode(decrypted));
   } catch (err) {
-    console.error("❌ DECRYPT FAILED:", err);
+    logger.error("❌ DECRYPT FAILED:", err);
     throw err;
   }
 }

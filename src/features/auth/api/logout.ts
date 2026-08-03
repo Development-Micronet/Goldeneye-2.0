@@ -2,6 +2,7 @@ import { apiClient } from "../../../api/apiClient";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useLayersStore } from "../../../store/useLayersStore";
 import { useMapStore } from "../../data/store/useMapStore";
+import { logger } from "../../../utils/logger";
 
 /**
  * Performs backend logout via POST to auth/logout/ and clears the local auth session.
@@ -14,7 +15,7 @@ export const performLogout = async (): Promise<void> => {
     // Send POST request to auth/logout/ endpoint
     await apiClient.post("auth/logout/", { refresh: refreshToken });
   } catch (err) {
-    console.error("[Logout Error]: Failed to notify server of logout session", err);
+    logger.error("[Logout Error]: Failed to notify server of logout session", err);
   } finally {
     // Always clear credentials from local state to logout user on frontend
     useAuthStore.getState().clearAuth();
@@ -24,5 +25,8 @@ export const performLogout = async (): Promise<void> => {
 
     // Reset all map options and states completely
     useMapStore.getState().clearMapState();
+
+    // Hard redirect to login page (which completely resets React Query cache & state)
+    window.location.href = "/login";
   }
 };
