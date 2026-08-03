@@ -488,7 +488,7 @@ function applyVisualState(map: MapLibreMap, def: LayerDef): void {
         map.setLayoutProperty(spec.id, "visibility", def.visible ? "visible" : "none");
         const paint = (spec as { paint?: Record<string, unknown> }).paint ?? {};
         Object.entries(paint).forEach(([prop, value]) => {
-            if (prop.endsWith("opacity")) map.setPaintProperty(spec.id, prop, value);
+            if (prop.endsWith("opacity")) map.setPaintProperty(spec.id, prop as any, value);
         });
     });
 }

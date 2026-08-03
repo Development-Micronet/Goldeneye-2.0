@@ -5,7 +5,7 @@ import { Upload, Eye, EyeOff, Trash2, Crosshair, Image, Map, X, AlertTriangle, L
 import { useRasterStore } from "../../hooks/useRasterStore";
 import AOIDialog from "./component/AOIDialog";
 import { uploadRaster, type UploadRasterResponse } from "./api/Analytics.service";
-import { readGeoTIFFMetadata, renderGeoTIFFPreview } from "../../../../utils/Geotiffpreview";
+import { renderGeoTIFFPreview } from "../../../../utils/Geotiffpreview";
 
 interface RasterPopupProps {
   onClose: () => void;

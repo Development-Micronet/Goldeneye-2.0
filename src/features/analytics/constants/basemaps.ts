@@ -126,7 +126,7 @@ export function getBasemap(id: string): BasemapDef {
  * and it fails visibly if a provider goes away.
  */
 export function basemapThumbnail(basemap: BasemapDef): string {
-    return basemap.tiles[0]
+    return (basemap.tiles?.[0] || "")
         .replace("{z}", "4")
         .replace("{x}", "8")
         .replace("{y}", "5")

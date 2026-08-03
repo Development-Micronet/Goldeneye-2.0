@@ -32,10 +32,11 @@ import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import Text from "ol/style/Text";
 import * as turf from "@turf/turf";
+import { logger } from "../../../../utils/logger";
 import { useArchiveHoverStore } from "../../hooks/useArchiveHoverStore";
 import { usePinnedProductStore } from "../../hooks/usePinnedProductStore";
 import { useSelectedAOIStore } from "../../hooks/useSelectedAOIStore";
-import { useRasterStore } from "../../hooks/useRasterStore";
+
 import { useRasterLayers } from "./core/useRasterLayers";
 
 export default function MapView() {
@@ -59,9 +60,7 @@ export default function MapView() {
   } = useMapOptions();
   const polylineBufferDistance = useMapStore((state) => state.polylineBufferDistance);
   const polygonBufferDistance = useMapStore((state) => state.polygonBufferDistance);
-  const rasters = useRasterStore((state) => state.rasters);
-  const fitRasterId = useRasterStore((state) => state.fitRasterId);
-  const setFitRasterId = useRasterStore((state) => state.setFitRasterId);
+
   const setSelectedAOI = useSelectedAOIStore((state) => state.setSelectedAOI);
   const { flyToProduct, setFlyToProduct } = useMapStore();
   const layers = useLayersStore((state) => state.layers);
@@ -460,7 +459,7 @@ export default function MapView() {
             const geojson = geojsonFormat.writeFeatureObject(feature);
             const buffered = turf.buffer(geojson, bufferVal, { units: "kilometers" });
             const bufferedFeature = geojsonFormat.readFeature(buffered);
-            const bufferedGeom = bufferedFeature.getGeometry();
+            const bufferedGeom = (bufferedFeature as any).getGeometry();
             if (bufferedGeom) {
               feature.setGeometry(bufferedGeom);
             }
@@ -477,7 +476,7 @@ export default function MapView() {
             const geojson = geojsonFormat.writeFeatureObject(feature);
             const buffered = turf.buffer(geojson, bufferVal, { units: "kilometers" });
             const bufferedFeature = geojsonFormat.readFeature(buffered);
-            const bufferedGeom = bufferedFeature.getGeometry();
+            const bufferedGeom = (bufferedFeature as any).getGeometry();
             if (bufferedGeom) {
               feature.setGeometry(bufferedGeom);
             }
@@ -843,7 +842,7 @@ export default function MapView() {
       geometry: hoveredProduct.geometry,
     });
 
-    const productGeo = format.writeFeatureObject(productFeature);
+    const productGeo = format.writeFeatureObject(productFeature as any);
 
     // Get AOIs
     const aoiLayers = layers.filter((layer) =>
@@ -853,15 +852,15 @@ export default function MapView() {
     aoiLayers.forEach((aoiLayer) => {
       const aoiFeature = format.readFeature(aoiLayer.geojson);
 
-      const aoiGeo = format.writeFeatureObject(aoiFeature);
+      const aoiGeo = format.writeFeatureObject(aoiFeature as any);
 
       // AOI ∩ Image footprint
-      const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo]));
+      const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo] as any));
 
       if (intersection) {
         const commonFeature = format.readFeature(intersection);
 
-        commonFeature.setStyle(
+        (commonFeature as any).setStyle(
           new Style({
             fill: new Fill({
               color: "rgba(255,152,0,0.45)",
@@ -869,7 +868,7 @@ export default function MapView() {
           }),
         );
 
-        hoverSource.addFeature(commonFeature);
+        hoverSource.addFeature(commonFeature as any);
       }
     });
 
@@ -900,21 +899,21 @@ export default function MapView() {
         geometry: product.geometry,
       });
 
-      const productGeo = format.writeFeatureObject(productFeature);
+      const productGeo = format.writeFeatureObject(productFeature as any);
 
       aoiLayers.forEach((aoiLayer) => {
         const aoiFeature = format.readFeature(aoiLayer.geojson);
 
-        const aoiGeo = format.writeFeatureObject(aoiFeature);
+        const aoiGeo = format.writeFeatureObject(aoiFeature as any);
 
-        const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo]));
+        const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo] as any));
 
         if (intersection) {
           const feature = format.readFeature(intersection);
 
-          feature.set("productId", product.id);
+          (feature as any).set("productId", product.id);
 
-          feature.setStyle(
+          (feature as any).setStyle(
             new Style({
               fill: new Fill({
                 color: "rgba(255,204,128,0.50)",
@@ -922,7 +921,7 @@ export default function MapView() {
             }),
           );
 
-          source.addFeature(feature);
+          source.addFeature(feature as any);
         }
       });
     });

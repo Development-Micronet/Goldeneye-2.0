@@ -7,11 +7,11 @@ import { toast } from "react-toastify";
 
 
 interface CompanyRequestsTableProps {
+  onEdit: (customer: Customer) => void;
   onDelete?: (id: number) => void;
 }
 
 export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
-onDelete,
 }) => {
   const { data: customers = [], isLoading, isError, error } = useCustomers();
   const { mutate: approveCustomer, isPending: isApproving } = useApproveCustomerMutation();

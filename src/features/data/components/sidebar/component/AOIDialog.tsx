@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import ReactDOM from "react-dom";
+
 import { X, Check, MapPin, AlertCircle, Move } from "lucide-react";
 
 interface AOIDialogProps {

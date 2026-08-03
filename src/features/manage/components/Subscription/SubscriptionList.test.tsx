@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import Swal from "sweetalert2";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useQuery } from "@tanstack/react-query";
-import { deleteSubscription } from "../../api/subscription";
 import SubscriptionList from "./SubscriptionList";
 
 const deleteSubscriptionMock = vi.fn();
@@ -61,7 +60,7 @@ describe("SubscriptionList", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    vi.mocked(useQuery).mockImplementation((options: any) => {
+    vi.mocked(useQuery).mockImplementation(((options: any) => {
       if (options.queryKey[0] === "providers-dropdown") {
         return {
           data: [{ name: "Example Provider" }],
@@ -88,7 +87,7 @@ describe("SubscriptionList", () => {
         isLoading: false,
         isError: false,
       };
-    });
+    }) as any);
 
     vi.mocked(Swal.fire).mockResolvedValue({ isConfirmed: true } as never);
   });

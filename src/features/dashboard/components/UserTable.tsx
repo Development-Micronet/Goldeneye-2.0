@@ -16,8 +16,7 @@ interface UserTableProps {
 export function UserTable({
   users,
   companyName,
-  schemaName,
-  isLoading,
+    isLoading,
   onAddUserClick,
   onDeleteUser,
   onEditUser,

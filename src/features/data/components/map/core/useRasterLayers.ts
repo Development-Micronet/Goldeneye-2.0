@@ -8,12 +8,12 @@ import useZoomStore from "../../../hooks/useZoomStore";
 import { get as getProjection } from 'ol/proj';
 
 export const useRasterLayers = (mapState: any) => {
-    const { zoom, setZoom, setMaxZoom, maxZoom } = useZoomStore();
     const fitRasterId = useRasterStore((state) => state.fitRasterId);
     const rasters = useRasterStore(
         (state) => state.rasters
     );
     const setFitRasterId = useRasterStore((state) => state.setFitRasterId);
+    const setMaxZoom = useZoomStore((state) => state.setMaxZoom);
 
     useEffect(() => {
         const map = mapState;
@@ -38,10 +38,24 @@ export const useRasterLayers = (mapState: any) => {
 
 
             const imageSource = new ImageStatic({
-                url: imageUrl,
-                imageExtent: raster.aoi,
+                url: imageUrl as string,
+                imageExtent: raster.aoi as any,
                 projection: sourceProjCode,
                 crossOrigin: "anonymous",
+                imageLoadFunction: function (image, src) {
+                    import("../../../../../api/apiClient2").then(({ apiClient2 }) => {
+                        apiClient2.get(src, { responseType: "blob" })
+                            .then((response) => {
+                                const objectUrl = URL.createObjectURL(response.data);
+                                const img = image.getImage() as HTMLImageElement;
+                                img.onload = () => URL.revokeObjectURL(objectUrl);
+                                img.src = objectUrl;
+                            })
+                            .catch((err) => {
+                                console.error("Error fetching raster image:", err);
+                            });
+                    });
+                }
             });
 
 
@@ -62,8 +76,8 @@ export const useRasterLayers = (mapState: any) => {
 
 
                 const centerUTM = [
-                    (raster.aoi[0] + raster.aoi[2]) / 2,
-                    (raster.aoi[1] + raster.aoi[3]) / 2,
+                    (raster.aoi![0] + raster.aoi[2]) / 2,
+                    (raster.aoi![1] + raster.aoi[3]) / 2,
                 ];
 
 
@@ -113,15 +127,15 @@ export const useRasterLayers = (mapState: any) => {
 
             const projObj = getProjection(sourceProjCode);
             if (projObj && !projObj.getExtent()) {
-                projObj.setExtent(raster.aoi);
+                projObj.setExtent(raster.aoi as any);
                 // console.log(`[Raster Effect] Set extent for ${sourceProjCode} to`, raster.aoi);
             }
 
             // Since the backend only runs gdal_translate to PNG (and NOT gdalwarp),
             // the PNG is STILL in UTM! We must let OpenLayers reproject it automatically.
             const imageSource = new ImageStatic({
-                url: raster.imageUrl,
-                imageExtent: raster.aoi,        // The original UTM bounds
+                url: raster.imageUrl as string,
+                imageExtent: raster.aoi as any,        // The original UTM bounds
                 projection: sourceProjCode,     // The original UTM projection
                 crossOrigin: "anonymous"        // Critical for client-side reprojection
             });
@@ -141,8 +155,8 @@ export const useRasterLayers = (mapState: any) => {
             map.addLayer(layer);
             // Calculate the exact center of the UTM bounding box
             const centerUTM = [
-                (raster.aoi[0] + raster.aoi[2]) / 2,
-                (raster.aoi[1] + raster.aoi[3]) / 2
+                (raster.aoi![0] + raster.aoi![2]) / 2,
+                (raster.aoi![1] + raster.aoi![3]) / 2,
             ];
             // Transform just the center point to the map's projection
             const centerLonLat = transform(centerUTM, sourceProjCode, view.getProjection());
@@ -178,8 +192,8 @@ export const useRasterLayers = (mapState: any) => {
         ensureProjection(sourceProj);
 
         const centerUTM = [
-            (raster.aoi[0] + raster.aoi[2]) / 2,
-            (raster.aoi[1] + raster.aoi[3]) / 2
+            (raster.aoi![0] + raster.aoi[2]) / 2,
+            (raster.aoi![1] + raster.aoi[3]) / 2
         ];
         const centerLonLat = transform(centerUTM, sourceProj, map.getView().getProjection());
 

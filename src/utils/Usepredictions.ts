@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { useRasterStore, type DetectionType, type RasterLayer } from "../features/data/hooks/useRasterStore";
 import { isActive, readCount, SERVICE_BY_NAME, serviceLabel, type PredictionStatus } from "../constant/Analytics.config";
-import type { RasterOperationType } from "ol/source/Raster";
 
 
 

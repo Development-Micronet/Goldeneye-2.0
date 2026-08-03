@@ -37,7 +37,7 @@ export interface BasemapDef {
   provider: string;
 
   /** Which of the two source shapes below applies. */
-  type: BasemapType;
+  type?: BasemapType;
 
   /**
    * XYZ tile templates (multiple entries = subdomain sharding).
