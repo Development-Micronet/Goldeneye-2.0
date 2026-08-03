@@ -166,55 +166,16 @@ export async function exportKML({
   lang = "en",
   extraInfos = {},
 }: ExportKMLPayload) {
-  //   console.log(aoi);
-  const payload = {
-    format: "kml",
-
-    items: items.map((product) => ({
-      type: "Feature",
-
-      geometry: product.geometry,
-
-      properties: {
-        acquisitionDate: product.raw?.acquisitionDate,
-
-        acquisitionIdentifier: product.raw?.acquisitionIdentifier,
-
-        resolution: product.raw?.resolution,
-
-        incidenceAngle: product.raw?.incidenceAngle,
-
-        cloudCover: product.raw?.cloudCover,
-
-        imageUrl: product.imageUrl,
-      },
-
-      id: product.id,
-    })),
-
-    aois: Array.isArray(aoi)
-      ? aoi.map((item) => ({
-          label: item.label,
-          value: item.value,
-          coordinates: item.coordinates,
-        }))
-      : [
-          {
-            label: "Polygon 1",
-            value: "aoi_polygon_1",
-            coordinates: aoi,
-          },
-        ],
-
-    lang,
-
-    filename,
-
-    extraInfos,
-  };
-
   try {
-    toast.info("KML export backend is not ready yet.");
+    const payload = buildExportPayload({
+      format: "kml",
+      items,
+      aoi,
+      filename,
+      lang,
+      extraInfos,
+    });
+    await postExport(payload);
   } catch (error) {
     logger.error("KML Export Error:", error);
     toast.error("Failed to export KML.");
@@ -515,33 +476,7 @@ export async function exportKMZ({
       extraInfos,
     });
 
-    ...(aoi
-      ? [
-          {
-            type: "Feature",
-            geometry: {
-              type: "Polygon",
-              coordinates: Array.isArray(aoi) ? aoi : aoi.coordinates,
-            },
-            properties: {
-              name: "AOI",
-            },
-          },
-        ]
-      : []),
-  ];
-
-  const geojson = {
-    type: "FeatureCollection",
-    features,
-  };
-
-  try {
-    console.log("KMZ Payload Ready:", geojson);
-
-    toast.info("KMZ export backend not done yet");
-
-    return;
+    await postExport(payload);
   } catch (error) {
     logger.error("KMZ Export Error:", error);
     toast.error("Failed to export KMZ.");
@@ -554,65 +489,16 @@ export async function exportShape({
   aoi = null,
   filename = "Archive_Product.zip",
 }: ExportShapePayload) {
-  const features = [
-    ...items.map((product) => ({
-      type: "Feature",
-      geometry: product.geometry,
-      properties: {
-        name: product.name,
-        id: product.id,
-
-        acquisitionDate: product.raw?.acquisitionDate,
-        acquisitionIdentifier: product.raw?.acquisitionIdentifier,
-
-        resolution: product.raw?.resolution,
-        platform: product.raw?.platform,
-
-        incidenceAngle: product.raw?.incidenceAngle,
-
-        cloudCover: product.raw?.cloudCover,
-
-        imageUrl: product.imageUrl,
-
-        sensor: product.sensor,
-
-        processingLevel: product.raw?.processingLevel,
-
-        productType: product.raw?.productType,
-      },
-    })),
-
-    ...(aoi
-      ? [
-          {
-            type: "Feature",
-            geometry: {
-              type: "Polygon",
-              coordinates: Array.isArray(aoi) ? aoi : aoi.coordinates,
-            },
-            properties: {
-              name: "AOI",
-            },
-          },
-        ]
-      : []),
-  ];
-
-  const geojson = {
-    type: "FeatureCollection",
-    features,
-  };
-
   try {
-    console.log("Shape Export Payload Ready:", geojson);
+    const payload = buildExportPayload({
+      format: "shp",
+      items,
+      aoi,
+      filename,
+      lang: "en",
+    });
 
-    toast.info("Shape export backend not done yet");
-
-    return;
-
-    // Future:
-    // POST geojson to backend
-    // Backend will create .shp/.zip file
+    await postExport(payload);
   } catch (error) {
     logger.error("Shape Export Error:", error);
     toast.error("Failed to export Shape.");

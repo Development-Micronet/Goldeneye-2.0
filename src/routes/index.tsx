@@ -8,7 +8,7 @@ import { ManagePage } from "../features/manage/pages/ManagePage";
 import { QuotationPage } from "../features/quotation/pages/QuotationPage";
 import MainLayout from "../layouts/MainLayout";
 import { useAuthStore } from "../store/useAuthStore";
-import AnalyticsMapview from "../features/analytics/AnalyticsMapview";
+import EarthMap from "../features/analytics/EarthMapview";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -45,7 +45,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/data" element={<DataPage />} />
           <Route path="/manage" element={<ManagePage />} />
           <Route path="/quotation" element={<QuotationPage />} />
-          <Route path="/analytics" element={<AnalyticsMapview />} />
+          <Route path="/Libre" element={<EarthMap />} />
           {/* Default entry redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>

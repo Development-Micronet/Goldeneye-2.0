@@ -2,15 +2,9 @@ import { FiPackage } from "react-icons/fi";
 import React, { useState, useEffect } from "react";
 import { useParameter } from "../hooks/useParameter";
 import { useProductStore } from "../hooks/useproductStore";
-
-type ProductItem = {
-  Subcategory: string;
-  Description: string;
-  isAvailable: boolean;
-  isAssigned: boolean;
-};
-
-type Products = Record<string, Record<string, ProductItem[]>>;
+import { listofproviderandsensors } from "./sidebar/api/product.service";
+import { decryptAESGCM } from "../../../utils/dataDecrypt";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 const ProductSwitcher: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -29,211 +23,29 @@ const ProductSwitcher: React.FC = () => {
 
   const { tab, setTab } = useParameter();
   const open = tab === "products";
-  const products: Products = {
-    "Optical (Archive)": {
-      "Pleiades Neo (0.3m)": [
-        {
-          Subcategory: "Pleiades-Neo-0.3m-MONO",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-        {
-          Subcategory: "Pleiades-Neo-0.3m-STEREO",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-        {
-          Subcategory: "Pleiades-Neo-0.3m-TRISTEREO",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-      ],
 
-      DMC: [
-        {
-          Subcategory: "UK-DMC2-32m",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-        {
-          Subcategory: "UK-DMC2-22m",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-      ],
-
-      Spot: [
-        {
-          Subcategory: "SPOT 1.5-m-MONO",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-        {
-          Subcategory: "SPOT 1.5-m-STEREO",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-        {
-          Subcategory: "SPOT 1.5-m-TRISTEREO",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-      ],
-
-      "Pleiades (0.5m)": [
-        {
-          Subcategory: "Pleiades-0.5m-MONO",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-        {
-          Subcategory: "Pleiades-0.5m-STEREO",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-        {
-          Subcategory: "Pleiades-0.5m-TRISTEREO",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-      ],
-    },
-
-    Elevation: {
-      Elevation: [
-        {
-          Subcategory: "E30 -DSM",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-        {
-          Subcategory: "E30 -DSM -Quality Layers",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-        {
-          Subcategory: "E30 -DSM -Quality Layers + Ortho",
-          Description: "",
-          isAvailable: false,
-          isAssigned: true,
-        },
-      ],
-    },
-  };
-  const allProducts = Object.values(products).flatMap((category) => Object.keys(category));
-
-  const getSensor = (subcategory: string) => {
-    if (subcategory.startsWith("Pleiades-Neo")) {
-      return "PNEO";
-    }
-
-    if (subcategory.startsWith("Pleiades-0.5")) {
-      return "PLEIADES";
-    }
-
-    if (subcategory.startsWith("SPOT")) {
-      return "SPOT";
-    }
-
-    if (subcategory.startsWith("UK-DMC")) {
-      return "DMC";
-    }
-
-    if (subcategory.startsWith("E30")) {
-      return "ELEVATION";
-    }
-
-    return "";
-  };
-
-  const getProductSubcategories = (productName: string) => {
-    for (const category of Object.values(products)) {
-      if (category[productName]) {
-        return category[productName].map((item) => item.Subcategory);
+  useEffect(() => {
+    const fetchProviders = async () => {
+      if (!token) return;
+      setIsLoading(true);
+      try {
+        const response = await listofproviderandsensors();
+        const decrypted = await decryptAESGCM(response.data, token);
+        const parsed = typeof decrypted === "string" ? JSON.parse(decrypted) : decrypted;
+        if (parsed && parsed.success && Array.isArray(parsed.providers)) {
+          setProviders(parsed.providers);
+        }
+      } catch (error) {
+        console.error("Error fetching providers/sensors:", error);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+    fetchProviders();
+  }, [token, setProviders]);
 
-    return [];
-  };
-  const toggleProduct = (product: string) => {
-    const subs = getProductSubcategories(product);
-    const alreadySelected = subs.every((sub) => selectedItems.some((x) => x.subcategory === sub));
+  const currentProviderObj = providers.find((p) => p.name === selectedProvider);
 
-    if (alreadySelected) {
-      subs.forEach((sub) => {
-        removeProduct(sub);
-      });
-    } else {
-      const items = subs.map((sub) => ({
-        product,
-        resolution: getResolution(sub),
-        subcategory: sub,
-        sensor: getSensor(sub),
-      }));
-
-      setProducts([...selectedItems, ...items]);
-    }
-  };
-  const toggleExpand = (name: string) => {
-    setExpanded((prev) => {
-      const updated = prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name];
-
-      setExpandAll(updated.length === allProducts.length);
-
-      return updated;
-    });
-  };
-  const handleExpandAll = () => {
-    if (expandAll) {
-      setExpanded([]);
-    } else {
-      setExpanded(allProducts);
-    }
-
-    setExpandAll(!expandAll);
-  };
-  const handleSelectAll = () => {
-    if (selectAll) {
-      clearProducts();
-      setSelectAll(false);
-      return;
-    }
-
-    const all = Object.entries(products).flatMap(([category, categoryItems]) =>
-      Object.entries(categoryItems).flatMap(([product, items]) =>
-        items.map((item) => ({
-          category,
-          product,
-          resolution: getResolution(item.Subcategory),
-          subcategory: item.Subcategory,
-          sensor: getSensor(item.Subcategory),
-        })),
-      ),
-    );
-
-    setProducts(all);
-    setSelectAll(true);
-  };
-  const getResolution = (subcategory: string) => {
-    const match = subcategory.match(/(\d+\.?\d*m)/);
-
-    return match ? match[1] : "";
-  };
-
-  // console.log(selectedItems || []);
   return (
     <>
       <style>
@@ -267,11 +79,10 @@ const ProductSwitcher: React.FC = () => {
       {/* Product Icon */}
       <button
         onClick={() => setTab(open ? "none" : "products")}
-        className={`flex h-8 items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2.5 text-xs font-semibold shadow-sm transition-all duration-200 ${
-          open
-            ? "bg-primary-100 text-primary border-primary/30"
-            : "hover:text-primary text-gray-700 hover:bg-primary-100"
-        }`}
+        className={`flex h-8 items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2.5 text-xs font-semibold shadow-sm transition-all duration-200 ${open
+          ? "bg-primary-100 text-primary border-primary/30"
+          : "hover:text-primary text-gray-700 hover:bg-primary-100"
+          }`}
       >
         <FiPackage size={14} className="stroke-[2.5]" />
         <span>Products</span>
@@ -309,11 +120,10 @@ const ProductSwitcher: React.FC = () => {
                     key={p.name}
                     type="button"
                     onClick={() => setSelectedProvider(p.name)}
-                    className={`flex-1 py-1.5 px-3 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
-                      isActive
-                        ? "bg-primary text-white shadow-sm"
-                        : "text-gray-500 hover:text-gray-800 hover:bg-white hover:shadow-xs"
-                    }`}
+                    className={`flex-1 py-1.5 px-3 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-200 ${isActive
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-gray-500 hover:text-gray-800 hover:bg-white hover:shadow-xs"
+                      }`}
                   >
                     {p.name}
                   </button>
@@ -362,11 +172,10 @@ const ProductSwitcher: React.FC = () => {
                   return (
                     <label
                       key={sensor}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer select-none transition-all duration-200 ${
-                        checked
-                          ? "border-primary/50 bg-primary-100 text-primary font-semibold shadow-xs"
-                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50/50"
-                      }`}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer select-none transition-all duration-200 ${checked
+                        ? "border-primary/50 bg-primary-100 text-primary font-semibold shadow-xs"
+                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50/50"
+                        }`}
                     >
                       <input
                         type="checkbox"

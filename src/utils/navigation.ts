@@ -24,8 +24,8 @@ export const navigationItems: NavItem[] = [
     path: "/quotation",
   },
   {
-    label:"Analytics",
-    path:"/analytics"
+    label:"Libre",
+    path:"/libre"
   }
 ];
 

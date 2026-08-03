@@ -35,6 +35,8 @@ import * as turf from "@turf/turf";
 import { useArchiveHoverStore } from "../../hooks/useArchiveHoverStore";
 import { usePinnedProductStore } from "../../hooks/usePinnedProductStore";
 import { useSelectedAOIStore } from "../../hooks/useSelectedAOIStore";
+import { useRasterStore } from "../../hooks/useRasterStore";
+import { useRasterLayers } from "./core/useRasterLayers";
 
 export default function MapView() {
   const mapRef = useRef<HTMLDivElement>(null);
