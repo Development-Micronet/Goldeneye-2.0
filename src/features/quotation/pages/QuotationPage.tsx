@@ -1,12 +1,20 @@
 import React from "react";
+import { useSearchParams } from "react-router-dom";
+import Quotationlayout from "../components/Quotationlayout";
+import CreateQuotation from "../components/CreateQuotation";
+import UpdateQuotation from "../components/UpdateQuotation";
 
 export const QuotationPage: React.FC = () => {
-  return (
-    <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-      <div className="w-full max-w-sm rounded-xl border border-gray-100 bg-white p-8 shadow-lg">
-        <h2 className="mb-3 text-2xl font-bold text-gray-800">Quotations</h2>
-        <p className="text-sm text-gray-500">Create, view, and manage client quotations here.</p>
-      </div>
-    </div>
-  );
+  const [searchParams] = useSearchParams();
+  const view = searchParams.get("view");
+
+  if (view === "create") {
+    return <CreateQuotation />;
+  }
+
+  if (view === "update") {
+    return <UpdateQuotation />;
+  }
+
+  return <Quotationlayout />;
 };

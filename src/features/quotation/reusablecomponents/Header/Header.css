@@ -1,0 +1,104 @@
+.header1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* background-color: #134f77; */
+    background-color: #2a74a5;
+    padding: 0.5rem 1rem;
+    flex-wrap: wrap;
+    /* Allows items to wrap on smaller screens */
+}
+
+.left-side {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    /* Allows this section to take available space */
+}
+
+.left-side img {
+    filter: drop-shadow(2px 2px 2px black);
+}
+
+.right-side {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    /* Allows this section to take available space */
+    justify-content: flex-end;
+    /* Aligns items to the end */
+}
+
+/* Ensures both images are of similar size and aligned */
+.left-side img,
+.right-side img {
+    height: auto;
+    /* Maintain aspect ratio */
+}
+
+.logo {
+    margin-right: 0.5rem;
+    max-width: 100px;
+    /* Limits the maximum width */
+}
+
+.heading {
+    font-size: 1.8rem;
+    margin: 0;
+    color: #ffbf00;
+    padding-left: 5px;
+    font-family: 'Eras ITC', sans-serif;
+    text-shadow: 2px 2px black;
+}
+
+.language-select {
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.1rem;
+    margin-left: 0.5rem;
+    /* Space between the logo and dropdown */
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .header1 {
+        align-items: center;
+        /* Center items horizontally */
+    }
+
+    .left-side,
+    .right-side {
+        width: 100%;
+        /* Full width for both sections */
+        margin-bottom: 0.5rem;
+        /* Space between sections */
+    }
+
+    .logo {
+        max-width: 70px;
+        /* Smaller logo size on smaller screens */
+    }
+
+    .heading {
+        font-size: 1.2rem;
+        /* Smaller font size on smaller screens */
+    }
+
+    .language-select {
+        font-size: 0.9rem;
+        /* Smaller font size for the dropdown */
+    }
+}
+
+@media (max-width: 480px) {
+    .heading {
+        font-size: 1rem;
+        /* Further reduce font size on very small screens */
+    }
+
+    .language-select {
+        font-size: 0.8rem;
+        /* Further reduce font size for the dropdown */
+    }
+}

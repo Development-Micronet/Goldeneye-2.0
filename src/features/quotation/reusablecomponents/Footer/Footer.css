@@ -1,0 +1,94 @@
+.footerMainBox {
+    background-color: #1D364D;
+    padding: 2rem;
+}
+
+.FooteServicesMainBox span,
+.FooteGoldenEyeMainBox span,
+.FooterGetMainBox span {
+    font-size: 1.5rem;
+    color: #dbc40e;
+    font-weight: 400;
+}
+
+.FooteServicesMainBox ul li,
+.FooterGetMainBox ul li {
+    font-size: 0.875rem;
+    color: #d5dbdf;
+}
+
+.FooteGoldenEyeMainBox p {
+    text-align: justify;
+    font-size: 0.875rem;
+    color: #d5dbdf;
+}
+
+.FooteGoldenEyeMainBox img {
+    margin-bottom: 1rem;
+}
+
+.FooteServicesMainBox,
+.FooterGetMainBox {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.ImageContaineroflogo{
+    display: flex;
+    justify-content: end;
+    align-items: center;
+
+}
+.Footerbackground{
+background: url(https://www.shutterstock.com/image-vector/light-blue-diagonal-gradient-lines-260nw-2409919709.jpg);
+    object-fit: cover;
+    background-size: cover;
+}
+.ServiceContainerMAin{
+    padding-left: 31%;
+ 
+}
+@media (min-width: 320px) and (max-width:425px){
+.ImageContaineroflogo{
+   display: flex!important;
+   justify-content: center!important;
+   align-items: center!important;
+}
+.ServiceContainer, .ServiceContainerMAin{
+
+    padding-left: 30px;
+  }
+
+}
+@media (min-width: 426px) and (max-width:768px){
+    .ImageContaineroflogo{
+        display: flex!important;
+        justify-content: center!important;
+        align-items: center!important;
+     }  
+     .ServiceContainer, .ServiceContainerMAin{
+
+        padding-left: 30px;
+      }
+
+}
+@media(max-width:769px)and(max-width:1024px){
+    .ServiceContainerMAin{
+        padding-left: 0%!important;
+     
+    } 
+}
+@media (min-width: 1024px) and (max-width:1440px){
+    .ImageContaineroflogo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    } 
+    .ServiceContainerMAin{
+        padding-left: 0%;
+     
+    } 
+}
+@media (min-width: 320px) and (max-width:425px){
+    
+}

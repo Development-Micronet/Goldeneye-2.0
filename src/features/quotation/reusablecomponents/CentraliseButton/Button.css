@@ -1,0 +1,181 @@
+.custom-button:active,
+.custom-button.clicked {
+  transform: scale(0.99);
+}
+.custom-button:disabled {
+  cursor: not-allowed;
+}
+.custom-button.disabled {
+  background-color: #ddd;
+  color: #aaa;
+  border-color: #ddd;
+  cursor: not-allowed;
+}
+
+.custom-button.disabled:hover {
+  background-color: #ddd;
+  color: #aaa;
+  border-color: #ddd;
+}
+/* Default Button Styles */
+.custom-button.default {
+  background-color: #2c6671;
+}
+
+.custom-button.default:disabled {
+  background-color: #6c757d;
+}
+
+/* Login Button Styles */
+.custom-button.login {
+  background-color: #2c6671;
+  width: 150px;
+  height: 50px;
+}
+
+.custom-button.login:disabled {
+  background-color: #6c757d;
+}
+
+/* Logout Button Styles */
+.custom-button.logout {
+  background-color: #dc3545;
+  width: 150px;
+  height: 50px;
+}
+
+.custom-button.logout:disabled {
+  background-color: #6c757d;
+}
+
+/* Primary Button Styles */
+.custom-button.primary {
+  background-color: #2c6671;
+}
+
+.custom-button.primary:disabled {
+  background-color: #6c757d;
+}
+
+/* Success Button Styles */
+.custom-button.success {
+  background-color: #28a745;
+}
+
+.custom-button.success:disabled {
+  background-color: #6c757d;
+}
+
+/* Danger Button Styles */
+.custom-button.danger {
+  background-color: #dc3545;
+}
+
+.custom-button.danger:disabled {
+  background-color: #6c757d;
+}
+
+/* Warning Button Styles */
+.custom-button.warning {
+  background-color: #ffc107;
+  color: black;
+}
+
+.custom-button.warning:disabled {
+  background-color: #6c757d;
+}
+
+/* Icon Styles */
+.button-icon-left {
+  margin-right: 8px;
+}
+
+.button-icon-right {
+  margin-left: 8px;
+}
+
+.custom-button {
+  font-size: 16px;
+  border-radius: 4px;
+  background-color: var(--bg-color, #2c6671);
+  color: var(--text-color, #fff);
+  border: 2px solid var(--border-color, transparent);
+  padding: var(--padding, 10px 20px);
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.custom-button:hover {
+  background-color: var(--hover-bg-color, #204e57);
+  border-color: var(--hover-border-color, transparent);
+}
+
+@media (max-width: 575px) {
+  .custom-button {
+    margin: 10px;
+  }
+}
+
+/* button2 */
+.Button2 {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-shadow: var(--text-shadow);
+
+  color: #fff;
+  background: var(--bg-color-start, #2c6671);
+
+  padding: 10px 10px;
+
+  border: 2px solid var(--border-color, transparent);
+
+  cursor: pointer;
+
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+
+  border-radius: 5px;
+}
+.Button2 .button-text {
+  height: 20px;
+  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
+    "Lucida Sans", Arial, sans-serif;
+
+  font-size: 20px;
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+.Button2:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.Button2:after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+
+  background: var(--border-bottom-color);
+  border-radius: 0 0 10px 10px;
+  transition: height 150ms ease;
+}
+.Button2:hover {
+  background: var(--hover-bg-color, #204e57);
+  background-color: var(--hover-bg-color, #204e57);
+  color: var(--hover-text-color);
+  border-color: var(--hover-border-color);
+}
+
+.button-icon-left {
+  margin-right: 8px;
+}
+
+.button-icon-right {
+  margin-left: 8px;
+}

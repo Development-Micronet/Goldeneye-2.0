@@ -1,0 +1,26 @@
+.customBtn {
+  background-color: #2c6671;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  display: inline-block;
+  transition: background-color 0.2s ease;
+}
+
+.customBtn:hover {
+  background-color: #204e57;
+}
+
+.customBtn:active {
+  background-color: #183a41;
+}
+
+.customBtn:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}

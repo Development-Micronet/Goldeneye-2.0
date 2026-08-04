@@ -1,18 +1,43 @@
-import { NavLink } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
 import { ChevronDown, Lock, LogOut, Menu, Search, User, X } from "lucide-react";
 import { goldeneyeLogo } from "../../../assets";
 import { performLogout } from "../../../features/auth/api/logout";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { getNavigationItems } from "../../../utils/navigation";
+import { useScreenshotStore } from "../../../features/quotation/mystore/features/useScreenshotStore";
+import { useImageStore } from "../../../features/quotation/mystore/features/useImageStore";
+import { useQuotationItemStore } from "../../../features/quotation/mystore/features/useQuotationItemStore";
+import { toast } from "react-toastify";
+import { useProductStore } from "../../../features/data/hooks/useproductStore";
+import { useArchiveProductStore } from "../../../features/data/components/sidebar/store/useArchiveProductStore";
+
+const PRODUCT_NAME_MAP: Record<string, string> = {
+  PNEO: "Pleiades-Neo-0.3m",
+  PHR: "Pleiades-0.5m",
+  SPOT: "SPOT 1.5-m",
+  DMC: "UK-DMC2",
+  Elevation: "E30 -DSM",
+};
 
 export default function Navbar() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isQuotationDropdownOpen, setIsQuotationDropdownOpen] = useState(false);
+  const quotationDropdownRef = useRef<HTMLDivElement>(null);
+
+  const captureScreenshot = useScreenshotStore((state) => state.captureScreenshot);
+  const setImages = useImageStore((state) => state.setImages);
+  const quotationItem = useQuotationItemStore((state) => state.quotationItem);
+  const setQuotationItems = useQuotationItemStore((state) => state.setQuotationItems);
+
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => {
     setIsOpen(false);
     setIsProfileOpen(false);
+    setIsQuotationDropdownOpen(false);
   };
   const { user } = useAuthStore();
   const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -32,6 +57,236 @@ export default function Navbar() {
     document.addEventListener("click", handleOutsideClick);
     return () => document.removeEventListener("click", handleOutsideClick);
   }, [isProfileOpen]);
+
+  // Close quotation dropdown when clicking outside
+  useEffect(() => {
+    if (!isQuotationDropdownOpen) return;
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        quotationDropdownRef.current &&
+        !quotationDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsQuotationDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isQuotationDropdownOpen]);
+
+  const parseRange = (val: any) => {
+    if (!val) return "";
+    try {
+      return JSON.parse(val);
+    } catch {
+      return val;
+    }
+  };
+
+  const checkHasSelectedProducts = (): { hasProducts: boolean; data: any } => {
+    // 1. Check useArchiveProductStore
+    try {
+      const archiveProducts = useArchiveProductStore?.getState?.()?.selectedProducts;
+      if (Array.isArray(archiveProducts) && archiveProducts.length > 0) {
+        return { hasProducts: true, data: archiveProducts };
+      }
+    } catch {}
+
+    // 2. Check useProductStore
+    try {
+      const zustandItems = useProductStore?.getState?.()?.selectedItems;
+      if (Array.isArray(zustandItems) && zustandItems.length > 0) {
+        return { hasProducts: true, data: zustandItems };
+      }
+    } catch {}
+
+    // 3. Check sessionStorage storedCheckedProductList
+    const rawData = sessionStorage.getItem("storedCheckedProductList");
+    let data: any = {};
+    if (rawData) {
+      try {
+        data = JSON.parse(rawData);
+      } catch {
+        data = {};
+      }
+    }
+
+    if (Array.isArray(data) && data.length > 0) {
+      return { hasProducts: true, data };
+    }
+
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+      const hasKeys = Object.keys(data).length > 0;
+      const hasValues = Object.values(data).some((val: any) => {
+        if (Array.isArray(val)) return val.length > 0;
+        return Boolean(val);
+      });
+      if (hasKeys && hasValues) {
+        return { hasProducts: true, data };
+      }
+    }
+
+    // 4. Check sessionStorage selectedProducts
+    const rawSelected = sessionStorage.getItem("selectedProducts");
+    if (rawSelected) {
+      try {
+        const parsed = JSON.parse(rawSelected);
+        if (
+          (Array.isArray(parsed) && parsed.length > 0) ||
+          (typeof parsed === "object" && Object.keys(parsed).length > 0)
+        ) {
+          return { hasProducts: true, data: parsed };
+        }
+      } catch {}
+    }
+
+    return { hasProducts: false, data: {} };
+  };
+
+  const formatQuotationItems = (
+    data: any,
+    cloudCover: string,
+    incidenceAngle: string,
+    acquisitionDate: string,
+    base64Image: any,
+    screenshotImage: any,
+    area: any
+  ) => {
+    if (!data) return [];
+    const result: any[] = [];
+
+    if (Array.isArray(data)) {
+      data.forEach((itemObj: any) => {
+        let itemName = "";
+        if (typeof itemObj === "string") {
+          itemName = itemObj;
+        } else if (
+          itemObj.name ||
+          itemObj.item ||
+          itemObj.product ||
+          itemObj.subcategory ||
+          itemObj.sensor
+        ) {
+          const pName =
+            itemObj.name ||
+            itemObj.product ||
+            itemObj.subcategory ||
+            itemObj.sensor ||
+            "Selected Product";
+          const res = itemObj.resolution ? `-${itemObj.resolution}m` : "";
+          itemName = `${pName}${res}`;
+        } else {
+          itemName = "Selected Product";
+        }
+
+        result.push({
+          item: itemName,
+          unit: "Sqkm",
+          qty: 1,
+          price: 0,
+          amount: 0,
+          cloud_cover: itemObj.cloud_cover ?? parseRange(cloudCover),
+          area: area || 25,
+          angle: itemObj.incidenceAngle ?? parseRange(incidenceAngle),
+          date:
+            itemObj.date ||
+            itemObj.acquisitionDate ||
+            (acquisitionDate ? acquisitionDate.replace("]", "") : ""),
+          base64Image: base64Image,
+          screenshotImage: screenshotImage,
+        });
+      });
+      return result;
+    }
+
+    if (typeof data === "object") {
+      Object.entries(data).forEach(([key, values]: [string, any]) => {
+        const baseName = PRODUCT_NAME_MAP[key] || key;
+
+        if (Array.isArray(values)) {
+          values.forEach((val: string) => {
+            let itemName = "";
+            if (key === "Elevation") {
+              if (val.toLowerCase() === "dsm") {
+                itemName = baseName;
+              } else if (val.toLowerCase() === "quality layers") {
+                itemName = `${baseName} -Quality Layers`;
+              } else if (val.toLowerCase() === "quality layers + ortho") {
+                itemName = `${baseName} -Quality Layers + Ortho`;
+              }
+            } else if (key === "DMC") {
+              itemName = `${baseName}-${val}`;
+            } else {
+              itemName = `${baseName}-${val.toUpperCase()}`;
+            }
+
+            result.push({
+              item: itemName,
+              unit: "Sqkm",
+              qty: 1,
+              price: 0,
+              amount: 0,
+              cloud_cover: parseRange(cloudCover),
+              area: area || 25,
+              angle: parseRange(incidenceAngle),
+              date: acquisitionDate ? acquisitionDate.replace("]", "") : "",
+              base64Image: base64Image,
+              screenshotImage: screenshotImage,
+            });
+          });
+        }
+      });
+    }
+
+    return result;
+  };
+
+  const handleAddQuotation = async () => {
+    if (location.pathname !== "/data") {
+      toast.info(
+        "Please go to the Data page to select products and add to quotation."
+      );
+      navigate("/data");
+      return;
+    }
+
+    const { hasProducts, data } = checkHasSelectedProducts();
+
+    if (!hasProducts) {
+      toast.warn(
+        "Please draw an AOI on the map and select products from search results first."
+      );
+      return;
+    }
+
+    const screenshotResult = await captureScreenshot();
+    const captured = screenshotResult?.payload?.base64 ?? null;
+    const otherData = JSON.parse(sessionStorage.getItem("filter") || "{}");
+
+    if (captured) {
+      toast.success("✅ Map screenshot captured!");
+      setImages([
+        {
+          dataUrl: captured,
+          caption: `Map Screenshot`,
+        },
+      ]);
+    }
+
+    const formattedItems = formatQuotationItems(
+      data,
+      otherData?.cloudcover || "",
+      otherData?.incidenceAngle || "",
+      otherData?.acquisitionDate || "",
+      null,
+      null,
+      sessionStorage.getItem("area") || otherData?.area || ""
+    );
+
+    setQuotationItems([...quotationItem, ...formattedItems]);
+
+    navigate("/quotation?view=create");
+    toast.success("✅ Products added to quotation successfully!");
+  };
 
   const username = user?.user || "user";
   const initial = username[0]?.toUpperCase() || "U";
@@ -54,11 +309,67 @@ export default function Navbar() {
 
           {/* Desktop Navigation Links */}
           <div className="mt-1 hidden items-center gap-3 md:flex lg:gap-6 xl:gap-8">
-            {navItems.map((item) => (
-              <NavLink key={item.path} to={item.path} className={linkClass}>
-                {item.label}
-              </NavLink>
-            ))}
+            {navItems.map((item) => {
+              if (item.label === "Quotation") {
+                return (
+                  <div
+                    key={item.path}
+                    ref={quotationDropdownRef}
+                    className="relative inline-block group"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setIsQuotationDropdownOpen((prev) => !prev)}
+                      className={`flex items-center gap-1 text-xs lg:text-sm font-medium transition-colors cursor-pointer ${
+                        location.pathname.includes("/quotation")
+                          ? "text-white font-bold"
+                          : "text-nav-inactive hover:text-white"
+                      }`}
+                    >
+                      <span>Quotation</span>
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                          isQuotationDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    <div
+                      className={`absolute top-full left-0 mt-1.5 w-48 rounded-xl bg-white shadow-xl border border-gray-100 py-1.5 z-50 transition-all ${
+                        isQuotationDropdownOpen ? "block" : "hidden group-hover:block"
+                      }`}
+                    >
+                      <div className="py-1">
+                        <NavLink
+                          to="/quotation"
+                          onClick={() => setIsQuotationDropdownOpen(false)}
+                          className="block px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#2c6671]/10 hover:text-[#2c6671] transition-colors"
+                        >
+                          See All Quotations
+                        </NavLink>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuotationDropdownOpen(false);
+                            handleAddQuotation();
+                          }}
+                          className="w-full text-left block px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#2c6671]/10 hover:text-[#2c6671] cursor-pointer transition-colors"
+                        >
+                          Add Quotation Item
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <NavLink key={item.path} to={item.path} className={linkClass}>
+                  {item.label}
+                </NavLink>
+              );
+            })}
           </div>
         </div>
 
@@ -83,7 +394,7 @@ export default function Navbar() {
               <span className="hidden text-xs font-semibold text-white transition-opacity group-hover:opacity-90 lg:inline lg:text-sm">
                 {username}
               </span>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-2 border-white text-xs font-bold text-white transition-transform group-hover:scale-105">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white transition-transform group-hover:scale-105">
                 {initial}
               </div>
             </div>
@@ -159,11 +470,56 @@ export default function Navbar() {
               <Search className="absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 cursor-pointer text-gray-400" />
             </div>
 
-            {navItems.map((item) => (
-              <NavLink key={item.path} to={item.path} className={linkClass} onClick={closeMenu}>
-                {item.label}
-              </NavLink>
-            ))}
+            {navItems.map((item) => {
+              if (item.label === "Quotation") {
+                return (
+                  <div key={item.path} className="flex flex-col gap-2">
+                    <div
+                      onClick={() => setIsQuotationDropdownOpen((prev) => !prev)}
+                      className={`flex items-center justify-between text-xs lg:text-sm font-medium cursor-pointer ${
+                        location.pathname.includes("/quotation")
+                          ? "text-white font-bold"
+                          : "text-nav-inactive hover:text-white"
+                      }`}
+                    >
+                      <span>Quotation</span>
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform ${
+                          isQuotationDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
+                    {isQuotationDropdownOpen && (
+                      <div className="flex flex-col gap-2 pl-4 text-xs">
+                        <NavLink
+                          to="/quotation"
+                          onClick={closeMenu}
+                          className="text-white hover:underline font-semibold"
+                        >
+                          See All Quotations
+                        </NavLink>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            closeMenu();
+                            handleAddQuotation();
+                          }}
+                          className="text-left text-white hover:underline font-semibold"
+                        >
+                          Add Quotation Item
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <NavLink key={item.path} to={item.path} className={linkClass} onClick={closeMenu}>
+                  {item.label}
+                </NavLink>
+              );
+            })}
 
             {/* Mobile User Profile */}
             <div className="profile-menu-container mt-1 border-t border-[#1f4e57] pt-3">
@@ -173,7 +529,7 @@ export default function Navbar() {
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-white">{username}</span>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full border border-2 border-white text-xs font-bold text-white">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white">
                     {initial}
                   </div>
                 </div>

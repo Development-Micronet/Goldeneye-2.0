@@ -1,0 +1,442 @@
+/* styles.css */
+.logoutUserprofile {
+    font-size: 10px;
+    margin-bottom: -2px;
+}
+
+.Card-Modal {
+    background-color: #fff;
+    padding: 5px;
+    border: 3px solid;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    position: absolute;
+    border-radius: 14px;
+    margin-left: -140px;
+    height: 134px;
+    width: 189px;
+}
+
+
+.Close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.Close:hover {
+    color: black;
+}
+
+.logout-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* margin-top: 20px; */
+    /* Adjust the margin-top as needed */
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+}
+
+.user-image img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    /* Optional: Make the user image circular */
+    margin-right: 10px;
+}
+
+.user-details {
+    margin-left: 35px;
+    margin-top: -27px;
+}
+
+.logout-button {
+    margin-left: 10px;
+}
+
+.Label-Name {
+    color: black;
+}
+
+.updateButton {
+    font-size: 11px;
+    width: 92px;
+    margin-left: -10px;
+    padding: 4px;
+}
+
+.Heading-Name {
+    color: black;
+    text-align: center;
+}
+
+.Card-Modal {
+    background-color: #fff;
+    padding: 5px;
+    border: 3px solid;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    border-radius: 14px;
+    height: auto;
+    width: 189px;
+}
+
+@media screen and (max-width: 1760px) {
+    .Card-Modal {
+        background-color: #fff;
+        padding: 5px;
+        border: 3px solid;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        z-index: 10;
+        position: absolute;
+        border-radius: 14px;
+        margin-left: -250px;
+        height: auto;
+        width: 189px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .Card-Modal {
+        width: 100%;
+        /* Make the modal full width on small screens */
+        height: auto;
+        /* Allow the modal's height to adjust to content */
+        margin: 0;
+        /* Remove any margin */
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .Card-Modal {
+        height: auto;
+        /* Allow the modal's height to adjust to content */
+        max-width: 90%;
+        /* Limit the modal's width on extra small screens */
+        margin: 0 auto;
+        /* Center the modal horizontally */
+    }
+
+    .user-profile {
+        flex-direction: column;
+        /* Stack user profile vertically on extra small screens */
+        text-align: center;
+        /* Center user profile content */
+    }
+
+    .user-image img {
+        margin: 0 auto;
+        /* Center user image horizontally */
+    }
+
+    .user-details {
+        margin-top: 10px;
+        /* Add some space between user image and details */
+    }
+
+    /* .logout-button {
+      margin-top: 20px; 
+    } */
+}
+
+
+
+/* pradumm  profile csss */
+
+
+.card_waper {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
+    margin: 14px auto;
+    position: absolute;
+    right: 19px;
+    top: 76px;
+    width: 10rem;
+}
+
+
+.avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: #292929;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.card_waper .card-body {
+    text-align: center;
+    padding: 10px;
+}
+
+.list-group-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.other-profiles {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.card_waper .close-btn {
+    position: absolute;
+    top: -9px;
+    right: 5px;
+    background: none;
+    border: none;
+    font-size: 20px !important;
+    cursor: pointer;
+    color: white !important;
+}
+
+.card_waper .card-header {
+    background-color: #32b1b3;
+    text-align: center;
+    padding: 15px;
+    position: relative;
+}
+
+.UserNameProfile {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 1.1em !important;
+}
+
+.UserProfileItems {
+    font-size: 0.8rem;
+}
+
+.UserProfileItems:hover {
+    background-color: rgb(223, 235, 244);
+}
+
+.modern-card {
+    background-color: #fff;
+    border-radius: 12px;
+    /* Slightly rounded corners for a modern look */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    /* Enhanced shadow for depth */
+    width: 200px;
+    position: absolute;
+    top: 96px;
+    right: 5px;
+    z-index: 10;
+    overflow: hidden;
+}
+
+/* Add this to your existing CSS file */
+
+.arrow-up {
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 10px solid #fff; /* Match the background color of the card */
+    position: absolute;
+    top: -10px; /* Adjust to ensure it connects well */
+    right: 20px; /* Adjust to align with the profile icon */
+}
+
+.modern-card-header {
+    color: #020202;
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    background-color: #fff;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+/* Adding the triangle cutout
+.modern-card-header::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 30px;
+    background-color: #fff;
+    clip-path: polygon(100% 0, 50% 100%, 0 0);
+} */
+
+
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: rgb(8, 8, 8);
+    transition: color 0.3s ease-in-out;
+    width: 30px;
+}
+
+.close-btn:hover {
+    color: #ddd;
+}
+
+.avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #248A8B;
+    color: white;
+    font-size: 22px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border: 2px solid #fff;
+    /* Slight border to enhance visibility */
+}
+
+.modern-card-title {
+    margin-top: 8px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* .modern-card-body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+} */
+
+.modern-card-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.modern-card-item:hover {
+    background-color: rgba(36, 138, 139, 0.1);
+}
+
+.modern-card-item img {
+    width: 20px;
+    height: 20px;
+}
+
+.modern-card-icon {
+    font-size: 18px;
+    color: #248A8B;
+    transition: color 0.3s ease-in-out;
+}
+
+.modern-card-item:hover .modern-card-icon {
+    color: #165d5e;
+}
+
+.logout-icon {
+    color: #dc3545;
+    transition: color 0.3s ease-in-out;
+}
+
+.modern-card-item:hover .logout-icon {
+    color: #dc3545;
+}
+
+.action-btn {
+    width: 90%;
+    padding: 8px 0;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s ease-in-out;
+    text-align: center;
+}
+
+.update-btn {
+    background-color: #11a9eb;
+    color: white;
+}
+
+.update-btn:hover {
+    background-color: #1b6b6c;
+}
+
+.password-btn {
+    background-color: #fff;
+    color: #333;
+    border: 2px solid #333;
+}
+
+.password-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.logout-btn {
+    background-color: #fff;
+    color: #333;
+    border: 2px solid #333;
+}
+
+.logout-btn:hover {
+    background-color: #C0392B;
+    color: white;
+}
+
+/* New styles */
+.action-btn-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 10px;
+    /* Add some space between the rows */
+}
+
+.action-btn {
+    width: 48%;
+    /* Adjust the width to fit two buttons in one row */
+}
+
+.logout-btn {
+    margin: 0 auto;
+    /* Center the logout button */
+}
+
+/* Add this to your existing CSS file */
+
+.action-btn-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 10px;
+    /* Add some space between the rows */
+}
+
+.action-btn {
+    width: 48%;
+    /* Adjust the width to fit two buttons in one row */
+}
+
+.logout-btn {
+    margin: 0 auto;
+    /* Center the logout button */
+}

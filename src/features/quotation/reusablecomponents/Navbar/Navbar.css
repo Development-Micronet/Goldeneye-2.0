@@ -1,0 +1,186 @@
+:root {
+  --navbar-bg-color: #145b64;
+  --superadmin-bg-color: #007bff;
+  --admin-bg-color: #28a745;
+  --user-bg-color: #ffc107;
+  --link-color: #ffffff;
+  --link-hover-color: #ffffffa9;
+  --text-shadow: 1.5px 1.5px black;
+  --disabled-color: gray;
+  --active-color: yellow;
+  --font-size-default: 1rem;
+  --font-weight-regular: 400;
+  --font-weight-bold: 600;
+  --mobile-menu-bg-color: #66a2dd;
+  --hover-shadow: 1px 1px black;
+  --gap-default: 0.6rem;
+}
+
+/* Navbar */
+.GeopicXNavbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  /* padding: 0.2rem 1rem; */
+  background-color: var(--navbar-bg-color);
+}
+
+a.Active_links {
+  /* background-color: red; */
+  padding: 4px 7px;
+  transition: background-color 0.3s ease, padding 0.3s ease;
+}
+
+a.Active_links:hover {
+  background: blue;
+}
+
+/* Disabled Link */
+.nav-link.disabled,
+.nav-link:disabled {
+  color: var(--disabled-color) !important;
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+}
+
+/* Background for roles */
+.superadmin-background {
+  background-color: var(--superadmin-bg-color);
+}
+
+.admin-background {
+  background-color: var(--admin-bg-color);
+}
+
+.user-background {
+  background-color: var(--user-bg-color);
+}
+
+/* Navigation Link Container */
+.GENavLinkContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-default);
+  /* justify-items: center !important; */
+  align-items: center;
+}
+
+.GENavLinkContainer a {
+  text-decoration: none;
+  color: var(--link-color);
+  font-size: var(--font-size-default);
+  text-transform: uppercase;
+  font-weight: var(--font-weight-regular);
+  /* text-shadow: var(--text-shadow); */
+}
+
+.GENavLinkContainer a:hover {
+  /* color: var(--link-hover-color); */
+}
+
+/* Login Button */
+.GELoginBtn a {
+  color: var(--link-color);
+  font-size: var(--font-size-default);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: var(--font-weight-bold);
+  text-shadow: var(--hover-shadow);
+}
+
+.GELoginBtn a:hover {
+  color: var(--link-hover-color);
+}
+
+/* Mobile Menu Toggle */
+.GEMobileMenuToggle {
+  display: none;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  color: var(--link-color);
+  cursor: pointer;
+}
+
+/* User Profile Name */
+.GEUserProfileName {
+  background: none;
+  border: none;
+  color: var(--link-color);
+  cursor: pointer;
+}
+
+/* Mobile Menu */
+.GEMobileMenu {
+  display: none;
+  flex-direction: column;
+  gap: 0.2rem;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--mobile-menu-bg-color);
+  padding: 0.5rem 1.4rem;
+  width: 100%;
+}
+
+.GEMobileMenu a {
+  color: black;
+  text-decoration: none;
+  font-size: var(--font-size-default);
+}
+
+.GEMobileMenu a:hover {
+  text-decoration: underline;
+}
+
+.GEMobileMenu.GEMobileMenuOpen {
+  display: flex;
+}
+
+.div_Line {
+  border: solid rgb(245, 242, 242) 1px;
+  margin: 4px 10px;
+}
+
+.disabled-link {
+  pointer-events: none; /* Disable clicks */
+  opacity: 0.5; /* Reduce opacity to indicate disabled state */
+  cursor: not-allowed; /* Change cursor to indicate it's not clickable */
+  color: rgb(189, 189, 189);
+}
+
+/* Active Links */
+.GELoginBtn .active,
+#GENavBarContainer .GENavLinkContainer .active {
+  color: var(--active-color);
+  border-bottom: 2px solid var(--active-color);
+}
+
+/* Disabled Data Links */
+.data.disabled {
+  pointer-events: none;
+  color: var(--disabled-color);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.nav-link.disabled:hover {
+  color: var(--disabled-color);
+}
+
+/* Mobile Menu Media Query */
+@media (max-width: 768px) {
+  .GENavLinkContainer {
+    display: none;
+  }
+
+  .GEMobileMenuToggle {
+    display: block;
+  }
+
+  .div_Line {
+    border: solid rgb(245, 242, 242) 1px;
+    margin: 4px 0;
+  }
+}
