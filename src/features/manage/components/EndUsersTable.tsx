@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Edit2, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useTenantSuperusers, useCompanyUsers } from "../hooks/useEndUsers";
 import type { Company, CompanyUser } from "../api/enduser"; // <--- 'type' keyword add kiya hai
 
@@ -15,7 +15,7 @@ const CompanyUserAccordion: React.FC<{
   company: Company;
   onEdit?: (user: CompanyUser) => void;
   onDelete?: (id: number) => void;
-}> = ({ company, onEdit, onDelete }) => {
+}> = ({ company }) => {
   const [open, setOpen] = useState(false);
 
   // selected company ka users data fetch karenge

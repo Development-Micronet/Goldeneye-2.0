@@ -3,7 +3,7 @@ import { create } from "zustand";
 interface SelectedAOIStore {
   selectedAOIId: string | null;
 
-  setSelectedAOI: (id: string) => void;
+  setSelectedAOI: (id: string | null) => void;
 }
 
 export const useSelectedAOIStore = create<SelectedAOIStore>((set) => ({

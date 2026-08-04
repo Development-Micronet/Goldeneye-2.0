@@ -143,6 +143,7 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
     if (window.confirm("Are you sure you want to delete all plotted layers?")) {
       clearLayers();
       setSelectedLayerId(null);
+      setSelectedAOI(null);
       toast.success("All layers cleared");
     }
   };
@@ -248,7 +249,15 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
             return (
               <div
                 key={layer.id}
-                onClick={() => setSelectedLayerId(isSelected ? null : layer.id)}
+                onClick={() => {
+                  if (isSelected) {
+                    setSelectedLayerId(null);
+                    setSelectedAOI(null);
+                  } else {
+                    setSelectedLayerId(layer.id);
+                    setSelectedAOI(layer.id);
+                  }
+                }}
                 style={{ position: "relative", zIndex: isMenuOpen ? 999 : 1 }}
                 className={`group flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2 transition-colors ${
                   isSelected
@@ -338,7 +347,10 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
                       onClick={() => {
                         if (window.confirm(`Delete layer "${layer.label}"?`)) {
                           removeLayer(layer.id);
-                          if (isSelected) setSelectedLayerId(null);
+                          if (isSelected) {
+                            setSelectedLayerId(null);
+                            setSelectedAOI(null);
+                          }
                         }
                       }}
                       className="cursor-pointer rounded p-1.5 text-gray-500 transition-colors hover:bg-black/5 hover:text-red-600"

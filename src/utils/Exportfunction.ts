@@ -246,8 +246,8 @@ body {
 <body>
 
 ${items
-  .map(
-    (product) => `
+      .map(
+        (product) => `
 
 <div class="product">
 
@@ -370,8 +370,8 @@ style="width:112px;height:111px"
 
 
 `,
-  )
-  .join("")}
+      )
+      .join("")}
 
 
 </body>

@@ -1,21 +1,21 @@
 import React, { useState } from "react";
-import { Edit2, Trash2, Check } from "lucide-react";
+import { Trash2, Check } from "lucide-react";
 import { useCustomers } from "../hooks/useCustomers";
-import { useApproveCustomerMutation, type Customer } from "../api/customers";
+import { useApproveCustomerMutation, useDeleteCustomerMutation, type Customer } from "../api/customers";
+
 import { toast } from "react-toastify";
 
 
 interface CompanyRequestsTableProps {
-  onEdit?: (customer: Customer) => void;
+  onEdit: (customer: Customer) => void;
   onDelete?: (id: number) => void;
 }
 
 export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
-  onEdit,
-  onDelete,
 }) => {
   const { data: customers = [], isLoading, isError, error } = useCustomers();
   const { mutate: approveCustomer, isPending: isApproving } = useApproveCustomerMutation();
+  const { mutate: deleteCustomer, isPending: isDeleting } = useDeleteCustomerMutation();
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Pending">("All");
 
   const handleApprove = (companyId: number, companyName: string) => {
@@ -45,6 +45,35 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
       });
     }
   };
+
+  const handleDelete = (companyId: number, companyName: string) => {
+    if (confirm(`Are you sure you want to delete the request for "${companyName}"?`)) {
+      const toastId = toast.loading(`Deleting organization "${companyName}"...`);
+      deleteCustomer(companyId, {
+        onSuccess: (res) => {
+          toast.update(toastId, {
+            render: res.message || `${companyName} request deleted successfully!`,
+            type: "success",
+            isLoading: false,
+            autoClose: 3000,
+          });
+        },
+        onError: (err) => {
+          const apiError =
+            (err as any).response?.data?.message ||
+            err.message ||
+            "Deletion failed. Please try again.";
+          toast.update(toastId, {
+            render: apiError,
+            type: "error",
+            isLoading: false,
+            autoClose: 3000,
+          });
+        },
+      });
+    }
+  };
+
 
 
   if (isLoading) {
@@ -77,11 +106,10 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
           <button
             key={filter}
             onClick={() => setStatusFilter(filter)}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
-              statusFilter === filter
-                ? "bg-primary text-white border-primary shadow-sm"
-                : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-750"
-            }`}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${statusFilter === filter
+              ? "bg-primary text-white border-primary shadow-sm"
+              : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-750"
+              }`}
           >
             {filter === "All" ? "All Statuses" : filter}
           </button>
@@ -139,13 +167,12 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
                 <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
                   <div className="flex items-center select-none">
                     <span
-                      className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${
-                        c.status === "Active" || c.status === "Approved"
-                          ? "bg-[#10B981]"
-                          : c.status === "Pending"
+                      className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${c.status === "Active" || c.status === "Approved"
+                        ? "bg-[#10B981]"
+                        : c.status === "Pending"
                           ? "bg-[#F59E0B]"
                           : "bg-[#EF4444]"
-                      }`}
+                        }`}
                     />
                     <span>{c.status}</span>
                   </div>
@@ -165,22 +192,16 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
                         <Check className="w-4.5 h-4.5" />
                       </button>
                     )}
+
                     <button
-                      onClick={() => onEdit?.(c)}
-                      disabled={isApproving}
-                      className="p-1 hover:bg-gray-100 rounded text-gray-655 hover:text-primary disabled:opacity-50 transition-colors cursor-pointer"
-                      title="Edit Request"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete?.(c.id)}
-                      disabled={isApproving}
+                      onClick={() => handleDelete(c.id, c.name)}
+                      disabled={isApproving || isDeleting}
                       className="p-1 hover:bg-gray-100 rounded text-gray-655 hover:text-red-500 disabled:opacity-50 transition-colors cursor-pointer"
                       title="Delete Request"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
+
                   </div>
                 </td>
               </tr>

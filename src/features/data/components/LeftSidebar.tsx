@@ -1,11 +1,12 @@
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import React, { useEffect, useRef, useState } from "react";
-import { drawIcon, importIcon, selectIcon } from "../../../assets";
+import { drawIcon, importIcon, selectIcon, RasterIcon } from "../../../assets";
 import { useMapStore } from "../store/useMapStore";
 import DrawPopup from "./sidebar/DrawPopup";
 import ImportPopup from "./sidebar/ImportPopup";
 import SelectPopup from "./sidebar/SelectPopup";
+import RasterPopup from "./sidebar/RasterPopup";
 
 interface LeftSidebarProps {
   activeIndex?: number | null;
@@ -44,6 +45,11 @@ export default function LeftSidebar({
       id: 3,
       icon: selectIcon,
       tooltip: "Select",
+    },
+    {
+      id: 4,
+      icon: RasterIcon,
+      tooltip: "Raster",
     },
   ];
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -85,11 +91,10 @@ export default function LeftSidebar({
                     onClick={() => handleItemClick(index)}
                     data-tooltip-id={isActive ? undefined : "left-sidebar-tooltip"}
                     data-tooltip-content={item.tooltip}
-                    className={`relative flex h-9 w-9 items-center justify-center rounded-md transition-all duration-200 focus:outline-none sm:h-11 sm:w-11 sm:rounded-lg md:h-12 md:w-12 ${
-                      isActive
-                        ? "bg-primary/20 text-primary shadow-sm"
-                        : "hover:bg-primary/10 cursor-pointer text-gray-700"
-                    }`}
+                    className={`relative flex h-9 w-9 items-center justify-center rounded-md transition-all duration-200 focus:outline-none sm:h-11 sm:w-11 sm:rounded-lg md:h-12 md:w-12 ${isActive
+                      ? "bg-primary/20 text-primary shadow-sm"
+                      : "hover:bg-primary/10 cursor-pointer text-gray-700"
+                      }`}
                   >
                     <img
                       src={item.icon}
@@ -107,6 +112,9 @@ export default function LeftSidebar({
 
                   {/* Select Option Modal/Popup */}
                   {index === 2 && isActive && <SelectPopup onClose={() => setActiveIndex(null)} />}
+
+                  {/* Raster Option Modal/Popup */}
+                  {index === 3 && isActive && <RasterPopup onClose={() => setActiveIndex(null)} />}
                 </div>
               </div>
 

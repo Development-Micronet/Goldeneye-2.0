@@ -12,9 +12,6 @@ import { unByKey } from "ol/Observable";
 import Overlay from "ol/Overlay";
 import View from "ol/View";
 import { defaults as defaultControls } from "ol/control";
-import { easeOut } from "ol/easing";
-// import { getHeight, getWidth } from "ol/extent";
-// import { isEmpty } from "ol/extent";
 import GeoJSON from "ol/format/GeoJSON";
 import type { Type } from "ol/geom/Geometry";
 import Point from "ol/geom/Point";
@@ -24,7 +21,6 @@ import ImageLayer from "ol/layer/Image";
 import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
 import "ol/ol.css";
-import { transformExtent } from "ol/proj";
 import ImageStatic from "ol/source/ImageStatic";
 import OSM from "ol/source/OSM";
 import TileWMS from "ol/source/TileWMS";
@@ -36,17 +32,21 @@ import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import Text from "ol/style/Text";
 import * as turf from "@turf/turf";
+import { logger } from "../../../../utils/logger";
 import { useArchiveHoverStore } from "../../hooks/useArchiveHoverStore";
 import { usePinnedProductStore } from "../../hooks/usePinnedProductStore";
 import { useSelectedAOIStore } from "../../hooks/useSelectedAOIStore";
-import { logger } from "../../../../utils/logger";
+
+import { useRasterLayers } from "./core/useRasterLayers";
 
 export default function MapView() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<Map | null>(null);
+  const [mapState, setMapState] = useState<Map | null>(null);
   const vectorSourceRef = useRef<VectorSource | null>(null);
   const hoverSourceRef = useRef<VectorSource | null>(null);
   const pinSourceRef = useRef<VectorSource | null>(null);
+
   const {
     activeTool,
     setActiveTool,
@@ -58,6 +58,9 @@ export default function MapView() {
     plotBoundCoordinates,
     setPlotBoundCoordinates,
   } = useMapOptions();
+  const polylineBufferDistance = useMapStore((state) => state.polylineBufferDistance);
+  const polygonBufferDistance = useMapStore((state) => state.polygonBufferDistance);
+
   const setSelectedAOI = useSelectedAOIStore((state) => state.setSelectedAOI);
   const { flyToProduct, setFlyToProduct } = useMapStore();
   const layers = useLayersStore((state) => state.layers);
@@ -71,6 +74,7 @@ export default function MapView() {
   const { visibleProducts } = useArchiveProductStore();
   const hoveredProduct = useArchiveHoverStore((state) => state.hoveredProduct);
   const { pinnedProducts } = usePinnedProductStore();
+
   // Zoom to / fit bounds of selected layer
   useEffect(() => {
     if (!fitLayerId || !mapInstance.current) return;
@@ -116,7 +120,7 @@ export default function MapView() {
     // Center coordinates for India in EPSG:4326 (longitude, latitude)
     const origin = [78.9629, 20.5937];
     const minZoom = 2;
-    const initialMaxZoom = 19;
+    const initialMaxZoom = 30;
     // Base Layer: OpenStreetMap
     const osmLayer = new TileLayer({
       properties: { label: "Base Layer" },
@@ -249,12 +253,14 @@ export default function MapView() {
     });
 
     mapInstance.current = map;
+    setMapState(map);
 
     return () => {
       if (mapInstance.current) {
         mapInstance.current.setTarget(undefined);
         mapInstance.current = null;
       }
+      setMapState(null);
       vectorSourceRef.current = null;
     };
   }, []);
@@ -444,6 +450,40 @@ export default function MapView() {
         }
       }
 
+      if (activeTool === "Polyline") {
+        const geometry = feature.getGeometry();
+        if (geometry && geometry.getType() === "LineString") {
+          const bufferVal = parseFloat(polylineBufferDistance) || 0;
+          if (bufferVal > 0) {
+            const geojsonFormat = new GeoJSON();
+            const geojson = geojsonFormat.writeFeatureObject(feature);
+            const buffered = turf.buffer(geojson, bufferVal, { units: "kilometers" });
+            const bufferedFeature = geojsonFormat.readFeature(buffered);
+            const bufferedGeom = (bufferedFeature as any).getGeometry();
+            if (bufferedGeom) {
+              feature.setGeometry(bufferedGeom);
+            }
+          }
+        }
+      }
+
+      if (activeTool === "Polygon") {
+        const geometry = feature.getGeometry();
+        if (geometry && geometry.getType() === "Polygon") {
+          const bufferVal = parseFloat(polygonBufferDistance) || 0;
+          if (bufferVal > 0) {
+            const geojsonFormat = new GeoJSON();
+            const geojson = geojsonFormat.writeFeatureObject(feature);
+            const buffered = turf.buffer(geojson, bufferVal, { units: "kilometers" });
+            const bufferedFeature = geojsonFormat.readFeature(buffered);
+            const bufferedGeom = (bufferedFeature as any).getGeometry();
+            if (bufferedGeom) {
+              feature.setGeometry(bufferedGeom);
+            }
+          }
+        }
+      }
+
       // Serialize feature to GeoJSON and add to layers store
       const geojsonFormat = new GeoJSON();
       const geojson = geojsonFormat.writeFeatureObject(feature);
@@ -461,6 +501,9 @@ export default function MapView() {
         geojson: geojson,
         area: area,
       });
+
+      // Auto-select the newly drawn layer as the active AOI for Archive Search
+      setSelectedAOI(newLayer.id);
 
       toast.success(`${newLayer.label} plotted successfully`);
       setMaxZoom(18);
@@ -484,7 +527,7 @@ export default function MapView() {
       }
       removeTooltip();
     };
-  }, [activeTool, setActiveTool, pointBufferDistance]);
+  }, [activeTool, setActiveTool, pointBufferDistance, polylineBufferDistance, polygonBufferDistance]);
 
   useEffect(() => {
     if (!drawRectangleCoords) return;
@@ -519,6 +562,9 @@ export default function MapView() {
       geojson: geojson,
       area: area,
     });
+
+    // Auto-select the newly plotted layer as the active AOI for Archive Search
+    setSelectedAOI(newLayer.id);
 
     map.getView().fit(rectGeometry, {
       padding: [50, 50, 50, 50],
@@ -563,6 +609,9 @@ export default function MapView() {
       area,
     });
 
+    // Auto-select the newly plotted layer as the active AOI for Archive Search
+    setSelectedAOI(newLayer.id);
+
     toast.success(`${newLayer.label} plotted successfully`);
 
     mapInstance.current.getView().fit(geometry, {
@@ -602,6 +651,9 @@ export default function MapView() {
       geojson,
       area,
     });
+
+    // Auto-select the newly plotted layer as the active AOI for Archive Search
+    setSelectedAOI(newLayer.id);
 
     toast.success(`${newLayer.label} plotted successfully`);
 
@@ -790,7 +842,7 @@ export default function MapView() {
       geometry: hoveredProduct.geometry,
     });
 
-    const productGeo = format.writeFeatureObject(productFeature);
+    const productGeo = format.writeFeatureObject(productFeature as any);
 
     // Get AOIs
     const aoiLayers = layers.filter((layer) =>
@@ -800,15 +852,15 @@ export default function MapView() {
     aoiLayers.forEach((aoiLayer) => {
       const aoiFeature = format.readFeature(aoiLayer.geojson);
 
-      const aoiGeo = format.writeFeatureObject(aoiFeature);
+      const aoiGeo = format.writeFeatureObject(aoiFeature as any);
 
       // AOI ∩ Image footprint
-      const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo]));
+      const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo] as any));
 
       if (intersection) {
         const commonFeature = format.readFeature(intersection);
 
-        commonFeature.setStyle(
+        (commonFeature as any).setStyle(
           new Style({
             fill: new Fill({
               color: "rgba(255,152,0,0.45)",
@@ -816,7 +868,7 @@ export default function MapView() {
           }),
         );
 
-        hoverSource.addFeature(commonFeature);
+        hoverSource.addFeature(commonFeature as any);
       }
     });
 
@@ -847,21 +899,21 @@ export default function MapView() {
         geometry: product.geometry,
       });
 
-      const productGeo = format.writeFeatureObject(productFeature);
+      const productGeo = format.writeFeatureObject(productFeature as any);
 
       aoiLayers.forEach((aoiLayer) => {
         const aoiFeature = format.readFeature(aoiLayer.geojson);
 
-        const aoiGeo = format.writeFeatureObject(aoiFeature);
+        const aoiGeo = format.writeFeatureObject(aoiFeature as any);
 
-        const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo]));
+        const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo] as any));
 
         if (intersection) {
           const feature = format.readFeature(intersection);
 
-          feature.set("productId", product.id);
+          (feature as any).set("productId", product.id);
 
-          feature.setStyle(
+          (feature as any).setStyle(
             new Style({
               fill: new Fill({
                 color: "rgba(255,204,128,0.50)",
@@ -869,7 +921,7 @@ export default function MapView() {
             }),
           );
 
-          source.addFeature(feature);
+          source.addFeature(feature as any);
         }
       });
     });
@@ -878,6 +930,7 @@ export default function MapView() {
       source.clear();
     };
   }, [pinnedProducts, layers]);
+
   useEffect(() => {
     const map = mapInstance.current;
     if (!map) return;
@@ -902,5 +955,8 @@ export default function MapView() {
     // select latest AOI
     setSelectedAOI(latestAOI.id);
   }, [layers, setSelectedAOI]);
+
+
+  useRasterLayers(mapState);
   return <div className="h-full w-full" ref={mapRef} id="map-container" />;
 }
