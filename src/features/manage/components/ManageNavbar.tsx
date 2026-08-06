@@ -2,7 +2,7 @@ import React from "react";
 import { useAuthStore } from "../../../store/useAuthStore";
 
 export type TabType =
-  "company-requests" | "end-users" | "allocated-products" | "provider & Contracts" | "subscription";
+  "company-requests" | "end-users" | "allocated-products" | "provider & Contracts" | "subscription" | "plan";
 
 interface TabConfig {
   value: TabType;
@@ -21,11 +21,6 @@ const TABS_CONFIG: TabConfig[] = [
     label: "End Users",
     notAllowedRoles: [],
   },
-  // {
-  //   value: "allocated-products",
-  //   label: "Allocated Products",
-  //   notAllowedRoles: [],
-  // },
   {
     value: "provider & Contracts",
     label: "Provider & Contracts",
@@ -35,6 +30,11 @@ const TABS_CONFIG: TabConfig[] = [
     value: "subscription",
     label: "Subscription",
     notAllowedRoles: ["admin", "user"], // admin and user roles are not allowed to view subscription
+  },
+  {
+    value: "plan",
+    label: "Plan",
+    notAllowedRoles: [],
   },
 ];
 
@@ -55,11 +55,10 @@ export const ManageNavbar: React.FC<ManageNavbarProps> = ({ activeTab, onTabChan
         <button
           key={tab.value}
           onClick={() => onTabChange(tab.value)}
-          className={`cursor-pointer border-none bg-transparent text-xs tracking-wide transition-colors sm:text-[0.8rem] ${
-            activeTab === tab.value
-              ? "font-bold text-gray-900"
-              : "text-[#4B737A] hover:text-gray-950"
-          }`}
+          className={`cursor-pointer border-none bg-transparent text-xs tracking-wide transition-colors sm:text-[0.8rem] ${activeTab === tab.value
+            ? "font-bold text-gray-900"
+            : "text-[#4B737A] hover:text-gray-950"
+            }`}
         >
           {tab.label}
         </button>
