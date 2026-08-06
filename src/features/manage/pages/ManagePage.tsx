@@ -9,7 +9,10 @@ import ProviderTable from "../components/Provider/ProviderMain";
 import ProviderFormModal from "../components/Provider/ProviderFormModal";
 import SubscriptionFormModal from "../components/Subscription/SubscriptionFormModal";
 import SubscriptionList from "../components/Subscription/SubscriptionList";
+import { PlanFormModal } from "../components/Plan/PlanFormModal";
+import { PlanTable } from "../components/Plan/PlanTable";
 import { buildManageTabSearch, getTabFromSearch } from "../utils/manageTabs";
+
 
 export const ManagePage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
@@ -18,6 +21,8 @@ export const ManagePage: React.FC = () => {
   const navigate = useNavigate();
   const [showProviderModalform, setshowProviderModalform] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
 
   const [activeTab, setActiveTab] = useState<TabType>(() =>
     getTabFromSearch(location.search, roleName),
@@ -45,8 +50,11 @@ export const ManagePage: React.FC = () => {
       setshowProviderModalform(true);
     } else if (activeTab === "subscription") {
       setShowSubscriptionModal(true);
+    } else if (activeTab === "plan") {
+      setShowPlanModal(true);
     }
   };
+
 
   // Edit Action Handlers
   const handleEditRequest = (customer: Customer) => {
@@ -54,6 +62,17 @@ export const ManagePage: React.FC = () => {
       `Editing customer profile: ${customer.name}\nUsername: ${customer.userName}\nStatus: ${customer.status}`,
     );
   };
+
+  const handleClosePlanModal = () => {
+    setShowPlanModal(false);
+    setSelectedPlan(null); // Close par edit memory clean karein
+  };
+
+  const handleEditPlan = (plan: any) => {
+    setSelectedPlan(plan);
+    setShowPlanModal(true); // Edit details ke sath modal open karein
+  };
+
 
   // Delete Action Handlers
   const handleDeleteRequest = (id: number) => {
@@ -77,9 +96,10 @@ export const ManagePage: React.FC = () => {
               {activeTab === "end-users" && "Manage End User"}
               {activeTab === "provider & Contracts" && "Manage Providers"}
               {activeTab === "subscription" && "Manage Subscriptions"}
+              {activeTab === "plan" && (roleName === "admin" ? "My Plan" : "Manage Plans")}
             </h2>
 
-            {activeTab !== "end-users" && (
+            {activeTab !== "end-users" && !(activeTab === "plan" && roleName === "admin") && (
               <button
                 onClick={handleAddItem}
                 className="bg-primary cursor-pointer self-start rounded-full px-4 py-1.5 text-[11px] font-medium text-white shadow-sm transition-colors select-none hover:bg-[#1F4E57] active:scale-[0.98] sm:self-center sm:px-5 sm:text-xs"
@@ -87,6 +107,7 @@ export const ManagePage: React.FC = () => {
                 {activeTab === "company-requests" && "Add Request"}
                 {activeTab === "provider & Contracts" && "Add Provider"}
                 {activeTab === "subscription" && "Add Subscription"}
+                {activeTab === "plan" && "Add Plan"}
               </button>
             )}
           </div>
@@ -104,6 +125,7 @@ export const ManagePage: React.FC = () => {
             )}
             {activeTab === "provider & Contracts" && <ProviderTable />}
             {activeTab === "subscription" && <SubscriptionList />}
+            {activeTab === "plan" && <PlanTable onEdit={handleEditPlan} />}
           </div>
         </div>
       </div>
@@ -119,6 +141,14 @@ export const ManagePage: React.FC = () => {
           onClose={() => setShowSubscriptionModal(false)}
         />
       )}
+      {activeTab === "plan" && (
+        <PlanFormModal
+          open={showPlanModal}
+          onClose={handleClosePlanModal}
+          plan={selectedPlan}
+        />
+      )}
     </div>
   );
 };
+

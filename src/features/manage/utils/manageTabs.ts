@@ -15,7 +15,8 @@ export function getTabFromSearch(search: string, roleName?: string): TabType {
     tabParam === "end-users" ||
     tabParam === "allocated-products" ||
     tabParam === "provider & Contracts" ||
-    tabParam === "subscription"
+    tabParam === "subscription" ||
+    tabParam === "plan"
   ) {
     return tabParam as TabType;
   }
