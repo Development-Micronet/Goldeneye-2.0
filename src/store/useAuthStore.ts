@@ -15,6 +15,7 @@ export interface User {
   schema_name?: string;
   domain_name?: string;
   date: string;
+  must_reset_password?: boolean; // <-- Add this line
 }
 
 interface AuthState {

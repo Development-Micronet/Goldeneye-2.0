@@ -70,3 +70,13 @@ export const getCompanyUsers = async (schemaName: string): Promise<EncryptedResp
     );
     return data;
 };
+
+/**
+ * Register a new end user
+ * POST /api/tenants/register-user/
+ */
+export const registerUser = async (payload: any): Promise<any> => {
+    const { data } = await apiClient.post("tenants/register-user/", payload);
+    return data;
+};
+
