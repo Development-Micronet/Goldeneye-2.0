@@ -36,7 +36,8 @@ apiClient.interceptors.request.use(
       user &&
       user.schema_name &&
       user.schema_name.toLowerCase() !== "public" &&
-      user.roleName.toLowerCase() !== "superadmin"
+      // user.roleName.toLowerCase() !== "superadmin"
+      (user.roleName || "").toLowerCase() !== "superadmin"
     ) {
       const tenantHost = useNipIo
         ? `${user.schema_name}.${host}.nip.io`

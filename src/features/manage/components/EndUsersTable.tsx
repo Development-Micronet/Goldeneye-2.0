@@ -1,7 +1,10 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { useTenantSuperusers, useCompanyUsers } from "../hooks/useEndUsers";
 import type { Company, CompanyUser } from "../api/enduser"; // <--- 'type' keyword add kiya hai
+import { useAuthStore } from "../../../store/useAuthStore";
+import { EndUserFormModal } from "./Enduser/EndUserFormModal";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 interface EndUsersTableProps {
@@ -13,9 +16,11 @@ interface EndUsersTableProps {
 // 1. Child Component: Har Company ke liye Accordion aur Users Table
 const CompanyUserAccordion: React.FC<{
   company: Company;
+  isAdmin: boolean;
+  onAddUser: (companyName: string) => void;
   onEdit?: (user: CompanyUser) => void;
   onDelete?: (id: number) => void;
-}> = ({ company }) => {
+}> = ({ company, isAdmin, onAddUser }) => {
   const [open, setOpen] = useState(false);
 
   // selected company ka users data fetch karenge
@@ -53,6 +58,20 @@ const CompanyUserAccordion: React.FC<{
             ({company.email})
           </span>
         </div>
+
+        {/* Plus button inside the blue row header */}
+        {isAdmin && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddUser(company.company_name);
+            }}
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-primary hover:bg-[#1F4E57] text-white transition shadow-sm cursor-pointer animate-pulse-subtle"
+            title="Add End User"
+          >
+            <Plus size={16} />
+          </button>
+        )}
       </div>
 
       {/* Accordion Content (Table) */}
@@ -158,8 +177,25 @@ export const EndUsersTable: React.FC<EndUsersTableProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const queryClient = useQueryClient();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<string>("");
+  const user = useAuthStore((state) => state.user);
+  const roleName = user?.roleName.toLowerCase() || "";
+  const isAdmin = roleName === "admin";
+
   // Sabhi Companies/Tenant-Superusers ki decrypted list fetch karenge
   const { data: companies, isLoading, error } = useTenantSuperusers();
+
+  const handleSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["manage-tenant-superusers"] });
+    queryClient.invalidateQueries({ queryKey: ["manage-company-users"] });
+  };
+
+  const handleAddUserClick = (companyName: string) => {
+    setSelectedCompany(companyName);
+    setShowAddModal(true);
+  };
 
   if (isLoading) {
     return (
@@ -191,10 +227,20 @@ export const EndUsersTable: React.FC<EndUsersTableProps> = ({
         <CompanyUserAccordion
           key={company.id}
           company={company}
+          isAdmin={isAdmin}
+          onAddUser={handleAddUserClick}
           onEdit={onEdit}
           onDelete={onDelete}
         />
       ))}
+
+      <EndUserFormModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        companies={companies}
+        defaultOrganization={selectedCompany}
+        onSuccess={handleSuccess}
+      />
     </div>
   );
 };
