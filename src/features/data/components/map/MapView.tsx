@@ -28,6 +28,7 @@ import VectorSource from "ol/source/Vector";
 import XYZ from "ol/source/XYZ";
 import { getArea } from "ol/sphere";
 import Fill from "ol/style/Fill";
+import Icon from "ol/style/Icon";
 import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import Text from "ol/style/Text";
@@ -38,6 +39,50 @@ import { usePinnedProductStore } from "../../hooks/usePinnedProductStore";
 import { useSelectedAOIStore } from "../../hooks/useSelectedAOIStore";
 
 import { useRasterLayers } from "./core/useRasterLayers";
+
+const createOrbitBadgeCanvas = (text: string): HTMLCanvasElement => {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+
+  ctx.font = "bold 13px 'Inter', sans-serif";
+  const textWidth = ctx.measureText(text).width;
+
+  const h = 26; // height
+  const r = h / 2; // radius of rounded left side
+  const tailWidth = 8; // length of pointed chevron tail
+  const paddingLeft = 14;
+  const w = textWidth + paddingLeft + tailWidth + 10; // width
+
+  canvas.width = w;
+  canvas.height = h;
+
+  // Re-apply font after resizing canvas
+  ctx.font = "bold 13px 'Inter', sans-serif";
+  ctx.textBaseline = "middle";
+
+  ctx.beginPath();
+  // Rounded left side
+  ctx.arc(r, r, r, 0.5 * Math.PI, 1.5 * Math.PI);
+  // Top edge
+  ctx.lineTo(w - tailWidth, 0);
+  // Pointed tip on the right
+  ctx.lineTo(w, r);
+  // Bottom edge
+  ctx.lineTo(w - tailWidth, h);
+  // Close path
+  ctx.closePath();
+
+  // Fill background
+  ctx.fillStyle = "#c28b1b";
+  ctx.fill();
+
+  // Draw text
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(text, paddingLeft, r + 0.5); // shift 0.5 for perfect vertical alignment
+
+  return canvas;
+};
 
 export default function MapView() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -150,14 +195,16 @@ export default function MapView() {
       const label = feature.get("label") || "";
       const area = feature.get("area");
       const geom = feature.getGeometry();
+      const isOrbit = label && label.startsWith("Orbit:");
+      const geomType = geom ? geom.getType() : "";
       const styles = [
         new Style({
           fill: new Fill({
-            color: "rgba(44, 102, 113, 0.15)", // Theme primary color #2C6671 with 15% opacity
+            color: isOrbit ? "rgba(194, 139, 27, 0.15)" : "rgba(44, 102, 113, 0.15)", // Matching warm orange/brown fill for orbits
           }),
           stroke: new Stroke({
-            color: "#2C6671", // Theme primary color #2C6671
-            width: 2.5,
+            color: isOrbit ? "#c28b1b" : "#2C6671", // Gold/brown stroke for orbits
+            width: isOrbit ? (geomType === "LineString" ? 3 : 1.5) : 2.5, // Thick centerline (width 3), thin swath boundary (width 1.5)
           }),
         }),
       ];
@@ -179,27 +226,57 @@ export default function MapView() {
         const displayText =
           typeof area === "number" && area > 0 ? ` ${label} ( ${area.toFixed(2)} sqkm ) ` : label;
 
-        styles.push(
-          new Style({
-            geometry: labelGeom,
-            text: new Text({
-              text: displayText,
-              font: "bold 14px 'Inter', sans-serif",
-              fill: new Fill({
-                color: "#ffffff", // white text
+        if (isOrbit) {
+          // Skip label for orbit tracks to avoid duplicate labels
+          if (label.endsWith("Track")) {
+            return styles;
+          }
+
+          // Parse name and time, e.g. "Orbit: SPOT-6 (05:11 - 05:12) Swath" -> "05:11 SPOT-6"
+          let badgeText = label;
+          const match = label.match(/Orbit:\s*([^\(]+)\s*\(([^-\s]+)/);
+          if (match) {
+            const satName = match[1].trim();
+            const startTime = match[2].trim();
+            badgeText = `${startTime} ${satName}`;
+          }
+
+          const canvas = createOrbitBadgeCanvas(badgeText);
+          styles.push(
+            new Style({
+              geometry: labelGeom,
+              image: new Icon({
+                img: canvas,
+                imgSize: [canvas.width, canvas.height],
+                anchor: [1, 0.5], // Anchor the pointed tip (right-center) to the coordinate
+                anchorXUnits: "fraction",
+                anchorYUnits: "fraction",
               }),
-              backgroundFill: new Fill({
-                color: "#000000", // black background
+            })
+          );
+        } else {
+          styles.push(
+            new Style({
+              geometry: labelGeom,
+              text: new Text({
+                text: displayText,
+                font: "bold 14px 'Inter', sans-serif",
+                fill: new Fill({
+                  color: "#ffffff", // white text
+                }),
+                backgroundFill: new Fill({
+                  color: "#000000", // black background
+                }),
+                padding: [4, 6, 4, 6], // padding for readability
+                overflow: true,
+                offsetX: 8,
+                offsetY: -10,
+                textAlign: "left",
+                textBaseline: "bottom",
               }),
-              padding: [4, 6, 4, 6], // padding for readability
-              overflow: true,
-              offsetX: 8,
-              offsetY: -10,
-              textAlign: "left",
-              textBaseline: "bottom",
             }),
-          }),
-        );
+          );
+        }
       }
 
       return styles;
@@ -662,7 +739,7 @@ export default function MapView() {
       duration: 1000,
     });
 
-    setPlotBoundCoordinates(null);  
+    setPlotBoundCoordinates(null);
   }, [plotBoundCoordinates, addLayer, setPlotBoundCoordinates]);
 
   useEffect(() => {
@@ -940,20 +1017,21 @@ export default function MapView() {
     view.setMaxZoom(maxZoom);
   }, [maxZoom]);
 
+  const prevAoiCountRef = useRef(0);
+
   useEffect(() => {
-    if (!layers.length) return;
-
     const aoiTypes = ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"];
+    const aoiLayers = layers.filter(
+      (layer) => aoiTypes.includes(layer.type) && !layer.label.startsWith("Orbit:")
+    );
 
-    const aoiLayers = layers.filter((layer) => aoiTypes.includes(layer.type));
+    // Only auto-select if a new drawn layer has been added (count increased)
+    if (aoiLayers.length > prevAoiCountRef.current) {
+      const latestAOI = aoiLayers[aoiLayers.length - 1];
+      setSelectedAOI(latestAOI.id);
+    }
 
-    if (!aoiLayers.length) return;
-
-    // latest created AOI
-    const latestAOI = aoiLayers[aoiLayers.length - 1];
-
-    // select latest AOI
-    setSelectedAOI(latestAOI.id);
+    prevAoiCountRef.current = aoiLayers.length;
   }, [layers, setSelectedAOI]);
 
 
