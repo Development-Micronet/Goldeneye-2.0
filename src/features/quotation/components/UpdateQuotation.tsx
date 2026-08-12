@@ -62,7 +62,7 @@ import {
 } from "../assets/preview/Preview";
 import { formatDate } from "../utils/dateHelpers";
 import { downloadAsPDF } from "../hooks/Usepdfdownload";
-import { GetTechspec } from "../api/Techspec";
+import { GetTechspec, getProductPrefix } from "../api/Techspec";
 import ImageCard from "../assets/Microcomponent/ImageCard";
 import GroupedProductEntryUpdate, {
   buildGroupKeyUpdate,
@@ -477,12 +477,17 @@ const UpdateQuotation = () => {
       ...existingImages
         .filter((img) => !img._deleted)
         .map((img) => ({
+          id: img.id,
           url: img.url,
           dataUrl: img.url,
           caption: img.caption,
           kml: img.kml_file?.url || null,
           html: img.html_file?.url || null,
           jpg: img.jpg_file?.url || null,
+          kml_file: img.kml_file,
+          html_file: img.html_file,
+          jpg_file: img.jpg_file,
+          supportingfiles: img.supportingfiles || [],
         })),
       ...newImages.map((img) => ({
         dataUrl: img.dataUrl,
@@ -580,17 +585,19 @@ const UpdateQuotation = () => {
 
   const removeNewImage = (i) => setNewImages((p) => p.filter((_, idx) => idx !== i));
 
-  const attachFileToNew = (i, file, type) =>
+  const attachFileToNew = (i, file, type) => {
+    const fileUrl = URL.createObjectURL(file);
     setNewImages((prev) =>
       prev.map((img, idx) => {
         if (idx !== i) return img;
         const filtered = (img.supportingfiles || []).filter((f) => f.fileType !== type);
         return {
           ...img,
-          supportingfiles: [...filtered, { file, fileType: type, name: file.name }],
+          supportingfiles: [...filtered, { file, fileType: type, name: file.name, url: fileUrl }],
         };
       }),
     );
+  };
 
   const detachFileFromNew = (i, type) =>
     setNewImages((prev) =>
@@ -617,7 +624,11 @@ const UpdateQuotation = () => {
       settechspecimage((prev) => {
         const merged = [...prev];
         (data || []).forEach((incoming) => {
-          const exists = merged.some((existing) => existing.product_name === incoming.product_name);
+          const exists = merged.some(
+            (existing) =>
+              getProductPrefix(existing.product_name) === getProductPrefix(incoming.product_name) ||
+              existing.product_name === incoming.product_name,
+          );
           if (!exists) merged.push(incoming);
         });
         return merged;
@@ -628,14 +639,23 @@ const UpdateQuotation = () => {
 
   const fetchSpecification = () => {
     const keywords = [
-      ...new Set(description.map((it) => it.item?.split(" ")[0].toLowerCase()).filter(Boolean)),
+      ...new Set(
+        description
+          .map((it) => getProductPrefix(it.item?.split(" ")[0]).toLowerCase())
+          .filter(Boolean),
+      ),
     ];
     if (!keywords.length) {
       toast.info("No items to fetch specs for");
       return;
     }
     const toFetch = keywords.filter(
-      (kw) => !techspecimage.some((img) => img.product_name?.toLowerCase() === kw),
+      (kw) =>
+        !techspecimage.some(
+          (img) =>
+            getProductPrefix(img.product_name)?.toLowerCase() === kw ||
+            img.product_name?.toLowerCase() === kw,
+        ),
     );
     if (!toFetch.length) {
       toast.info("All tech specs already fetched!");

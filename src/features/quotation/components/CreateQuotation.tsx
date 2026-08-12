@@ -49,7 +49,7 @@ import { Link } from "react-router-dom";
 import GroupedProductEntry, {
   buildGroupKey,
 } from "../reusablecomponents/Productentry/ProductEntry.tsx";
-import { GetTechspec } from "../api/Techspec.ts";
+import { GetTechspec, getProductPrefix } from "../api/Techspec.ts";
 import ImageCard from "../assets/Microcomponent/ImageCard.js";
 import { GSTSummaryPanel } from "../assets/Microcomponent/GSTSummaryPanel.tsx";
 import {
@@ -391,7 +391,7 @@ export default function CreateQuotation() {
 
     const fetchAll = async () => {
       const uniqueItems = [
-        ...new Set(quotationItem.map((i) => i?.item).filter(Boolean)),
+        ...new Set(quotationItem.map((i) => getProductPrefix(i?.item)).filter(Boolean)),
       ];
 
       try {
@@ -560,6 +560,7 @@ export default function CreateQuotation() {
   };
 
   const attachFile = (i, file, type) => {
+    const fileUrl = URL.createObjectURL(file);
     setExtraImages((prev) =>
       prev.map((img, idx) => {
         if (idx !== i) return img;
@@ -574,6 +575,7 @@ export default function CreateQuotation() {
             file, // local only (NOT Redux)
             fileType: type,
             name: file.name,
+            url: fileUrl,
           },
         ];
 
@@ -854,13 +856,17 @@ export default function CreateQuotation() {
     const keywords = [
       ...new Set(
         quotationItem
-          .map((it) => it.item?.split(" ")[0].toLowerCase())
+          .map((it) => getProductPrefix(it.item?.split(" ")[0]).toLowerCase())
           .filter(Boolean),
       ),
     ];
     const toFetch = keywords.filter(
       (kw) =>
-        !techspecimage.some((img) => img.product_name?.toLowerCase() === kw),
+        !techspecimage.some(
+          (img) =>
+            getProductPrefix(img.product_name)?.toLowerCase() === kw ||
+            img.product_name?.toLowerCase() === kw,
+        ),
     );
     if (!toFetch.length) {
       toast.info("All tech specs already fetched!");

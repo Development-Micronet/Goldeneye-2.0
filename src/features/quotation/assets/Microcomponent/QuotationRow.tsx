@@ -107,19 +107,12 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
         extraImages: Array.isArray(res.images)
           ? res.images.map((img: any) => ({
               id: img.id,
-              dataUrl: img.image?.url ?? "",
+              dataUrl: img.image?.url ?? img.image ?? img.url ?? "",
               caption: img.captions ?? img.caption ?? "",
-              kml_download_url: img.kml_file?.url ?? img.html_file?.url ?? null,
-              kml_url: img.kml_file?.url ?? null,
-              supportingfile: img.kml_file?.url ?? null,
-              attachment_type: img.html_file?.url
-                ? "html"
-                : img.kml_file?.url
-                  ? "kml"
-                  : null,
-
-              html_file: img.html_file?.url ?? null,
-              jpg_file: img.jpg_file?.url ?? null,
+              kml_file: img.kml_file ?? img.kml ?? img.kml_url ?? null,
+              html_file: img.html_file ?? img.html ?? img.html_url ?? null,
+              jpg_file: img.jpg_file ?? img.jpg ?? img.jpg_url ?? null,
+              supportingfiles: Array.isArray(img.supportingfiles) ? img.supportingfiles : [],
               _deleted: false,
             }))
           : [],

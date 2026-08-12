@@ -628,78 +628,146 @@ export function buildPreviewHTML({
     </div>`
       : "";
 
+  const renderSupportingFilesBlock = (img: any) => {
+    const files: Array<{ name: string; fileType: string; url?: string }> = [];
+
+    const getFileUrl = (field: any) => {
+      if (!field) return null;
+      if (typeof field === "string") return field;
+      if (typeof field === "object") return field.url || field.downloadUrl || field.fileUrl || null;
+      return null;
+    };
+
+    const getFileName = (field: any, fallbackUrl: any, defaultName: string) => {
+      if (typeof field === "object" && field?.name) return field.name;
+      const url = getFileUrl(field) || fallbackUrl;
+      if (url && typeof url === "string") {
+        const extracted = url.split("/").pop()?.split("?")[0];
+        if (extracted) return extracted;
+      }
+      return defaultName;
+    };
+
+    // 1. Check img.supportingfiles array
+    if (Array.isArray(img.supportingfiles) && img.supportingfiles.length > 0) {
+      img.supportingfiles.forEach((sf: any) => {
+        if (sf) {
+          const rawType = (sf.fileType || sf.type || "file").toLowerCase();
+          const typeLabel =
+            rawType === "html"
+              ? "html"
+              : rawType === "jpg" || rawType === "png" || rawType === "image"
+              ? "jpg"
+              : "kml";
+          const name =
+            sf.name || sf.fileName || (sf.file ? sf.file.name : `attachment.${typeLabel}`);
+          let url = getFileUrl(sf) || sf.url || sf.downloadUrl || sf.fileUrl || null;
+          if (!url && sf.file instanceof File) {
+            try {
+              url = URL.createObjectURL(sf.file);
+            } catch {
+              url = null;
+            }
+          }
+          if (!files.some((f) => f.fileType === typeLabel && (f.name === name || (url && f.url === url)))) {
+            files.push({ name, fileType: typeLabel, url });
+          }
+        }
+      });
+    }
+
+    // 2. KML file check
+    const kmlUrl =
+      getFileUrl(img.kml_file) ||
+      getFileUrl(img.kml) ||
+      getFileUrl(img.kml_url) ||
+      getFileUrl(img.kml_download_url) ||
+      getFileUrl(img.supportingfile);
+    if (kmlUrl || img.kml_file || img.kml || img.kml_url || img.supportingfile) {
+      const kmlName = getFileName(img.kml_file, kmlUrl, "KML_Area_File.kml");
+      if (!files.some((f) => f.fileType === "kml" || f.name === kmlName)) {
+        files.push({ name: kmlName, fileType: "kml", url: kmlUrl });
+      }
+    }
+
+    // 3. HTML file check
+    const htmlUrl =
+      getFileUrl(img.html_file) ||
+      getFileUrl(img.html) ||
+      getFileUrl(img.html_url) ||
+      getFileUrl(img.html_download_url);
+    if (htmlUrl || img.html_file || img.html || img.html_url) {
+      const htmlName = getFileName(img.html_file, htmlUrl, "HTML_Area_File.html");
+      if (!files.some((f) => f.fileType === "html" || f.name === htmlName)) {
+        files.push({ name: htmlName, fileType: "html", url: htmlUrl });
+      }
+    }
+
+    // 4. PNG / JPG / Image file check
+    const jpgUrl =
+      getFileUrl(img.jpg_file) ||
+      getFileUrl(img.jpg) ||
+      getFileUrl(img.jpg_url) ||
+      getFileUrl(img.jpg_download_url) ||
+      getFileUrl(img.image_file) ||
+      getFileUrl(img.png_file);
+    if (jpgUrl || img.jpg_file || img.jpg || img.jpg_url) {
+      const jpgName = getFileName(img.jpg_file, jpgUrl, "Image_File.png");
+      if (!files.some((f) => f.fileType === "jpg" || f.name === jpgName)) {
+        files.push({ name: jpgName, fileType: "jpg", url: jpgUrl });
+      }
+    }
+
+    if (files.length === 0) return "";
+
+    const styleMap: Record<
+      string,
+      { bg: string; border: string; color: string; badgeBg: string; label: string }
+    > = {
+      kml: { bg: "#f0fdf4", border: "#86efac", color: "#15803d", badgeBg: "#dcfce7", label: "KML" },
+      html: { bg: "#eff6ff", border: "#93c5fd", color: "#1d4ed8", badgeBg: "#dbeafe", label: "HTML" },
+      jpg: { bg: "#faf5ff", border: "#d8b4fe", color: "#6b21a8", badgeBg: "#f3e8ff", label: "IMAGE" },
+    };
+
+    const fileItems = files
+      .map((f) => {
+        const st = styleMap[f.fileType] || styleMap.kml;
+        const action = f.url
+          ? `<a href="${f.url}" download="${f.name}" target="_blank" style="margin-left:auto;background:${st.color};color:#ffffff;font-size:8.5px;font-weight:700;padding:3px 10px;border-radius:4px;text-decoration:none;display:inline-flex;align-items:center;gap:3px;box-shadow:0 1px 2px rgba(0,0,0,0.1);">↓ Download ${st.label}</a>`
+          : `<span style="margin-left:auto;font-size:8px;color:#64748b;font-style:italic;">(Attached)</span>`;
+
+        return `
+      <div style="display:flex;align-items:center;gap:6px;background:${st.bg};border:1px solid ${st.border};border-radius:4px;padding:5px 8px;margin-top:4px;">
+        <span style="background:${st.badgeBg};color:${st.color};font-size:8px;font-weight:800;padding:1.5px 6px;border-radius:3px;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:2px;">📎 ${st.label}</span>
+        <span style="font-size:9px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;" title="${f.name}">${f.name}</span>
+        ${action}
+      </div>`;
+      })
+      .join("");
+
+    return `
+    <div style="margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid ${pal.borderColor};border-radius:6px;width:100%;box-sizing:border-box;">
+      <div style="font-size:9.5px;font-weight:700;color:${pal.primary};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">
+        Imported Supporting Files (${files.length})
+      </div>
+      ${fileItems}
+    </div>`;
+  };
+
   const imagePages = extraImages.length
     ? extraImages
         .map((img, idx) => {
-          const hasKml = !!(img.kml_download_url || img.kml_url || img.supportingfile);
-          const downloadHref = img.kml_download_url || img.kml_url || null;
-          const ext = img.attachment_type === "html" ? "html" : "kml";
-          const kmlName = img.caption
-            ? `${img.caption.replace(/\s+/g, "_")}.${ext}`
-            : `area_${idx + 1}.${ext}`;
-
-          // const kmlBlock =
-          //   hasKml && downloadHref
-          //     ? `<div style="margin:6px 0;background:#e8f7f0;border:1px solid #6fcfa4;border-radius:4px;padding:7px 10px;">
-          //     <div style="font-size:9px;font-weight:bold;color:#0d6e49;margin-bottom:3px;">${img.attachment_type === "html" ? "HTML" : "KML / KMZ"} Area File: ${kmlName}</div>
-          //     <div style="font-size:7.5px;color:#888;margin-top:2px;">Copy the link above in your browser to download the file</div>
-          //     <a href="${downloadHref}" target="_blank" class="kml-btn" style="display:inline-block;margin-top:5px;background:#1a9e6e;color:#fff;font-size:9px;font-weight:bold;padding:3px 10px;border-radius:3px;text-decoration:none;">↓ Download ${img.attachment_type === "html" ? "HTML" : "KML"}</a>
-          //   </div>`
-          //     : hasKml && !downloadHref
-          //       ? `<div style="margin:6px 0;background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:6px 10px;font-size:9px;color:#888;">⚠ ${ext.toUpperCase()} file attached — submit quotation to enable download link.</div>`
-          //       : "";
-          const kmlBlock =
-            hasKml && downloadHref
-              ? `
-    <div style="margin:6px 0;background:#e8f7f0;border:1px solid #6fcfa4;border-radius:4px;padding:7px 10px;">
-
-      <div style="font-size:9px;font-weight:bold;color:#0d6e49;margin-bottom:4px;">
-        ${img.attachment_type === "html" ? "HTML" : "KML / KMZ"} Area File: ${kmlName}
-      </div>
-
-      <a href="${downloadHref}"
-         style="display:inline-block;background:#1a9e6e;color:#fff;font-size:9px;font-weight:bold;padding:4px 10px;border-radius:3px;text-decoration:none;">
-        ↓ Download ${img.attachment_type === "html" ? "HTML" : "KML"}
-      </a>
-
-    </div>
-    `
-              : hasKml && !downloadHref
-                ? `<div style="margin:6px 0;background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:6px 10px;font-size:9px;color:#888;">
-          ⚠ ${ext.toUpperCase()} file attached — submit quotation to enable download link.
-        </div>`
-                : "";
-
-          const getAttachmentBlock = (file, label, type, imageId) => {
-            if (!file?.url) return "";
-            const fileName = file.url.split("/").pop()?.split("?")[0] || `file.${type}`;
-
-            // Use dedicated download endpoint to force download instead of browser render
-            const forceDownloadUrl = `${BASE_URL}/images/${imageId}/download-html/`;
-
-            return `
-<div style="margin:6px 0;background:#e8f7f0;border:1px solid #6fcfa4;border-radius:4px;padding:7px 10px;">
-  <div style="font-size:9px;font-weight:bold;color:#0d6e49;margin-bottom:4px;">${label}: ${fileName}</div>
-  <a href="${forceDownloadUrl}"
-     target="_blank"
-     style="display:inline-block;background:#1a9e6e;color:#fff;font-size:9px;font-weight:bold;padding:4px 10px;border-radius:3px;text-decoration:none;">
-    ↓ Download ${type.toUpperCase()}
-  </a>
-</div>`;
-          };
-
-          // Call it with imageId:
-          const htmlBlock = getAttachmentBlock(img.html_file, "HTML Area File", "html", img.id);
+          const imgSrc = img.dataUrl || img.url || "";
+          const supportingFilesBlock = renderSupportingFilesBlock(img);
 
           return `
         <div class="page page-break" id="page-img-${idx + 1}" style="position:relative;min-height:${A4_PX}px;padding-bottom:${FOOTER_H + 12}px;">
           ${pageTop}
           <div style="padding:8px 0;display:flex;flex-direction:column;align-items:center;">
-            <img src="${img.dataUrl}" alt="${img.caption || `Image ${idx + 1}`}" style="width:100%;height:460px;object-fit:contain;display:block;border:1px solid ${pal.borderColor};border-radius:4px;" />
+            <img src="${imgSrc}" alt="${img.caption || `Image ${idx + 1}`}" style="width:100%;height:460px;object-fit:contain;display:block;border:1px solid ${pal.borderColor};border-radius:4px;" />
           </div>
           ${img.caption ? `<div style="margin-top:5px;font-size:10px;font-weight:600;color:${pal.primary};text-align:center;padding:4px 8px;background:#f0f7ff;border:1px solid ${pal.borderColor};border-radius:3px;">${img.caption}</div>` : ""}
-          ${kmlBlock}
-          ${htmlBlock}
+          ${supportingFilesBlock}
           <div class="page-footer">${footerImgHTML}</div>
         </div>`;
         })

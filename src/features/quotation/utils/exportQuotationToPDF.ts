@@ -109,20 +109,17 @@ export async function exportQuotationToPDF(
 
     const fileName = `micronet_${q.quote_no || "quotation"}.pdf`;
 
-    const extraImages: PreviewImage[] = await Promise.all(
-      (q.images ?? []).map(async (img, idx) => {
-        const kmlRawUrl = img.kml_file?.url ?? null;
-        const htmlRawUrl = img.html_file?.url ?? null;
-
+    const extraImages: any[] = await Promise.all(
+      (q.images ?? []).map(async (img: any, idx: number) => {
+        const imgSrc = img.image?.url ?? img.image ?? img.url;
         return {
           id: img.id,
-          dataUrl: await toBase64(img.image?.url),
-          caption: img.caption ?? `Image ${idx + 1}`,
-          kml_url: kmlRawUrl,
-          html_file: htmlRawUrl ? { url: htmlRawUrl } : null,
-          kml_download_url: kmlRawUrl,
-          attachment_type: img.attachment_type ?? "kml",
-          supportingfile: Boolean(kmlRawUrl),
+          dataUrl: await toBase64(imgSrc),
+          caption: img.caption ?? img.captions ?? `Image ${idx + 1}`,
+          kml_file: img.kml_file ?? img.kml ?? img.kml_url ?? null,
+          html_file: img.html_file ?? img.html ?? img.html_url ?? null,
+          jpg_file: img.jpg_file ?? img.jpg ?? img.jpg_url ?? null,
+          supportingfiles: Array.isArray(img.supportingfiles) ? img.supportingfiles : [],
           order: img.order ?? idx,
         };
       })

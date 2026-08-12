@@ -66,11 +66,53 @@ export const AddTechspec = async (formData: FormData): Promise<any> => {
   return await decryptResponseData(response?.data);
 };
 
+/**
+ * Helper to extract product prefix before hyphen ('-').
+ * e.g., "Pléiades-0.7m" -> "Pléiades", "SPOT-6" -> "SPOT"
+ * Everything after '-' is ignored.
+ */
+export const getProductPrefix = (productName?: string): string => {
+  if (!productName) return "";
+  const trimmed = productName.trim();
+  if (trimmed.includes("-")) {
+    return trimmed.split("-")[0].trim();
+  }
+  return trimmed;
+};
+
 // 2. GET product-tech-image/?product_name=SPOT-6
 export const GetTechspec = async (productName?: string): Promise<any> => {
-  const query = productName ? `?product_name=${encodeURIComponent(productName)}` : "";
+  const prefix = getProductPrefix(productName);
+  const query = prefix ? `?product_name=${encodeURIComponent(prefix)}` : "";
   const response = await requestWithFallback("get", query);
-  return await decryptResponseData(response?.data);
+  const decrypted = await decryptResponseData(response?.data);
+
+  // Fallback: If searching with prefix returned empty results and productName had a hyphen,
+  // try searching with full productName.
+  if (
+    productName &&
+    prefix !== productName.trim() &&
+    (Array.isArray(decrypted)
+      ? decrypted.length === 0
+      : !decrypted ||
+        (decrypted.results && Array.isArray(decrypted.results) && decrypted.results.length === 0))
+  ) {
+    try {
+      const fallbackQuery = `?product_name=${encodeURIComponent(productName.trim())}`;
+      const fallbackRes = await requestWithFallback("get", fallbackQuery);
+      const fallbackDecrypted = await decryptResponseData(fallbackRes?.data);
+      const fallbackList = Array.isArray(fallbackDecrypted)
+        ? fallbackDecrypted
+        : fallbackDecrypted?.results || fallbackDecrypted?.data || [];
+      if (fallbackList.length > 0) {
+        return fallbackDecrypted;
+      }
+    } catch {
+      // Ignore fallback errors and return original decrypted response
+    }
+  }
+
+  return decrypted;
 };
 
 // 3. GET product-tech-image/{id}/
