@@ -8,6 +8,8 @@ interface QuotationCardMobileProps {
   handleDelete: (quoteNo: string) => void;
   deleteMutation: any;
   Exportpdf: any;
+  isSelected?: boolean;
+  onToggleSelect?: (quoteNo: string) => void;
 }
 
 const QuotationCardMobile: React.FC<QuotationCardMobileProps> = ({
@@ -16,6 +18,8 @@ const QuotationCardMobile: React.FC<QuotationCardMobileProps> = ({
   handleDelete,
   deleteMutation,
   Exportpdf,
+  isSelected,
+  onToggleSelect,
 }) => {
   const { role } = useUser() || {};
   const isAuthorize = role === "superadmin" || role === "admin";
@@ -23,16 +27,24 @@ const QuotationCardMobile: React.FC<QuotationCardMobileProps> = ({
   return (
     <div
       key={q.quote_no}
-      className="bg-white rounded-lg border border-light-200 p-3 shadow-sm"
+      className={`bg-white rounded-lg border border-light-200 p-3 shadow-sm ${isSelected ? "ring-2 ring-[#2c6671]/40 bg-primary-50/20" : ""}`}
     >
       <div className="flex items-start justify-between mb-2 gap-2">
-        <div className="min-w-0">
-          <p className="font-semibold text-primary-900 text-sm truncate">
-            {q.to_company}
-          </p>
-          <p className="font-mono text-xs text-primary-500 font-semibold mt-0.5">
-            {q.quote_no}
-          </p>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <input
+            type="checkbox"
+            checked={isSelected || false}
+            onChange={() => onToggleSelect && onToggleSelect(q.quote_no)}
+            className="rounded border-gray-300 text-[#2c6671] focus:ring-[#2c6671] cursor-pointer w-4 h-4 flex-shrink-0 mt-0.5"
+          />
+          <div className="min-w-0">
+            <p className="font-semibold text-primary-900 text-sm truncate">
+              {q.to_company}
+            </p>
+            <p className="font-mono text-xs text-primary-500 font-semibold mt-0.5">
+              {q.quote_no}
+            </p>
+          </div>
         </div>
         <span
           className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full ${

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CreateQuotation as CreateQuotationAPI,
   Getnextquotations,
@@ -116,6 +116,7 @@ export default function CreateQuotation() {
   const setTechImages = useTechSpecStore((state) => state.setTechImages);
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const images = useImageStore((state) => state.images);
   const setImagesZustand = useImageStore((state) => state.setImages);
   const removeImageZustand = useImageStore((state) => state.removeImage);
@@ -638,6 +639,9 @@ export default function CreateQuotation() {
     mutationFn: (payload) => CreateQuotationAPI(payload),
     onSuccess: (data) => {
       try {
+        queryClient.invalidateQueries({ queryKey: ["quotations"] });
+        queryClient.invalidateQueries({ queryKey: ["quotations_search"] });
+
         // 1. Cleanup app state first
         clearImages();
         resetQuotation();

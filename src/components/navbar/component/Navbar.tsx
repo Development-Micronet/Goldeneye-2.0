@@ -1,6 +1,6 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import { ChevronDown, Lock, LogOut, Menu, Search, User, X } from "lucide-react";
+import { ChevronDown, Lock, LogOut, MapPin, Menu, Search, User, X } from "lucide-react";
 import { goldeneyeLogo } from "../../../assets";
 import { performLogout } from "../../../features/auth/api/logout";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -11,6 +11,7 @@ import { useQuotationItemStore } from "../../../features/quotation/mystore/featu
 import { toast } from "react-toastify";
 import { useProductStore } from "../../../features/data/hooks/useproductStore";
 import { useArchiveProductStore } from "../../../features/data/components/sidebar/store/useArchiveProductStore";
+import { useMapStore } from "../../../features/data/store/useMapStore";
 
 const PRODUCT_NAME_MAP: Record<string, string> = {
   PNEO: "Pleiades-Neo-0.3m",
@@ -28,10 +29,116 @@ export default function Navbar() {
   const [isQuotationDropdownOpen, setIsQuotationDropdownOpen] = useState(false);
   const quotationDropdownRef = useRef<HTMLDivElement>(null);
 
+  const setSearchLocation = useMapStore((state) => state.setSearchLocation);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
   const captureScreenshot = useScreenshotStore((state) => state.captureScreenshot);
   const setImages = useImageStore((state) => state.setImages);
   const quotationItem = useQuotationItemStore((state) => state.quotationItem);
   const setQuotationItems = useQuotationItemStore((state) => state.setQuotationItems);
+
+  // Search location handler using Nominatim API
+  const searchPlaces = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+    setIsSearchingLocation(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data || []);
+        setShowSearchDropdown(true);
+      }
+    } catch (err) {
+      console.error("Geocoding search failed:", err);
+    } finally {
+      setIsSearchingLocation(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.trim().length >= 2) {
+        searchPlaces(searchQuery);
+      } else {
+        setSearchResults([]);
+        setShowSearchDropdown(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleSelectLocation = (place: any) => {
+    const lat = parseFloat(place.lat);
+    const lon = parseFloat(place.lon);
+    const boundingbox = place.boundingbox;
+
+    setSearchLocation({
+      id: Date.now(),
+      lat,
+      lon,
+      displayName: place.display_name,
+      boundingbox,
+    });
+
+    setShowSearchDropdown(false);
+    setSearchQuery(place.display_name.split(",")[0]);
+
+    if (location.pathname !== "/data") {
+      navigate("/data");
+    }
+  };
+
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+
+    setShowSearchDropdown(false);
+    setIsSearchingLocation(true);
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          handleSelectLocation(data[0]);
+        } else {
+          toast.info("Location not found");
+        }
+      }
+    } catch (err) {
+      console.error("Geocoding search error:", err);
+      toast.error("Failed to search location");
+    } finally {
+      setIsSearchingLocation(false);
+    }
+  };
+
+  // Close search dropdown on click outside
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => {
@@ -376,13 +483,61 @@ export default function Navbar() {
         {/* Right: Search & User Profile */}
         <div className="mt-1 hidden items-center gap-3 md:flex md:gap-6 lg:gap-10 xl:gap-15">
           {/* Search bar */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Go to place"
-              className="w-32 rounded border border-transparent bg-white px-3 py-1.5 pr-8 font-sans text-xs text-gray-800 placeholder-gray-400 transition-all duration-300 focus:w-40 focus:outline-none md:w-44 md:focus:w-52 lg:w-56 lg:focus:w-64 xl:w-70 xl:focus:w-80"
-            />
-            <Search className="absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 cursor-pointer text-gray-400" />
+          <div className="relative" ref={searchContainerRef}>
+            <form onSubmit={handleSearchSubmit}>
+              <input
+                type="text"
+                placeholder="Go to place"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (searchResults.length > 0) setShowSearchDropdown(true);
+                }}
+                className="w-32 rounded border border-transparent bg-white px-3 py-1.5 pr-8 font-sans text-xs text-gray-800 placeholder-gray-400 transition-all duration-300 focus:w-40 focus:outline-none md:w-44 md:focus:w-52 lg:w-56 lg:focus:w-64 xl:w-70 xl:focus:w-80"
+              />
+              <button
+                type="submit"
+                className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600"
+              >
+                <Search className="h-3.5 w-3.5" />
+              </button>
+            </form>
+
+            {/* Search Results Dropdown */}
+            {showSearchDropdown && (
+              <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-full min-w-[240px] max-w-[320px] rounded-lg border border-gray-200 bg-white py-1 shadow-2xl max-h-60 overflow-y-auto text-xs">
+                {isSearchingLocation ? (
+                  <div className="px-3 py-2 text-gray-400 text-center text-xs">
+                    Searching places...
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((item, idx) => (
+                    <div
+                      key={item.place_id || idx}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSelectLocation(item);
+                      }}
+                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-start gap-2 border-b border-gray-100 last:border-0"
+                    >
+                      <MapPin className="h-3.5 w-3.5 text-[#2c6671] shrink-0 mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-gray-900 truncate">
+                          {item.display_name.split(",")[0]}
+                        </p>
+                        <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                          {item.display_name}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-3 py-2 text-gray-400 text-center text-xs">
+                    No places found
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* User Profile Container with Click Trigger */}

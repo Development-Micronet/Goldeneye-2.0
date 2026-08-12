@@ -7,6 +7,7 @@ import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
 import { DataPage } from "../features/data/pages/DataPage";
 import { ManagePage } from "../features/manage/pages/ManagePage";
 import { QuotationPage } from "../features/quotation/pages/QuotationPage";
+import Addtech from "../features/quotation/components/Addtech";
 import MainLayout from "../layouts/MainLayout";
 import { useAuthStore } from "../store/useAuthStore";
 import EarthMap from "../features/analytics/EarthMapview";
@@ -74,6 +75,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/data" element={<DataPage />} />
           <Route path="/manage" element={<ManagePage />} />
           <Route path="/quotation" element={<QuotationPage />} />
+          <Route path="/addtech" element={<Addtech />} />
           <Route path="/Libre" element={<EarthMap />} />
           {/* Default entry redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

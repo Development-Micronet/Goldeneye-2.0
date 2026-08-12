@@ -62,8 +62,14 @@ const captureMapCanvas = (): string | null => {
     if (drawnCount === 0) return null;
 
     return compositeCanvas.toDataURL("image/png");
-  } catch (e) {
-    console.error("Direct map canvas capture error:", e);
+  } catch (e: any) {
+    if (e?.name === "SecurityError") {
+      console.warn(
+        "Direct map canvas capture tainted by CORS tiles, switching to display media capture fallback."
+      );
+    } else {
+      console.error("Direct map canvas capture error:", e);
+    }
     return null;
   }
 };
