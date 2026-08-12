@@ -10,7 +10,7 @@ interface EditUserModalProps {
     onClose: () => void;
     user: CompanyUser | null;
     onSuccess?: () => void;
-    
+
 }
 
 export const EditUserModal: React.FC<EditUserModalProps> = ({
@@ -174,7 +174,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         />
                     </div>
 
-                    <div>
+                    {/* <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">
                             Password (leave blank to keep current)
                         </label>
@@ -186,7 +186,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                             placeholder="••••••••"
                             className="w-full h-10 px-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                         />
-                    </div>
+                    </div> */}
 
                     <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Tenant Role</label>
