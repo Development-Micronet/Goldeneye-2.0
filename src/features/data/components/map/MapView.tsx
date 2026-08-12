@@ -32,6 +32,7 @@ import Icon from "ol/style/Icon";
 import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import Text from "ol/style/Text";
+import CircleStyle from "ol/style/Circle";
 import * as turf from "@turf/turf";
 import { logger } from "../../../../utils/logger";
 import { useArchiveHoverStore } from "../../hooks/useArchiveHoverStore";
@@ -900,6 +901,48 @@ export default function MapView() {
     // clear after animation
     setFlyToProduct(null);
   }, [flyToProduct, setFlyToProduct]);
+
+  const searchLocation = useMapStore((state) => state.searchLocation);
+
+  useEffect(() => {
+    if (!mapInstance.current || !searchLocation) return;
+    const map = mapInstance.current;
+
+    // Animate map view directly to zoom level 18 centered on the searched location
+    map.getView().animate({
+      center: [searchLocation.lon, searchLocation.lat],
+      zoom: 18,
+      duration: 1000,
+    });
+
+    setZoom(18);
+
+    if (pinSourceRef.current) {
+      pinSourceRef.current.clear();
+      const pinFeature = new Feature({
+        geometry: new Point([searchLocation.lon, searchLocation.lat]),
+        name: searchLocation.displayName,
+      });
+      pinFeature.setStyle(
+        new Style({
+          image: new CircleStyle({
+            radius: 9,
+            fill: new Fill({ color: "#2c6671" }),
+            stroke: new Stroke({ color: "#ffffff", width: 3 }),
+          }),
+          text: new Text({
+            text: ` ${searchLocation.displayName.split(",")[0]} `,
+            font: "bold 13px 'Inter', sans-serif",
+            fill: new Fill({ color: "#ffffff" }),
+            backgroundFill: new Fill({ color: "#2c6671" }),
+            padding: [4, 8, 4, 8],
+            offsetY: -22,
+          }),
+        })
+      );
+      pinSourceRef.current.addFeature(pinFeature);
+    }
+  }, [searchLocation, mapState, setZoom]);
 
   useEffect(() => {
     const hoverSource = hoverSourceRef.current;

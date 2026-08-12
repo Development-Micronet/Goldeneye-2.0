@@ -30,6 +30,14 @@ export interface RectangleCoords {
   bottomRightLon: number;
 }
 
+export interface SearchLocationResult {
+  id?: number;
+  lat: number;
+  lon: number;
+  displayName: string;
+  boundingbox?: [string, string, string, string] | [number, number, number, number];
+}
+
 interface MapState {
   plotCoordinates: PlotCoordinates | null;
   setPlotCoordinates: (coords: PlotCoordinates | null) => void;
@@ -37,6 +45,8 @@ interface MapState {
   setPlotBoundCoordinates: (coords: PlotBoundCoordinates | null) => void;
   flyToProduct: SelectedArchiveProduct | null;
   setFlyToProduct: (product: SelectedArchiveProduct | null) => void;
+  searchLocation: SearchLocationResult | null;
+  setSearchLocation: (location: SearchLocationResult | null) => void;
   activeTool: DrawTool;
   activeSubMenu: string | null;
   pointBufferDistance: string;
@@ -69,6 +79,12 @@ export const useMapStore = create<MapState>((set) => ({
   fitLayerId: null,
   selectedLayerId: null,
   flyToProduct: null,
+  searchLocation: null,
+
+  setSearchLocation: (location) =>
+    set({
+      searchLocation: location,
+    }),
 
   setFlyToProduct: (product) =>
     set({

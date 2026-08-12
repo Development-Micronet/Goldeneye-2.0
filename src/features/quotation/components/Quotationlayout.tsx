@@ -13,7 +13,16 @@ import { exportQuotationToPDF } from "../utils/exportQuotationToPDF";
 import Swal from "sweetalert2";
 import QuotationRow from "../assets/Microcomponent/QuotationRow";
 import QuotationCardMobile from "../assets/Microcomponent/QuotationCardMobile";
-import { FiSearch, FiSliders, FiPlus } from "react-icons/fi";
+import {
+  FiSearch,
+  FiSliders,
+  FiPlus,
+  FiChevronDown,
+  FiTrash2,
+  FiCheckCircle,
+  FiLayers,
+} from "react-icons/fi";
+import { useUser } from "../../auth/AuthProvider/AuthContext";
 
 const SORT_OPTIONS = [
   { value: "", label: "Default" },
@@ -89,24 +98,56 @@ const inputCls =
 const labelCls = "block text-xs font-semibold text-primary-700 mb-1";
 
 const Quotationlayout = () => {
+  const { role } = useUser() || {};
+  const isAuthorize = role === "superadmin" || role === "admin";
+
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [filters, setFilters] = useState<any>(EMPTY_FILTERS);
   const [pendingFilters, setPendingFilters] = useState<any>(EMPTY_FILTERS);
   const [filterOpen, setFilterOpen] = useState<boolean>(false);
   const [isFiltered, setIsFiltered] = useState<boolean>(false);
+  const [selectedQuoteNos, setSelectedQuoteNos] = useState<string[]>([]);
+  const [actionMenuOpen, setActionMenuOpen] = useState<boolean>(false);
+
   const queryClient = useQueryClient();
   const searchTimer = useRef(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+  const checkboxRef = useRef<HTMLInputElement>(null);
+
+  // Close action menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        actionMenuRef.current &&
+        !actionMenuRef.current.contains(event.target as Node)
+      ) {
+        setActionMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Auto refetch fresh quotations list whenever Quotationlayout mounts
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["quotations"] });
+    queryClient.invalidateQueries({ queryKey: ["quotations_search"] });
+  }, [queryClient]);
 
   const getAllQuotations = useQuery({
     queryKey: ["quotations", currentPage],
     queryFn: () => Getallquotations(currentPage),
     enabled: !isFiltered,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   const searchQuery = useQuery({
     queryKey: ["quotations_search", filters, currentPage],
     queryFn: () => SearchQuotation(filters, currentPage),
     enabled: isFiltered,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   const activeQuery = isFiltered ? searchQuery : getAllQuotations;
@@ -202,6 +243,141 @@ const Quotationlayout = () => {
       toast.error("Failed to verify: " + (err?.message || "Unknown error")),
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (quoteNos: string[]) => {
+      const results = await Promise.allSettled(
+        quoteNos.map((no) => DeleteQuotation(no))
+      );
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+      if (rejected.length > 0) {
+        throw new Error(`Failed to delete ${rejected.length} item(s)`);
+      }
+      return fulfilled.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`Successfully deleted ${count} quotation(s)!`);
+      setSelectedQuoteNos([]);
+      queryClient.invalidateQueries({ queryKey: ["quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["quotations_search"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to delete selected quotations");
+      queryClient.invalidateQueries({ queryKey: ["quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["quotations_search"] });
+    },
+  });
+
+  const bulkVerifyMutation = useMutation({
+    mutationFn: async (quoteNos: string[]) => {
+      const results = await Promise.allSettled(
+        quoteNos.map((no) => verifyquotation(no))
+      );
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+      if (rejected.length > 0) {
+        throw new Error(`Failed to verify ${rejected.length} item(s)`);
+      }
+      return fulfilled.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`Successfully verified ${count} quotation(s)!`);
+      setSelectedQuoteNos([]);
+      queryClient.invalidateQueries({ queryKey: ["quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["quotations_search"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to verify selected quotations");
+      queryClient.invalidateQueries({ queryKey: ["quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["quotations_search"] });
+    },
+  });
+
+  const handleBulkDelete = () => {
+    setActionMenuOpen(false);
+    if (selectedQuoteNos.length === 0) {
+      toast.info("Please select at least one quotation to delete.");
+      return;
+    }
+    if (!isAuthorize) {
+      toast.error("You are not authorized to delete quotations.");
+      return;
+    }
+    Swal.fire({
+      title: "Delete Selected Quotations?",
+      text: `Are you sure you want to delete ${selectedQuoteNos.length} selected quotation(s)? This action cannot be undone!`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: `Yes, delete ${selectedQuoteNos.length} item(s)!`,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        bulkDeleteMutation.mutate(selectedQuoteNos);
+      }
+    });
+  };
+
+  const handleBulkVerify = () => {
+    setActionMenuOpen(false);
+    if (selectedQuoteNos.length === 0) {
+      toast.info("Please select at least one quotation to verify.");
+      return;
+    }
+    Swal.fire({
+      title: "Verify Selected Quotations?",
+      text: `Are you sure you want to verify ${selectedQuoteNos.length} selected quotation(s)?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#2c6671",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: `Yes, verify ${selectedQuoteNos.length} item(s)!`,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        bulkVerifyMutation.mutate(selectedQuoteNos);
+      }
+    });
+  };
+
+  const handleToggleSelectRow = (quoteNo: string) => {
+    setSelectedQuoteNos((prev) =>
+      prev.includes(quoteNo)
+        ? prev.filter((id) => id !== quoteNo)
+        : [...prev, quoteNo]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const currentNos = quotations.map((q: any) => q.quote_no);
+    const allCurrentSelected =
+      currentNos.length > 0 &&
+      currentNos.every((no: string) => selectedQuoteNos.includes(no));
+
+    if (allCurrentSelected) {
+      setSelectedQuoteNos((prev) =>
+        prev.filter((no) => !currentNos.includes(no))
+      );
+    } else {
+      setSelectedQuoteNos((prev) =>
+        Array.from(new Set([...prev, ...currentNos]))
+      );
+    }
+  };
+
+  const isAllPageSelected =
+    quotations.length > 0 &&
+    quotations.every((q: any) => selectedQuoteNos.includes(q.quote_no));
+
+  const isSomePageSelected =
+    quotations.some((q: any) => selectedQuoteNos.includes(q.quote_no)) &&
+    !isAllPageSelected;
+
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = isSomePageSelected;
+    }
+  }, [isSomePageSelected]);
+
   const handleDelete = (quoteNo) => {
     Swal.fire({
       title: "Are you sure?",
@@ -272,6 +448,57 @@ const Quotationlayout = () => {
                     </span>
                   )}
                 </button>
+
+                {/* Actions Button right after Filter button */}
+                <div className="relative" ref={actionMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setActionMenuOpen((p) => !p)}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg border transition-all shadow-xs ${
+                      actionMenuOpen || selectedQuoteNos.length > 0
+                        ? "bg-[#2c6671] text-white border-[#2c6671]"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:text-[#2c6671]"
+                    }`}
+                  >
+                    <FiLayers className="w-4 h-4" />
+                    <span>Actions</span>
+                    {selectedQuoteNos.length > 0 && (
+                      <span className="ml-1 px-1.5 py-0.5 bg-white/20 text-white rounded-full text-[10px] font-bold">
+                        {selectedQuoteNos.length}
+                      </span>
+                    )}
+                    <FiChevronDown className="w-3.5 h-3.5 ml-0.5" />
+                  </button>
+
+                  {actionMenuOpen && (
+                    <div className="absolute right-0 mt-1.5 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
+                      <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                        Bulk Options {selectedQuoteNos.length > 0 ? `(${selectedQuoteNos.length})` : ""}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleBulkVerify}
+                        disabled={selectedQuoteNos.length === 0 || bulkVerifyMutation.isPending}
+                        className="w-full text-left px-3 py-2 text-xs font-medium text-teal-700 hover:bg-teal-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <FiCheckCircle className="w-4 h-4 text-teal-600" />
+                        <span>{bulkVerifyMutation.isPending ? "Verifying..." : "Bulk Verify"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleBulkDelete}
+                        disabled={selectedQuoteNos.length === 0 || bulkDeleteMutation.isPending || !isAuthorize}
+                        className="w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <FiTrash2 className="w-4 h-4 text-red-500" />
+                        <span>{bulkDeleteMutation.isPending ? "Deleting..." : "Bulk Delete"}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <Link
                   to="/quotation?view=create"
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2c6671] hover:bg-[#204e57] text-white text-xs font-bold rounded-lg shadow-sm transition-all whitespace-nowrap"
@@ -490,6 +717,32 @@ const Quotationlayout = () => {
             </div>
           )}
 
+          {/* Selected items info bar */}
+          {selectedQuoteNos.length > 0 && (
+            <div className="px-4 py-2 bg-[#2c6671]/10 border-b border-[#2c6671]/20 flex items-center justify-between text-xs font-semibold text-[#2c6671]">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#2c6671]" />
+                {selectedQuoteNos.length} quotation{selectedQuoteNos.length > 1 ? "s" : ""} selected
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
+                  className="hover:underline font-medium"
+                >
+                  {isAllPageSelected ? "Deselect Page" : "Select Page"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedQuoteNos([])}
+                  className="hover:underline text-gray-500 hover:text-gray-700 font-medium"
+                >
+                  Clear Selection
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Content */}
           <div className="p-3 sm:p-4">
             {/* Loading */}
@@ -533,6 +786,16 @@ const Quotationlayout = () => {
                 <table className="w-full text-[13px] text-left">
                   <thead>
                     <tr className="bg-light-100 border-b border-light-300">
+                      <th className="px-3 py-2.5 w-10 text-center">
+                        <input
+                          ref={checkboxRef}
+                          type="checkbox"
+                          checked={isAllPageSelected}
+                          onChange={handleSelectAll}
+                          className="rounded border-gray-300 text-[#2c6671] focus:ring-[#2c6671] cursor-pointer w-4 h-4"
+                          title="Select / Deselect all on this page"
+                        />
+                      </th>
                       {[
                         "S.No",
                         "Company",
@@ -579,6 +842,8 @@ const Quotationlayout = () => {
                         deleteMutation={deleteMutation}
                         Exportpdf={Exportpdf}
                         verificationmutation={verificationmutation}
+                        isSelected={selectedQuoteNos.includes(q.quote_no)}
+                        onToggleSelect={handleToggleSelectRow}
                       />
                     ))}
                   </tbody>
@@ -599,6 +864,8 @@ const Quotationlayout = () => {
                       handleDelete={handleDelete}
                       deleteMutation={deleteMutation}
                       Exportpdf={Exportpdf}
+                      isSelected={selectedQuoteNos.includes(q.quote_no)}
+                      onToggleSelect={handleToggleSelectRow}
                     />
                   );
                 })}

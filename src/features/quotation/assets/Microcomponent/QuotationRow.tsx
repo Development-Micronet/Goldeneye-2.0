@@ -24,6 +24,8 @@ interface QuotationRowProps {
   deleteMutation: any;
   Exportpdf: any;
   verificationmutation: any;
+  isSelected?: boolean;
+  onToggleSelect?: (quoteNo: string) => void;
 }
 
 const QuotationRow: React.FC<QuotationRowProps> = ({
@@ -34,6 +36,8 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
   deleteMutation,
   Exportpdf,
   verificationmutation,
+  isSelected,
+  onToggleSelect,
 }) => {
   const { role } = useUser() || {};
   const [previewOpen, setPreviewOpen] = useState<boolean>(false);
@@ -103,19 +107,12 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
         extraImages: Array.isArray(res.images)
           ? res.images.map((img: any) => ({
               id: img.id,
-              dataUrl: img.image?.url ?? "",
+              dataUrl: img.image?.url ?? img.image ?? img.url ?? "",
               caption: img.captions ?? img.caption ?? "",
-              kml_download_url: img.kml_file?.url ?? img.html_file?.url ?? null,
-              kml_url: img.kml_file?.url ?? null,
-              supportingfile: img.kml_file?.url ?? null,
-              attachment_type: img.html_file?.url
-                ? "html"
-                : img.kml_file?.url
-                  ? "kml"
-                  : null,
-
-              html_file: img.html_file?.url ?? null,
-              jpg_file: img.jpg_file?.url ?? null,
+              kml_file: img.kml_file ?? img.kml ?? img.kml_url ?? null,
+              html_file: img.html_file ?? img.html ?? img.html_url ?? null,
+              jpg_file: img.jpg_file ?? img.jpg ?? img.jpg_url ?? null,
+              supportingfiles: Array.isArray(img.supportingfiles) ? img.supportingfiles : [],
               _deleted: false,
             }))
           : [],
@@ -151,7 +148,15 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
 
   return (
     <>
-      <tr className="hover:bg-primary-50/30 transition-colors duration-150 border-b border-light-200">
+      <tr className={`hover:bg-primary-50/30 transition-colors duration-150 border-b border-light-200 ${isSelected ? "bg-primary-50/60" : ""}`}>
+        <td className="px-3 py-2.5 text-center w-10">
+          <input
+            type="checkbox"
+            checked={isSelected || false}
+            onChange={() => onToggleSelect && onToggleSelect(q.quote_no)}
+            className="rounded border-gray-300 text-[#2c6671] focus:ring-[#2c6671] cursor-pointer w-4 h-4"
+          />
+        </td>
         <td className="px-3 py-2.5 text-primary-500 text-[11px] font-mono font-semibold">
           {String((currentPage - 1) * 10 + index + 1).padStart(2, "0")}
         </td>
