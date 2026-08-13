@@ -10,8 +10,9 @@ import { QuotationPage } from "../features/quotation/pages/QuotationPage";
 import Addtech from "../features/quotation/components/Addtech";
 import MainLayout from "../layouts/MainLayout";
 import { useAuthStore } from "../store/useAuthStore";
-import EarthMap from "../features/analytics/EarthMapview";
 import { ForceResetPasswordPage } from "../features/auth/pages/ForceResetPasswordPage";
+import MapLayout from "../features/analytics/map/MapLayout";
+
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -126,7 +127,15 @@ export const AppRoutes: React.FC = () => {
               </RoleRoute>
             }
           />
-          <Route path="/Libre" element={<EarthMap />} />
+          <Route
+            path="/addtech"
+            element={
+              <RoleRoute allowedRoles={["superadmin", "admin"]}>
+                <Addtech />
+              </RoleRoute>
+            }
+          />
+         <Route path="/analytics" element={<MapLayout />} />
           {/* Default entry redirect */}
           <Route path="/" element={<HomeRedirect />} />
         </Route>
