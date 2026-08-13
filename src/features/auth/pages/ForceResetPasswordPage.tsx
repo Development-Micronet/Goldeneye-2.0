@@ -64,7 +64,13 @@ export const ForceResetPasswordPage: React.FC = () => {
                 });
             }
 
-            navigate("/dashboard");
+           const role = user?.roleName?.toLowerCase();
+            if (role === "user") {
+                navigate("/data");
+            } else {
+                navigate("/dashboard");
+            }
+
         } catch (err: any) {
             console.error("Force reset password error:", err);
             toast.update(toastId, {

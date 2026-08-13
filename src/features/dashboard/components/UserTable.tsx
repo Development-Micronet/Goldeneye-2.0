@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { CompanyUser } from "../api/dashboard";
 import { Edit2, Trash2 } from "lucide-react";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -23,6 +24,16 @@ export function UserTable({
 }: UserTableProps) {
   const loggedInUser = useAuthStore((state) => state.user);
   const isAdmin = loggedInUser?.roleName?.toLowerCase() === "admin"; // Check if role is 'admin' or 'Admin'
+
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      const aAdmin = a.tenant_role === "tenant_admin";
+      const bAdmin = b.tenant_role === "tenant_admin";
+      if (aAdmin && !bAdmin) return -1;
+      if (!aAdmin && bAdmin) return 1;
+      return 0;
+    });
+  }, [users]);
 
   if (isLoading) {
     return <div>Loading Users...</div>;
@@ -81,7 +92,7 @@ export function UserTable({
           </thead>
 
           <tbody>
-            {users.map((user) => (
+            {sortedUsers.map((user) => (
               <tr
                 key={user.id}
                 className="border border-gray-200 transition hover:bg-blue-50"
@@ -126,16 +137,18 @@ export function UserTable({
                       </button>
 
 
-                      <button
-                        onClick={() => {
-                          if (window.confirm("Are you sure you want to delete this user?")) {
-                            onDeleteUser?.(user.id);
-                          }
-                        }}
-                        className="text-[#2F6E7C] hover:text-red-500 transition-colors cursor-pointer"
-                      >
-                        <Trash2 size={17} />
-                      </button>
+                      {user.tenant_role !== "tenant_admin" && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm("Are you sure you want to delete this user?")) {
+                              onDeleteUser?.(user.id);
+                            }
+                          }}
+                          className="text-[#2F6E7C] hover:text-red-500 transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={17} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 )}

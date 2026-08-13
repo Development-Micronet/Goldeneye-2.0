@@ -459,13 +459,15 @@ const Navbar: React.FC = () => {
     };
   }, [isQuotationDropdownOpen]);
 
-  const isAuthorized = () =>
-    user?.roleName === "admin" ||
-    user?.roleName === "user" ||
-    user?.roleName === "superadmin";
+  const isAuthorized = () => {
+    const role = user?.roleName?.toLowerCase();
+    return role === "admin" || role === "user" || role === "superadmin";
+  };
 
-  const isAuthorizedEndUser = () =>
-    user?.roleName === "superadmin" || user?.roleName === "admin";
+  const isAuthorizedEndUser = () => {
+    const role = user?.roleName?.toLowerCase();
+    return role === "superadmin" || role === "admin";
+  };
 
   useEffect(() => {
     if (path.startsWith("/manage")) {
@@ -493,14 +495,16 @@ const Navbar: React.FC = () => {
 
             {access && (
               <div className="hidden lg:flex space-x-8 items-center">
-                <Link
-                  to="/dashboard"
-                  className={`no-underline ${
-                    path === "/dashboard" ? "text-white" : "text-[#b8b8b8]"
-                  } hover:text-gray-300`}
-                >
-                  Dashboard
-                </Link>
+                {isAuthorizedEndUser() && (
+                  <Link
+                    to="/dashboard"
+                    className={`no-underline ${
+                      path === "/dashboard" ? "text-white" : "text-[#b8b8b8]"
+                    } hover:text-gray-300`}
+                  >
+                    Dashboard
+                  </Link>
+                )}
                 <Link
                   to={isAuthorized() ? "/data" : "#"}
                   className={`no-underline ${
@@ -519,7 +523,7 @@ const Navbar: React.FC = () => {
                     Manage
                   </Link>
                 )}
-                {hasquotationaccess && (
+                {user?.roleName?.toLowerCase() === "superadmin" && hasquotationaccess && (
                   <div
                     ref={quotationDropdownRef}
                     className="relative inline-block group"

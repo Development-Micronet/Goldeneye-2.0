@@ -14,7 +14,7 @@ const TABS_CONFIG: TabConfig[] = [
   {
     value: "company-requests",
     label: "Company Requests",
-    notAllowedRoles: ["admin", "user"], // admin and user roles are not allowed to view company requests
+    notAllowedRoles: ["admin", "user"],
   },
   {
     value: "end-users",
@@ -24,7 +24,7 @@ const TABS_CONFIG: TabConfig[] = [
   {
     value: "provider & Contracts",
     label: "Provider & Contracts",
-    notAllowedRoles: [],
+    notAllowedRoles: ["admin", "user"],
   },
   {
     value: "subscription",
