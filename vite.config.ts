@@ -22,7 +22,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   optimizeDeps: {
-    include: ['maplibre-gl'],
+    exclude: ["maplibre-gl"],
   },
   server: {
     host: true,
