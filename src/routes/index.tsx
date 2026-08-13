@@ -39,10 +39,40 @@ const ForceResetPasswordRoute: React.FC<ProtectedRouteProps> = ({ children }) =>
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  // If the user already reset their password, redirect them back to the dashboard
-  if (!user?.must_reset_password) {
-    return <Navigate to="/dashboard" replace />;
+// If the user already reset their password, redirect them back to the dashboard/home
+if (!user?.must_reset_password) {
+  const role = user?.roleName?.toLowerCase();
+  if (role === "user") {
+    return <Navigate to="/data" replace />;
   }
+  return <Navigate to="/dashboard" replace />;
+}
+
+  return <>{children}</>;
+};
+
+const HomeRedirect = () => {
+  const user = useAuthStore((state) => state.user);
+  const role = user?.roleName?.toLowerCase() || "";
+  if (role === "user") {
+    return <Navigate to="/data" replace />;
+  }
+  return <Navigate to="/dashboard" replace />;
+};
+
+interface RoleRouteProps {
+  children: React.ReactNode;
+  allowedRoles: string[];
+}
+
+const RoleRoute: React.FC<RoleRouteProps> = ({ children, allowedRoles }) => {
+  const user = useAuthStore((state) => state.user);
+  const role = user?.roleName?.toLowerCase() || "";
+
+  if (!allowedRoles.includes(role)) {
+    return role === "user" ? <Navigate to="/data" replace /> : <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -71,14 +101,34 @@ export const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         >
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <RoleRoute allowedRoles={["superadmin", "admin"]}>
+                <DashboardPage />
+              </RoleRoute>
+            }
+          />
           <Route path="/data" element={<DataPage />} />
-          <Route path="/manage" element={<ManagePage />} />
-          <Route path="/quotation" element={<QuotationPage />} />
-          <Route path="/addtech" element={<Addtech />} />
+          <Route
+            path="/manage"
+            element={
+              <RoleRoute allowedRoles={["superadmin", "admin"]}>
+                <ManagePage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/quotation"
+            element={
+              <RoleRoute allowedRoles={["superadmin"]}>
+                <QuotationPage />
+              </RoleRoute>
+            }
+          />
           <Route path="/Libre" element={<EarthMap />} />
           {/* Default entry redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<HomeRedirect />} />
         </Route>
 
         {/* Default fallback route redirecting to login */}

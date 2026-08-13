@@ -22,6 +22,8 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
   const [selectedPlanId, setSelectedPlanId] = useState<number | "">("");
 
   const { data: plans = [], isLoading: isLoadingPlans } = usePlans();
+  // Filter out expired plans (end_date before today)
+  const activePlans = plans.filter(p => new Date(p.end_date) >= new Date());
   const { mutate: assignPlan, isPending: isAssigning } = useAssignPlanMutation();
 
   const handleAssignClick = (customer: Customer) => {
@@ -309,19 +311,19 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
                 </label>
                 {isLoadingPlans ? (
                   <div className="text-xs text-gray-500 py-2">Loading plans...</div>
-                ) : plans.length === 0 ? (
-                  <div className="text-xs text-gray-500 py-2">No plans available.</div>
+                ) : activePlans.length === 0 ? (
+                  <div className="text-xs text-gray-500 py-2">No active plans available.</div>
                 ) : (
                   <div className="max-h-48 overflow-y-auto border rounded-lg border-gray-200 divide-y divide-gray-100 bg-white">
-                    {plans.map((plan) => {
+                    {activePlans.map((plan) => {
                       const isSelected = selectedPlanId === plan.id;
                       return (
                         <div
                           key={plan.id}
                           onClick={() => setSelectedPlanId(plan.id)}
                           className={`flex flex-col p-3 text-left cursor-pointer transition-colors ${isSelected
-                              ? "bg-[#1F4E57]/10 text-[#1F4E57] border-l-4 border-[#1F4E57]"
-                              : "hover:bg-gray-50 text-gray-750"
+                            ? "bg-[#1F4E57]/10 text-[#1F4E57] border-l-4 border-[#1F4E57]"
+                            : "hover:bg-gray-50 text-gray-750"
                             }`}
                         >
                           <div className="flex items-center justify-between">

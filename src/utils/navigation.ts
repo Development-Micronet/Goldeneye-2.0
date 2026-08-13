@@ -8,11 +8,12 @@ export const navigationItems: NavItem[] = [
   {
     label: "Dashboard",
     path: "/dashboard",
+    roles: ["superadmin", "admin"], // Only superadmin and admin can see Dashboard
   },
   {
     label: "Data",
     path: "/data",
-    roles: ["superadmin", "admin", "user"], // visible to logged-in roles
+    roles: ["superadmin", "admin", "user"], // All logged-in roles can see Data
   },
   {
     label: "Manage",
@@ -22,10 +23,12 @@ export const navigationItems: NavItem[] = [
   {
     label: "Quotation",
     path: "/quotation",
+    roles: ["superadmin"], // Only superadmin can see Quotation
   },
   {
     label:"Libre",
-    path:"/libre"
+    path:"/libre",
+    roles: ["superadmin", "admin", "user"], // All logged-in roles can see Libr
   }
 ];
 

@@ -29,16 +29,22 @@ export const LoginPage: React.FC = () => {
   const setAuth = useAuthStore((state) => state.setAuth);
   const { mutate: login, isPending } = useLoginMutation();
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (token) {
-      if (user?.must_reset_password) {
-        navigate("/force-reset-password");
+// Redirect if already logged in
+useEffect(() => {
+  if (token) {
+    if (user?.must_reset_password) {
+      navigate("/force-reset-password");
+    } else {
+      const role = user?.roleName?.toLowerCase();
+      if (role === "user") {
+        navigate("/data");
       } else {
         navigate("/dashboard");
       }
     }
-  }, [token, user, navigate]);
+  }
+}, [token, user, navigate]);
+
 
 
   // Form states
