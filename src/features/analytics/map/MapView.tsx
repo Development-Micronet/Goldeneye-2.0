@@ -69,13 +69,13 @@
 
 //   return <div ref={mapContainer} className="h-full w-full" />;
 // }
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import { useMapStore } from "../store/useMapStore";
 import { useRasterLayers } from "../core/useRasterLayers";
 import { useLayerSync } from "../core/useLayerSync";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useOSM3DBuildings } from "../core/useOSM3DBuildings";
+
 import { sanitizeMapStyle } from "../utils/sanitizeStyle";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
@@ -205,57 +205,38 @@ export default function MapView() {
   }, [map, mapType]);
 
   useEffect(() => {
-    if (!map || !mapLoaded) return;
+    if (!map) return;
 
-    const hideBasemapBuildings = () => {
-      if (!map.isStyleLoaded()) return;
+    const toggleBuildingLayers = () => {
+      const style = map.getStyle();
 
-      for (const layer of map.getStyle()?.layers ?? []) {
-        const sourceLayer = (layer as any)["source-layer"];
-
-        if (
-          sourceLayer !== "building" ||
-          (layer.type !== "fill" &&
-            layer.type !== "fill-extrusion")
-        ) {
-          continue;
+      style.layers?.forEach((layer) => {
+        if (layer.type === "fill-extrusion") {
+          map.setLayoutProperty(
+            layer.id,
+            "visibility",
+            mapType === "3d" ? "visible" : "none"
+          );
         }
-
-        map.setLayoutProperty(layer.id, "visibility", "none");
-      }
+      });
     };
 
-    hideBasemapBuildings();
-
-    map.on("style.load", hideBasemapBuildings);
+    if (map.isStyleLoaded()) {
+      toggleBuildingLayers();
+    } else {
+      map.once("load", toggleBuildingLayers);
+    }
 
     return () => {
-      map.off("style.load", hideBasemapBuildings);
+      map.off("load", toggleBuildingLayers);
     };
-  }, [map, mapLoaded]);
+  }, [map, mapType]);
+
 
   // Basemap and buildings first, rasters after.
   useLayerSync(mapLoaded ? map : null);
 
-  const buildingOptions = useMemo(
-    () => ({
-      minZoom: 15,
-      color: "#ffffffff",
-      // color: "#e100ffff", 
-      /*
-       * Keep the extrusions under the raster overlays instead of on top
-       * of whatever happens to be added last. Point this at the id of the
-       * lowest layer useRasterLayers inserts.
-       */
-      // beforeId: "raster-overlay-base",
-    }),
-    [],
-  );
 
-  useOSM3DBuildings(
-    mapType === "3d" && mapLoaded ? map : null,
-    buildingOptions,
-  );
 
   useRasterLayers(mapLoaded ? map : null);
 

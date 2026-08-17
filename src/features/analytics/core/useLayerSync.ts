@@ -34,13 +34,18 @@ export const useLayerSync = (map: Map | null) => {
                 // Add layer if missing, ensuring correct visibility
                 if (!map.getLayer(layerId)) {
                     if (!map.getSource(sourceId)) return;
-                    map.addLayer({
-                        ...layer.layer,
-                        layout: {
-                            ...("layout" in layer.layer && layer.layer.layout ? layer.layer.layout : {}),
-                            visibility: isSelected ? "visible" : "none",
+                    map.addLayer(
+                        {
+                            ...layer.layer,
+                            layout: {
+                                ...("layout" in layer.layer && layer.layer.layout
+                                    ? layer.layer.layout
+                                    : {}),
+                                visibility: isSelected ? "visible" : "none",
+                            },
                         },
-                    });
+                        "building-3d"
+                    );
                 }
 
                 // Update visibility for existing layer

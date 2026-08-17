@@ -46,11 +46,7 @@ export default function LeftSidebar({
       icon: selectIcon,
       tooltip: "Select",
     },
-    {
-      id: 4,
-      icon: RasterIcon,
-      tooltip: "Raster",
-    },
+
   ];
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -113,8 +109,8 @@ export default function LeftSidebar({
                   {/* Select Option Modal/Popup */}
                   {index === 2 && isActive && <SelectPopup onClose={() => setActiveIndex(null)} />}
 
-                  {/* Raster Option Modal/Popup */}
-                  {index === 3 && isActive && <RasterPopup onClose={() => setActiveIndex(null)} />}
+
+                  {/* {index === 3 && isActive && <RasterPopup onClose={() => setActiveIndex(null)} />} */}
                 </div>
               </div>
 

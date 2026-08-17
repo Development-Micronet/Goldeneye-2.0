@@ -1,15 +1,17 @@
-// import { useEffect, useRef } from "react";
 import { MercatorCoordinate } from "maplibre-gl";
 import type {
     LngLatBounds,
     Map as MapLibreMap,
     MapGeoJSONFeature,
+    GeoJSONFeature,
     VectorTileSource,
 } from "maplibre-gl";
-import type { MultiPolygon, Polygon, Position } from "geojson";
+import type { Feature, Geometry, MultiPolygon, Polygon, Position } from "geojson";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import {  DEFAULT_FLOOR_HEIGHT, DEFAULT_HEIGHT, MIN_EXTRUSION} from "../constant/3Dconstant";
+import { DEFAULT_FLOOR_HEIGHT, DEFAULT_HEIGHT, MIN_EXTRUSION } from "../constant/3Dconstant";
+
+export type BuildingFeature = GeoJSONFeature | MapGeoJSONFeature | Feature<Geometry>;
 
 export function toNumber(value: unknown): number | null {
     if (typeof value === "number") {
@@ -54,7 +56,9 @@ export function getHeight(properties: Record<string, unknown>) {
     if (rendered !== null && rendered > 0) return rendered;
     const height = toNumber(properties.height);
     if (height !== null && height > 0) return height;
-    const levels = toNumber(properties["building:levels"]);
+    const levels =
+        toNumber(properties.levels) ??
+        toNumber(properties["building:levels"]);
     if (levels !== null && levels > 0) {
         return levels * DEFAULT_FLOOR_HEIGHT;
     }
@@ -66,7 +70,9 @@ export function getMinHeight(properties: Record<string, unknown>) {
     if (rendered !== null && rendered > 0) return rendered;
     const minHeight = toNumber(properties.min_height);
     if (minHeight !== null && minHeight > 0) return minHeight;
-    const minLevel = toNumber(properties["building:min_level"]);
+    const minLevel =
+        toNumber(properties.min_level) ??
+        toNumber(properties["building:min_level"]);
     if (minLevel !== null && minLevel > 0) {
         return minLevel * DEFAULT_FLOOR_HEIGHT;
     }
@@ -74,8 +80,7 @@ export function getMinHeight(properties: Record<string, unknown>) {
 }
 
 export function getProjectionMatrix(args: unknown): ArrayLike<number> | null {
-    const matrix = (args as any)?.defaultProjectionData?.mainMatrix;
-    if (matrix) return matrix;
+    if (!args) return null;
     if (
         args instanceof Float32Array ||
         args instanceof Float64Array ||
@@ -83,15 +88,25 @@ export function getProjectionMatrix(args: unknown): ArrayLike<number> | null {
     ) {
         return args;
     }
+    const anyArgs = args as any;
+    if (anyArgs.defaultProjectionData?.mainMatrix) {
+        return anyArgs.defaultProjectionData.mainMatrix;
+    }
+    if (anyArgs.matrix) {
+        return anyArgs.matrix;
+    }
+    if (anyArgs.projectionMatrix) {
+        return anyArgs.projectionMatrix;
+    }
     return null;
 }
 
 export function isExtrudable(
-    feature: MapGeoJSONFeature,
-): feature is MapGeoJSONFeature & { geometry: Polygon | MultiPolygon } {
+    feature: BuildingFeature,
+): feature is BuildingFeature & { geometry: Polygon | MultiPolygon } {
     return (
-        feature.geometry.type === "Polygon" ||
-        feature.geometry.type === "MultiPolygon"
+        feature.geometry?.type === "Polygon" ||
+        feature.geometry?.type === "MultiPolygon"
     );
 }
 

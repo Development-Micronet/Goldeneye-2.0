@@ -55,38 +55,38 @@ export default function MapSidebar({
         },
       ]
       : []),
+    // {
+    //   id: 3,
+    //   icon: analyticsIcon,
+    //   tooltip: "Analytics",
+    //   status: true,
+    // },
     {
       id: 3,
-      icon: analyticsIcon,
-      tooltip: "Analytics",
-      status: true,
-    },
-    {
-      id: 4,
       icon: advanceDataIcon,
       tooltip: "Advance Data",
       status: false,
     },
     {
-      id: 5,
+      id: 4,
       icon: mydataIcon,
       tooltip: "My Data",
       status: false,
     },
     {
-      id: 6,
+      id: 5,
       icon: indentIcon,
       tooltip: "My Indent",
       status: true,
     },
     {
-      id: 7,
+      id: 6,
       icon: orderIcon,
       tooltip: "My Order",
       status: true,
     },
-    {
-      id: 8,
+    { 
+      id: 7,
       icon: orbitIcon,
       tooltip: "Orbitography",
       status: true,
@@ -138,8 +138,8 @@ export default function MapSidebar({
       {/* Sliding Content Sheet */}
       <div
         className={`absolute top-0 z-30 flex h-full flex-col border-r border-gray-200 bg-white shadow-2xl transition-all duration-300 ease-in-out ${activeIndex !== null
-            ? "pointer-events-auto right-[50px] w-[calc(100vw-50px)] opacity-100 sm:right-full sm:w-[320px] md:w-[360px] lg:w-[550px]"
-            : "pointer-events-none right-full w-0 overflow-hidden border-none opacity-0"
+          ? "pointer-events-auto right-[50px] w-[calc(100vw-50px)] opacity-100 sm:right-full sm:w-[320px] md:w-[360px] lg:w-[550px]"
+          : "pointer-events-none right-full w-0 overflow-hidden border-none opacity-0"
           }`}
       >
         {activeIndex !== null && (
@@ -193,8 +193,8 @@ export default function MapSidebar({
                       isEnabled ? item.tooltip : `${item.tooltip} (Coming Soon)`
                     }
                     className={`relative flex items-center transition-all duration-200 focus:outline-none ${isExpanded
-                        ? "h-11 w-full justify-start gap-2 px-3 text-left sm:h-12 sm:gap-3 sm:px-4 md:h-14 md:gap-4 md:px-6"
-                        : "h-9 w-9 animate-none justify-center rounded-md sm:h-11 sm:w-11 sm:rounded-lg md:h-12 md:w-12"
+                      ? "h-11 w-full justify-start gap-2 px-3 text-left sm:h-12 sm:gap-3 sm:px-4 md:h-14 md:gap-4 md:px-6"
+                      : "h-9 w-9 animate-none justify-center rounded-md sm:h-11 sm:w-11 sm:rounded-lg md:h-12 md:w-12"
                       } ${!isEnabled
                         ? "cursor-not-allowed text-gray-400 opacity-45"
                         : isActive
@@ -222,8 +222,8 @@ export default function MapSidebar({
               {index < filteredItems.length - 1 && (
                 <div
                   className={`bg-primary/25 h-[1px] flex-shrink-0 transition-all duration-300 ${isExpanded
-                      ? "my-1 w-[calc(100%-16px)] sm:my-1.5 sm:w-[calc(100%-24px)] md:w-[calc(100%-32px)]"
-                      : "my-1 w-7 sm:w-9 md:w-10"
+                    ? "my-1 w-[calc(100%-16px)] sm:my-1.5 sm:w-[calc(100%-24px)] md:w-[calc(100%-32px)]"
+                    : "my-1 w-7 sm:w-9 md:w-10"
                     }`}
                 />
               )}

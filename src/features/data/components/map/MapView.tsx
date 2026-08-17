@@ -151,6 +151,7 @@ export default function MapView() {
     if (!map) return;
 
     const view = map.getView();
+    if (view.getAnimating()) return;
 
     const targetZoom = Math.min(zoom, maxZoom);
 
@@ -248,7 +249,8 @@ export default function MapView() {
               geometry: labelGeom,
               image: new Icon({
                 img: canvas,
-                imgSize: [canvas.width, canvas.height],
+                width: canvas.width,
+                height: canvas.height,
                 anchor: [1, 0.5], // Anchor the pointed tip (right-center) to the coordinate
                 anchorXUnits: "fraction",
                 anchorYUnits: "fraction",
@@ -349,7 +351,8 @@ export default function MapView() {
 
     const view = map.getView();
 
-    const key = view.on("change:resolution", () => {
+    const updateZoomFromView = () => {
+      if (view.getAnimating()) return;
       const currentZoom = view.getZoom();
 
       if (currentZoom === undefined) return;
@@ -361,10 +364,14 @@ export default function MapView() {
       if (roundedZoom !== storeZoom) {
         setZoom(roundedZoom);
       }
-    });
+    };
+
+    const key = view.on("change:resolution", updateZoomFromView);
+    const moveEndKey = map.on("moveend", updateZoomFromView);
 
     return () => {
       unByKey(key);
+      unByKey(moveEndKey);
     };
   }, [setZoom]);
 
@@ -893,13 +900,13 @@ export default function MapView() {
     if (!geometry) return;
 
     map.getView().fit(geometry.getExtent(), {
-      padding: [100, 100, 100, 100],
+      padding: [40, 40, 40, 40],
       duration: 800,
-      maxZoom: 16,
+      maxZoom: 18,
+      callback: () => {
+        setFlyToProduct(null);
+      },
     });
-
-    // clear after animation
-    setFlyToProduct(null);
   }, [flyToProduct, setFlyToProduct]);
 
   const searchLocation = useMapStore((state) => state.searchLocation);

@@ -13,10 +13,10 @@ export default function BasemapPopup({ onClose }: BasemapPopupProps) {
   const mapType = useMapStore((state) => state.Maptype);
   const setMaptype = useMapStore((state) => state.setMaptype);
   const handleLayerChange = (id: string) => {
-    if (mapType === "3d") {
-      setMaptype("2d")
-      toast.success("Map type changed to 2D")
-    }
+    // if (mapType === "3d") {
+    //   setMaptype("2d")
+    //   toast.success("Map type changed to 2D")
+    // }
     setMapMode(id);
     onClose?.();
   };
@@ -52,9 +52,7 @@ export default function BasemapPopup({ onClose }: BasemapPopupProps) {
                   <span>{layer.name}</span>
                 </span>
 
-                <span className="text-sm text-gray-500">
-                  {layer.type === "3d" ? "3D" : "2D"}
-                </span>
+
               </label>
             </li>
           );

@@ -60,7 +60,7 @@ export const ArchiveSearchMenu: React.FC = () => {
   const queryClient = useQueryClient();
   const layers = useLayersStore((state) => state.layers);
   const { setFlyToProduct } = useMapStore();
-  const { selectedProvider, selectedSensors, setSelectedProvider } = useProductStore();
+  const { selectedProvider, selectedSensors } = useProductStore();
   const { accessToken } = useAuthStore();
   const provider = selectedProvider as SatelliteProvider;
   const token = accessToken?.replace("Bearer ", "").trim() || "";
@@ -484,37 +484,8 @@ export const ArchiveSearchMenu: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-6 bg-white px-4 py-3 shadow-sm">
-          {/* Provider */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
-              Provider
-            </span>
+        <div className="flex items-center justify-end gap-6 bg-white px-4 py-3 shadow-sm">
 
-            <div className="relative">
-              <select
-                value={selectedProvider}
-                onChange={(e) => setSelectedProvider(e.target.value)}
-                className="focus:border-primary focus:ring-primary/20 h-8 w-36 appearance-none rounded-md border border-gray-300 bg-white pr-8 pl-3 text-sm text-gray-700 transition outline-none hover:border-gray-400 focus:ring-2"
-              >
-                <option value="airbus">Airbus</option>
-                <option value="sentinel">Sentinel</option>
-              </select>
-
-              <svg
-                className="pointer-events-none absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-gray-500"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-          </div>
           <div className="flex items-center gap-1">
             {/* Pin All / Clear All Pins */}
             <button
