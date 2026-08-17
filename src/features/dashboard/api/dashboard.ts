@@ -125,4 +125,16 @@ export const updateCompanyUser = async (userId: number, payload: Partial<Company
   const { data } = await apiClient.patch(`tenants/users/${userId}/`, payload);
   return data;
 };
+/**
+ * POST
+ * /api/tenants/customer/{company_id}/delete/
+ */
+export const deleteCompany = async (
+  companyId: number
+): Promise<any> => {
+  const { data } = await apiClient.post(
+    `tenants/customer/${companyId}/delete/`
+  );
 
+  return data;
+};

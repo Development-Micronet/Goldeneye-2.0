@@ -17,7 +17,7 @@ interface UserTableProps {
 export function UserTable({
   users,
   companyName,
-    isLoading,
+  isLoading,
   onAddUserClick,
   onDeleteUser,
   onEditUser,
@@ -64,9 +64,9 @@ export function UserTable({
         <table className="w-full min-w-[800px] border-collapse">
           <thead className="sticky top-0 bg-yellow-100">
             <tr className="bg-yellow-100">
-              <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
+              {/* <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
                 ID
-              </th>
+              </th> */}
               <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
                 Username
               </th>
@@ -97,7 +97,7 @@ export function UserTable({
                 key={user.id}
                 className="border border-gray-200 transition hover:bg-blue-50"
               >
-                <td className="border border-gray-200 px-4 py-3">{user.id}</td>
+
 
                 <td className="border border-gray-200 px-4 py-3">
                   {user.username}
