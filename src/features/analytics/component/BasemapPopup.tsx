@@ -22,7 +22,7 @@ export default function BasemapPopup({ onClose }: BasemapPopupProps) {
   };
 
   return (
-    <div className="absolute top-2 left-15 z-50 w-64 rounded-lg border border-gray-200 bg-white p-4 shadow-md">
+    <div className="absolute top-2 left-15 z-50 w-100 rounded-lg border border-gray-200 bg-white p-4 shadow-md">
       <div className="mb-2 text-lg font-semibold">Basemap</div>
 
       <MapTypeToggle />

@@ -1,19 +1,30 @@
 import { create } from "zustand";
 
+export type SensorData = {
+  id: string;
+  name: string;
+  productTypes: string[];
+};
+
 export type ProviderData = {
   name: string;
-  sensors: string[];
+  sensors: SensorData[];
 };
 
 interface ProductStore {
   providers: ProviderData[];
   selectedProvider: string;
+  /** Selected sensor IDs (e.g. "PNEO", "PHR") */
   selectedSensors: string[];
+  /** Selected product types (airbus only) */
+  selectedProductTypes: string[];
 
   setProviders: (providers: ProviderData[]) => void;
   setSelectedProvider: (provider: string) => void;
   setSelectedSensors: (sensors: string[]) => void;
-  toggleSensor: (sensor: string) => void;
+  toggleSensor: (sensorId: string) => void;
+  setSelectedProductTypes: (types: string[]) => void;
+  toggleProductType: (type: string) => void;
   clearProducts: () => void;
 }
 
@@ -21,41 +32,63 @@ export const useProductStore = create<ProductStore>((set, get) => ({
   providers: [],
   selectedProvider: "airbus",
   selectedSensors: [],
+  selectedProductTypes: [],
 
   setProviders: (providers) => {
     const state = get();
-    // Default to "airbus" and select all its sensors by default if not set
     const matched = providers.find((p) => p.name === "airbus");
-    const defaultSensors = matched ? matched.sensors : [];
+    const defaultSensorIds = matched ? matched.sensors.map((s) => s.id) : [];
+    // Collect all productTypes for default provider
+    const defaultProductTypes = matched
+      ? [...new Set(matched.sensors.flatMap((s) => s.productTypes))]
+      : [];
+
     set({
       providers,
-      selectedSensors: state.selectedSensors.length > 0 ? state.selectedSensors : defaultSensors,
+      selectedSensors:
+        state.selectedSensors.length > 0 ? state.selectedSensors : defaultSensorIds,
+      selectedProductTypes:
+        state.selectedProductTypes.length > 0
+          ? state.selectedProductTypes
+          : defaultProductTypes,
     });
   },
 
   setSelectedProvider: (provider) => {
     const state = get();
     const matched = state.providers.find((p) => p.name === provider);
+    const sensorIds = matched ? matched.sensors.map((s) => s.id) : [];
+    const allProductTypes = matched
+      ? [...new Set(matched.sensors.flatMap((s) => s.productTypes))]
+      : [];
     set({
       selectedProvider: provider,
-      selectedSensors: matched ? matched.sensors : [],
+      selectedSensors: sensorIds,
+      selectedProductTypes: allProductTypes,
     });
   },
 
-  setSelectedSensors: (sensors) =>
-    set({
-      selectedSensors: sensors,
-    }),
+  setSelectedSensors: (sensors) => set({ selectedSensors: sensors }),
 
-  toggleSensor: (sensor) =>
+  toggleSensor: (sensorId) =>
     set((state) => ({
-      selectedSensors: state.selectedSensors.includes(sensor)
-        ? state.selectedSensors.filter((s) => s !== sensor)
-        : [...state.selectedSensors, sensor],
+      selectedSensors: state.selectedSensors.includes(sensorId)
+        ? state.selectedSensors.filter((s) => s !== sensorId)
+        : [...state.selectedSensors, sensorId],
+    })),
+
+  setSelectedProductTypes: (types) => set({ selectedProductTypes: types }),
+
+  toggleProductType: (type) =>
+    set((state) => ({
+      selectedProductTypes: state.selectedProductTypes.includes(type)
+        ? state.selectedProductTypes.filter((t) => t !== type)
+        : [...state.selectedProductTypes, type],
     })),
 
   clearProducts: () =>
     set({
       selectedSensors: [],
+      selectedProductTypes: [],
     }),
 }));

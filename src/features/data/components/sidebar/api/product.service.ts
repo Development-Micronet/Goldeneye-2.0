@@ -1,8 +1,6 @@
 import { apiClient } from "../../../../../api/apiClient";
 
-// import type {ProductResponse} from "../Models/product.types";
-
-export type SatelliteProvider = "airbus" | "sentinel";
+export type SatelliteProvider = "airbus" | "sentinel" | "planet" | string;
 
 export interface ProductSearchPayload {
   provider: SatelliteProvider;
@@ -14,20 +12,22 @@ export interface ProductSearchPayload {
     coordinates: number[][][];
   };
   sensors: string[];
-  incidence_angle: [number, number],
+  incidence_angle: [number, number];
   start_page: number;
   items_per_page?: number;
   limit?: number;
   sortBy:
-  | "date"
-  | "cloud_cover"
-  | "incident_angle"
-  | "+date"
-  | "+cloud_cover"
-  | "+incident_angle"
-  | "-date"
-  | "-cloud_cover"
-  | "-incident_angle";
+    | "date"
+    | "cloud_cover"
+    | "incident_angle"
+    | "+date"
+    | "+cloud_cover"
+    | "+incident_angle"
+    | "-date"
+    | "-cloud_cover"
+    | "-incident_angle";
+  /** Only sent when provider === "airbus" */
+  productType?: string;
 }
 
 export interface EncryptedResponse {
@@ -36,12 +36,10 @@ export interface EncryptedResponse {
 
 export const searchProducts = async (payload: ProductSearchPayload): Promise<EncryptedResponse> => {
   const response = await apiClient.post<EncryptedResponse>("/products/unf-search/", payload);
-
   return response.data;
 };
-
 
 export const listofproviderandsensors = async () => {
   const res = await apiClient.get("/products/sensors/");
   return res.data;
-}
+};

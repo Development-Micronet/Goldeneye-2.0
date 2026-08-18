@@ -36,11 +36,13 @@ interface MapStore {
   Maptype: Maptype;
 
   setMap: (map: Map) => void;
+  buildingColor: string;
 
   clearMap: () => void;
 
   setMapMode: (mode: MapMode) => void;
   setMaptype: (type: Maptype) => void;
+  setBuildingColor: (color: string) => void;
 }
 
 export const useMapStore = create<MapStore>()(
@@ -51,6 +53,7 @@ export const useMapStore = create<MapStore>()(
       // Default layer
       mapMode: "osm",
       Maptype: "2d",
+      buildingColor: "#2C6671",
 
       setMap: (map) => set({ map }, false, "map/setMap"),
 
@@ -58,6 +61,8 @@ export const useMapStore = create<MapStore>()(
 
       setMapMode: (mode) => set({ mapMode: mode }, false, "map/setMapMode"),
       setMaptype: (type) => set({ Maptype: type }, false, "map/setMaptype"),
+      setBuildingColor: (color) =>
+        set({ buildingColor: color }, false, "map/setBuildingColor"),
     }),
     {
       name: "MapStore",
