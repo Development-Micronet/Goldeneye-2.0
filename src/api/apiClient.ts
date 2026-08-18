@@ -1,56 +1,45 @@
-import axios, { AxiosError } from "axios";
-import type { AxiosInstance, InternalAxiosRequestConfig } from "axios";
-import { useMapStore } from "../features/data/store/useMapStore";
+import axios, {
+  type AxiosError,
+  type AxiosInstance,
+  type InternalAxiosRequestConfig,
+} from "axios";
+
 import { useAuthStore } from "../store/useAuthStore";
+import { useMapStore } from "../features/data/store/useMapStore";
 import { useLayersStore } from "../store/useLayersStore";
 import { logger } from "../utils/logger";
 
-const rawBase = import.meta.env.VITE_API_BASE_URL;
-const cleanBase = rawBase
-  .replace(/^(https?:\/\/)?/, "")
-  .replace(/\/+$/, "")
-  .replace(/\/api$/, "");
-const [host, port] = cleanBase.split(":");
-const isHttps = rawBase.startsWith("https://");
-const protocol = isHttps ? "https" : "http";
-const useNipIo = !isHttps; // only for http .nip.io should be added
-const DEFAULT_API_BASE_URL = `${protocol}://${cleanBase}/api/`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: DEFAULT_API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api/`,
   timeout: 15000,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
-// Request Interceptor: Automatically inject authorization header and manage dynamic multi-tenant baseURL
+/**
+ * Request Interceptor
+ *
+ * Only adds required headers.
+ * URL is NOT modified.
+ */
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const state = useAuthStore.getState();
-    const token = state.accessToken;
-    const user = state.user;
+    const { accessToken, user } = useAuthStore.getState();
 
-    // Dynamically adjust API base URL based on logged in tenant schema_name
-    if (
-      user &&
-      user.schema_name &&
-      user.schema_name.toLowerCase() !== "public" &&
-      // user.roleName.toLowerCase() !== "superadmin"
-      (user.roleName || "").toLowerCase() !== "superadmin"
-    ) {
-      const tenantHost = useNipIo
-        ? `${user.schema_name}.${host}.nip.io`
-        : `${user.schema_name}.${host}`;
-      const tenantBase = port ? `${tenantHost}:${port}` : tenantHost;
-      config.baseURL = `${protocol}://${tenantBase}/api/`;
-      logger.log(`[Dynamic Tenant URL]: ${protocol}://${tenantBase}/api/`);
-    } else {
-      config.baseURL = DEFAULT_API_BASE_URL;
+    // Required headers
+    config.headers.set("Content-Type", "application/json");
+
+    if (API_KEY) {
+      config.headers.set("x-api-key", API_KEY);
     }
 
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (user?.schema_name) {
+      config.headers.set("X-Schema-Name", user.schema_name);
+    }
+
+    if (accessToken) {
+      config.headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
     return config;
@@ -60,29 +49,25 @@ apiClient.interceptors.request.use(
   },
 );
 
-// Response Interceptor: Handle global response behaviors and error codes
+/**
+ * Response Interceptor
+ */
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
+  (error: AxiosError) => {
     const status = error.response?.status;
 
-    // Global 401 Unauthorized handling (e.g. session expired)
     if (status === 401) {
-      logger.warn("[API] Unauthorized access. Clearing local sessions.");
+      logger.warn("[API] Unauthorized");
+
       useAuthStore.getState().clearAuth();
       useLayersStore.getState().clearLayers();
       useMapStore.getState().clearMapState();
-
-      // Optional: Redirection to login page or dispatching logout event
-      // window.location.href = '/login';
     }
 
-    // Log API errors globally for debuggability
-    const errMsg =
-      (error.response?.data as any)?.message ||
-      error.message ||
-      "An unknown network error occurred";
-    logger.error(`[API Error] [${status || "Network"}]: ${errMsg}`);
+    logger.error(
+      `[API Error] [${status ?? "Network"}]: ${error.message}`,
+    );
 
     return Promise.reject(error);
   },
