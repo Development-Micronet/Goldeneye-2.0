@@ -55,12 +55,6 @@ export default function MapSidebar({
         },
       ]
       : []),
-    // {
-    //   id: 3,
-    //   icon: analyticsIcon,
-    //   tooltip: "Analytics",
-    //   status: true,
-    // },
     {
       id: 3,
       icon: advanceDataIcon,
@@ -85,7 +79,7 @@ export default function MapSidebar({
       tooltip: "My Order",
       status: true,
     },
-    { 
+    {
       id: 7,
       icon: orbitIcon,
       tooltip: "Orbitography",
@@ -114,16 +108,14 @@ export default function MapSidebar({
       case 2:
         return <TaskingMenu />;
       case 3:
-        return <AnalyticsMenu />;
-      case 4:
         return <AdvanceDataMenu />;
-      case 5:
+      case 4:
         return <MyDataMenu />;
-      case 6:
+      case 5:
         return <MyIndentMenu />;
-      case 7:
+      case 6:
         return <MyOrderMenu />;
-      case 8:
+      case 7:
         return <OrbitographyMenu />;
       default:
         return null;
