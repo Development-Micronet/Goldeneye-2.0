@@ -6,7 +6,7 @@ import { useLayerSync } from "../core/useLayerSync";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { sanitizeMapStyle } from "../utils/sanitizeStyle";
-import { usebuildingcolor } from "../core/usebuildingcolor";
+// import { usebuildingcolor } from "../core/usebuildingcolor";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 
@@ -139,16 +139,24 @@ export default function MapView() {
 
     const toggleBuildingLayers = () => {
       const style = map.getStyle();
-
+      // console.log("style", style.layers)
       style.layers?.forEach((layer) => {
-        // if (layer.type === "fill-extrusion") {
-        //   map.setLayoutProperty(
-        //     layer.id,
-        //     "visibility",
-        //     mapType === "3d" ? "visible" : "none"
-        //   );
-        // }
+        // console.log("layer", layer)
         if (layer.type === "fill-extrusion") {
+          map.setLayoutProperty(
+            layer.id,
+            "visibility",
+            mapType === "3d" ? "visible" : "none"
+          );
+        }
+        if (layer.type === "raster") {
+          map.setLayoutProperty(
+            layer.id,
+            "visibility",
+            mapType === "3d" ? "visible" : "none"
+          );
+        }
+        if (layer.type === "line") {
           map.setLayoutProperty(
             layer.id,
             "visibility",
@@ -157,23 +165,10 @@ export default function MapView() {
 
           map.setPaintProperty(
             layer.id,
-            "fill-extrusion-color",
-            "#7f00e7ff"
-          );
-
-          map.setPaintProperty(
-            layer.id,
-            "fill-extrusion-opacity",
-            0.9
-          );
-
-          map.setPaintProperty(
-            layer.id,
-            "fill-extrusion-vertical-gradient",
-            false
+            "line-color",
+            mapType === "3d" ? "#00000073" : "#ffffff"
           );
         }
-
       });
     };
 
@@ -193,7 +188,8 @@ export default function MapView() {
   // Basemap and buildings first, rasters after.
   useLayerSync(mapLoaded ? map : null);
   useRasterLayers(mapLoaded ? map : null);
-  usebuildingcolor()
+  // usebuildingcolor()
+
   if (!isSupported) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-gray-900 p-6 text-center text-white">

@@ -1,4 +1,4 @@
-import { toast } from "react-toastify";
+
 import MapTypeToggle from "../assests/MapTypeToggle";
 import { MAP_LAYERS } from "../config/mapLayers";
 import { useMapStore } from "../store/useMapStore";
@@ -10,13 +10,8 @@ interface BasemapPopupProps {
 export default function BasemapPopup({ onClose }: BasemapPopupProps) {
   const mapMode = useMapStore((s) => s.mapMode);
   const setMapMode = useMapStore((s) => s.setMapMode);
-  const mapType = useMapStore((state) => state.Maptype);
-  const setMaptype = useMapStore((state) => state.setMaptype);
   const handleLayerChange = (id: string) => {
-    // if (mapType === "3d") {
-    //   setMaptype("2d")
-    //   toast.success("Map type changed to 2D")
-    // }
+
     setMapMode(id);
     onClose?.();
   };
@@ -30,7 +25,7 @@ export default function BasemapPopup({ onClose }: BasemapPopupProps) {
       <ul className="space-y-1">
         {MAP_LAYERS.map((layer) => {
           const active = mapMode === layer.id;
-          // console.log("mapmode", mapMode,layer)
+      
           return (
             <li key={layer.id}>
               <label

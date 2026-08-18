@@ -4,10 +4,10 @@ export default function MapTypeToggle() {
     const maptype = useMapStore((state) => state.Maptype);
     const setMaptype = useMapStore((state) => state.setMaptype);
 
-    const buildingColor = useMapStore((state) => state.buildingColor);
-    const setBuildingColor = useMapStore(
-        (state) => state.setBuildingColor
-    );
+    // const buildingColor = useMapStore((state) => state.buildingColor);
+    // const setBuildingColor = useMapStore(
+    //     (state) => state.setBuildingColor
+    // );
 
     return (
         <div className="flex items-center gap-2 px-4 py-2">
@@ -35,7 +35,7 @@ export default function MapTypeToggle() {
                 2D
             </button>
 
-            {/* Building Color */}
+            {/* Building Color
             {maptype === "3d" && (
                 <div className="ml-2 flex items-center gap-2 border-l border-gray-200 pl-3">
                     <span className="text-xs font-semibold text-gray-600">
@@ -56,7 +56,7 @@ export default function MapTypeToggle() {
                         {buildingColor}
                     </span>
                 </div>
-            )}
+            )} */}
         </div>
     );
 }
