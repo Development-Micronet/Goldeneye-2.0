@@ -217,8 +217,8 @@ const ProductSwitcher: React.FC = () => {
       <button
         onClick={() => setTab(open ? "none" : "products")}
         className={`flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-semibold shadow-sm transition-all duration-200 ${open
-            ? "border-primary bg-primary text-white"
-            : "border-gray-300 bg-white text-gray-700 hover:border-primary hover:bg-primary hover:text-white"
+          ? "border-primary bg-primary text-white"
+          : "border-gray-300 bg-white text-gray-700 hover:border-primary hover:bg-primary hover:text-white"
           }`}
       >
         <FiPackage size={13} className="stroke-[2.5]" />
@@ -292,8 +292,8 @@ const ProductSwitcher: React.FC = () => {
                         type="button"
                         onClick={() => setSelectedProvider(p.name)}
                         className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 px-3 text-xs font-semibold transition-all duration-200 ${isActive
-                            ? `bg-gradient-to-r ${m.color} text-white shadow-md`
-                            : "text-slate-500 hover:text-slate-800 hover:bg-white"
+                          ? `bg-gradient-to-r ${m.color} text-white shadow-md`
+                          : "text-slate-500 hover:text-slate-800 hover:bg-white"
                           }`}
                       >
                         <span
@@ -321,13 +321,16 @@ const ProductSwitcher: React.FC = () => {
                 </span>
 
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={toggleAllDropdowns}
-                    className="text-[11px] font-medium text-slate-500 hover:text-primary transition-colors"
-                  >
-                    {allDropdownsOpen ? "Close All" : "Open All"}
-                  </button>
+                  {currentProviderObj?.name?.toLowerCase() === "airbus" && (
+                    <button
+                      type="button"
+                      onClick={toggleAllDropdowns}
+                      className="text-[11px] font-medium text-slate-500 hover:text-primary transition-colors"
+                    >
+                      {allDropdownsOpen ? "Close All" : "Open All"}
+                    </button>
+                  )}
+
 
                   <label className="flex cursor-pointer items-center gap-1.5 text-[11px] font-medium text-slate-500 hover:text-primary transition-colors select-none">
                     <input

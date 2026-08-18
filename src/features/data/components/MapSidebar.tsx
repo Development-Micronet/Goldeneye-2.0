@@ -14,7 +14,6 @@ import {
 } from "../../../assets";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { AdvanceDataMenu } from "./sidebar/menus/AdvanceDataMenu";
-import { AnalyticsMenu } from "./sidebar/menus/AnalyticsMenu";
 import { ArchiveSearchMenu } from "./sidebar/menus/ArchiveSearchMenu";
 import { MyDataMenu } from "./sidebar/menus/MyDataMenu";
 import { MyIndentMenu } from "./sidebar/menus/MyIndentMenu";
