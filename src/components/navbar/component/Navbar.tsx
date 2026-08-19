@@ -494,62 +494,64 @@ export default function Navbar() {
         {/* Right: Search & User Profile */}
         <div className="mt-1 hidden items-center gap-3 md:flex md:gap-6 lg:gap-10 xl:gap-15">
           {/* Search bar */}
-          <div className="relative" ref={searchContainerRef}>
-            <form onSubmit={handleSearchSubmit}>
-              <input
-                type="text"
-                placeholder="Go to place"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => {
-                  if (searchResults.length > 0) setShowSearchDropdown(true);
-                }}
-                className="w-32 rounded border border-transparent bg-white px-3 py-1.5 pr-8 font-sans text-xs text-gray-800 placeholder-gray-400 transition-all duration-300 focus:w-40 focus:outline-none md:w-44 md:focus:w-52 lg:w-56 lg:focus:w-64 xl:w-70 xl:focus:w-80"
-              />
-              <button
-                type="submit"
-                className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600"
-              >
-                <Search className="h-3.5 w-3.5" />
-              </button>
-            </form>
+          {!location.pathname.includes("/analytics") && (
+            <div className="relative" ref={searchContainerRef}>
+              <form onSubmit={handleSearchSubmit}>
+                <input
+                  type="text"
+                  placeholder="Go to place"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => {
+                    if (searchResults.length > 0) setShowSearchDropdown(true);
+                  }}
+                  className="w-32 rounded border border-transparent bg-white px-3 py-1.5 pr-8 font-sans text-xs text-gray-800 placeholder-gray-400 transition-all duration-300 focus:w-40 focus:outline-none md:w-44 md:focus:w-52 lg:w-56 lg:focus:w-64 xl:w-70 xl:focus:w-80"
+                />
+                <button
+                  type="submit"
+                  className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600"
+                >
+                  <Search className="h-3.5 w-3.5" />
+                </button>
+              </form>
 
-            {/* Search Results Dropdown */}
-            {showSearchDropdown && (
-              <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-full min-w-[240px] max-w-[320px] rounded-lg border border-gray-200 bg-white py-1 shadow-2xl max-h-60 overflow-y-auto text-xs">
-                {isSearchingLocation ? (
-                  <div className="px-3 py-2 text-gray-400 text-center text-xs">
-                    Searching places...
-                  </div>
-                ) : searchResults.length > 0 ? (
-                  searchResults.map((item, idx) => (
-                    <div
-                      key={item.place_id || idx}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        handleSelectLocation(item);
-                      }}
-                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-start gap-2 border-b border-gray-100 last:border-0"
-                    >
-                      <MapPin className="h-3.5 w-3.5 text-[#2c6671] shrink-0 mt-0.5" />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-gray-900 truncate">
-                          {item.display_name.split(",")[0]}
-                        </p>
-                        <p className="text-[10px] text-gray-500 truncate mt-0.5">
-                          {item.display_name}
-                        </p>
-                      </div>
+              {/* Search Results Dropdown */}
+              {showSearchDropdown && (
+                <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-full min-w-[240px] max-w-[320px] rounded-lg border border-gray-200 bg-white py-1 shadow-2xl max-h-60 overflow-y-auto text-xs">
+                  {isSearchingLocation ? (
+                    <div className="px-3 py-2 text-gray-400 text-center text-xs">
+                      Searching places...
                     </div>
-                  ))
-                ) : (
-                  <div className="px-3 py-2 text-gray-400 text-center text-xs">
-                    No places found
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map((item, idx) => (
+                      <div
+                        key={item.place_id || idx}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelectLocation(item);
+                        }}
+                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-start gap-2 border-b border-gray-100 last:border-0"
+                      >
+                        <MapPin className="h-3.5 w-3.5 text-[#2c6671] shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-900 truncate">
+                            {item.display_name.split(",")[0]}
+                          </p>
+                          <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                            {item.display_name}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-gray-400 text-center text-xs">
+                      No places found
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* User Profile Container with Click Trigger */}
           <div className="profile-menu-container relative">
@@ -627,14 +629,16 @@ export default function Navbar() {
         <div className="bg-primary absolute top-full right-0 left-0 z-40 border-t border-[#1f4e57] shadow-xl md:hidden">
           <div className="flex flex-col gap-4 px-6 py-4">
             {/* Mobile Search bar */}
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Go to place"
-                className="w-full rounded border border-transparent bg-white px-3 py-1.5 pr-8 font-sans text-xs text-gray-800 placeholder-gray-400 focus:outline-none"
-              />
-              <Search className="absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 cursor-pointer text-gray-400" />
-            </div>
+            {!location.pathname.includes("/analytics") && (
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Go to place"
+                  className="w-full rounded border border-transparent bg-white px-3 py-1.5 pr-8 font-sans text-xs text-gray-800 placeholder-gray-400 focus:outline-none"
+                />
+                <Search className="absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 cursor-pointer text-gray-400" />
+              </div>
+            )}
 
             {navItems.map((item) => {
               if (item.label === "Quotation") {
