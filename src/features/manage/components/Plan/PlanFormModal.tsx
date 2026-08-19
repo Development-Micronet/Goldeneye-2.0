@@ -13,7 +13,7 @@ type PlanFormModalProps = {
 
 // Provider dynamic selection ke mapping options
 const PROVIDER_SENSORS_MAP: Record<string, string[]> = {
-    airbus: ["PHR", "SPOT", "PNEO"],
+    airbus: ["PHR", "SPOT", "PNEO", "DMC"],
     planet: [
         "PELICANSCENE",
         "PSSCENE",
@@ -25,10 +25,10 @@ const PROVIDER_SENSORS_MAP: Record<string, string[]> = {
         "TANAGERSCENE",
         "TANAGERMETHANE",
     ],
-    sentinel: ["sentinel-2-l2a", "sentinel-1-grd"],
+    sentinel: ["SENTINEL-1", "SENTINEL-2"],
 };
 
-const SERVICES_OPTIONS = ["search", "api_key", "orbitography"];
+const SERVICES_OPTIONS = ["search", "api_key", "orbitography", "analytics"];
 
 const initialForm: CreatePlanDto = {
     name: "",
@@ -256,8 +256,8 @@ export const PlanFormModal = ({ open, onClose, plan }: PlanFormModalProps) => {
                                         <div
                                             key={provider}
                                             className={`rounded-xl border transition-all duration-200 overflow-hidden ${isProviderSelected
-                                                    ? 'border-[#1F4E57]/30 bg-[#1F4E57]/5 shadow-sm'
-                                                    : 'border-slate-200 bg-white hover:border-slate-300'
+                                                ? 'border-[#1F4E57]/30 bg-[#1F4E57]/5 shadow-sm'
+                                                : 'border-slate-200 bg-white hover:border-slate-300'
                                                 }`}
                                         >
                                             {/* Provider Header Row */}
@@ -288,8 +288,8 @@ export const PlanFormModal = ({ open, onClose, plan }: PlanFormModalProps) => {
                                                                 <label
                                                                     key={sensor}
                                                                     className={`flex items-center gap-2 p-2 rounded-lg border text-xs select-none cursor-pointer transition-all ${isSensorSelected
-                                                                            ? 'bg-white border-[#1F4E57]/45 text-[#1F4E57] font-semibold shadow-xs'
-                                                                            : 'bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                                                                        ? 'bg-white border-[#1F4E57]/45 text-[#1F4E57] font-semibold shadow-xs'
+                                                                        : 'bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                                                                         }`}
                                                                 >
                                                                     <input
@@ -323,8 +323,8 @@ export const PlanFormModal = ({ open, onClose, plan }: PlanFormModalProps) => {
                                         <label
                                             key={service}
                                             className={`flex flex-col gap-2 p-3.5 rounded-xl border text-center select-none cursor-pointer transition-all duration-200 ${isSvcSelected
-                                                    ? 'bg-[#1F4E57]/5 border-[#1F4E57] text-[#1F4E57] font-bold shadow-xs'
-                                                    : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300'
+                                                ? 'bg-[#1F4E57]/5 border-[#1F4E57] text-[#1F4E57] font-bold shadow-xs'
+                                                : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300'
                                                 }`}
                                         >
                                             <div className="flex items-center justify-between w-full">

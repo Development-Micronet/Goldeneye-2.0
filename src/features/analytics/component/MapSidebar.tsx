@@ -51,9 +51,8 @@ export default function MapSidebar({
       {/* popup panel */}
 
       <div
-        className={`absolute top-0 right-full flex h-full flex-col border-r border-gray-200 bg-white shadow-[-4px_0_24px_rgba(15,23,42,0.08)] transition-all duration-300 ease-out ${
-          activeIndex !== null ? "w-[500px] opacity-100" : "w-0 overflow-hidden opacity-0"
-        } `}
+        className={`absolute top-0 right-full flex h-full flex-col border-r border-gray-200 bg-white shadow-[-4px_0_24px_rgba(15,23,42,0.08)] transition-all duration-300 ease-out ${activeIndex !== null ? "w-[500px] opacity-100" : "w-0 overflow-hidden opacity-0"
+          } `}
       >
         {activeIndex !== null && (
           <>
@@ -98,9 +97,8 @@ export default function MapSidebar({
               onClick={() => clickItem(index)}
               data-tooltip-id="map-sidebar-tooltip"
               data-tooltip-content={item.name}
-              className={`group relative flex items-center rounded-lg transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 ${
-                expanded ? "h-11 w-full gap-3 px-3" : "h-10 w-10 justify-center"
-              } ${active ? "bg-teal-50 text-teal-800 ring-1 ring-teal-600/15" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"} `}
+              className={`group relative flex items-center rounded-lg transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 ${expanded ? "h-11 w-full gap-3 px-3" : "h-10 w-10 justify-center"
+                } ${active ? "bg-teal-50 text-teal-800 ring-1 ring-teal-600/15" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"} `}
             >
               <img
                 src={item.icon}

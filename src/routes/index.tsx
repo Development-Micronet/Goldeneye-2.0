@@ -12,6 +12,8 @@ import MainLayout from "../layouts/MainLayout";
 import { useAuthStore } from "../store/useAuthStore";
 import { ForceResetPasswordPage } from "../features/auth/pages/ForceResetPasswordPage";
 import MapLayout from "../features/analytics/map/MapLayout";
+import { useMyPlan } from "../features/manage/hooks/usePlans";
+import { usePlanStore } from "../features/data/hooks/usePlanStore";
 
 
 interface ProtectedRouteProps {
@@ -40,14 +42,14 @@ const ForceResetPasswordRoute: React.FC<ProtectedRouteProps> = ({ children }) =>
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-// If the user already reset their password, redirect them back to the dashboard/home
-if (!user?.must_reset_password) {
-  const role = user?.roleName?.toLowerCase();
-  if (role === "user") {
-    return <Navigate to="/data" replace />;
+  // If the user already reset their password, redirect them back to the dashboard/home
+  if (!user?.must_reset_password) {
+    const role = user?.roleName?.toLowerCase();
+    if (role === "user") {
+      return <Navigate to="/data" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
   }
-  return <Navigate to="/dashboard" replace />;
-}
 
   return <>{children}</>;
 };
@@ -77,7 +79,48 @@ const RoleRoute: React.FC<RoleRouteProps> = ({ children, allowedRoles }) => {
   return <>{children}</>;
 };
 
+interface PlanRouteProps {
+  children: React.ReactNode;
+  requiredService: string;
+}
+
+const PlanRoute: React.FC<PlanRouteProps> = ({
+  children,
+  requiredService,
+}) => {
+  const plan = usePlanStore((state) => state.plan);
+  const user = useAuthStore((state) => state.user);
+
+  const roleName = user?.roleName?.toLowerCase() || "";
+
+  // Superadmin has access to everything
+  if (roleName === "superadmin") {
+    return <>{children}</>;
+  }
+
+  const allowedServices = plan?.services ?? [];
+
+  const hasAccess = allowedServices.some(
+    (service) =>
+      service?.toLowerCase() === requiredService.toLowerCase()
+  );
+
+  if (!hasAccess) {
+    return <Navigate to="/data" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+
 export const AppRoutes: React.FC = () => {
+  const accessToken = useAuthStore((state) => state.accessToken);
+
+
+  useMyPlan({
+    enabled: !!accessToken,
+  });
+
   return (
     <BrowserRouter>
       <Routes>
@@ -135,7 +178,15 @@ export const AppRoutes: React.FC = () => {
               </RoleRoute>
             }
           />
-         <Route path="/analytics" element={<MapLayout />} />
+
+          <Route
+            path="/analytics"
+            element={
+              <PlanRoute requiredService="analytics">
+                <MapLayout />
+              </PlanRoute>
+            }
+          />
           {/* Default entry redirect */}
           <Route path="/" element={<HomeRedirect />} />
         </Route>

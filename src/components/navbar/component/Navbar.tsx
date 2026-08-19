@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 import { useProductStore } from "../../../features/data/hooks/useproductStore";
 import { useArchiveProductStore } from "../../../features/data/components/sidebar/store/useArchiveProductStore";
 import { useMapStore } from "../../../features/data/store/useMapStore";
+import { usePlanStore } from "../../../features/data/hooks/usePlanStore";
 
 const PRODUCT_NAME_MAP: Record<string, string> = {
   PNEO: "Pleiades-Neo-0.3m",
@@ -24,9 +25,10 @@ const PRODUCT_NAME_MAP: Record<string, string> = {
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isQuotationDropdownOpen, setIsQuotationDropdownOpen] = useState(false);
+  const [isQuotationDropdownOpen, setIsQuotationDropdownOpen] = useState(false);  
   const quotationDropdownRef = useRef<HTMLDivElement>(null);
 
   const setSearchLocation = useMapStore((state) => state.setSearchLocation);
@@ -35,12 +37,19 @@ export default function Navbar() {
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-
+  const roleName = user?.roleName?.toLowerCase() || "";
   const captureScreenshot = useScreenshotStore((state) => state.captureScreenshot);
   const setImages = useImageStore((state) => state.setImages);
   const quotationItem = useQuotationItemStore((state) => state.quotationItem);
   const setQuotationItems = useQuotationItemStore((state) => state.setQuotationItems);
+  const plan = usePlanStore((state) => state.plan);
+  const allowedServices = plan?.services ?? [];
 
+  const hasAnalytics =
+    roleName === "superadmin" ||
+    allowedServices.some(
+      (service) => service?.toLowerCase() === "analytics"
+    );
   // Search location handler using Nominatim API
   const searchPlaces = async (query: string) => {
     if (!query.trim()) {
@@ -146,10 +155,8 @@ export default function Navbar() {
     setIsProfileOpen(false);
     setIsQuotationDropdownOpen(false);
   };
-  const { user } = useAuthStore();
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-xs lg:text-sm font-medium transition-colors ${
-      isActive ? "text-white " : "text-nav-inactive hover:text-white"
+    `text-xs lg:text-sm font-medium transition-colors ${isActive ? "text-white " : "text-nav-inactive hover:text-white"
     }`;
 
   // Close profile dropdown when clicking outside
@@ -196,7 +203,7 @@ export default function Navbar() {
       if (Array.isArray(archiveProducts) && archiveProducts.length > 0) {
         return { hasProducts: true, data: archiveProducts };
       }
-    } catch {}
+    } catch { }
 
     // 2. Check useProductStore
     try {
@@ -204,7 +211,7 @@ export default function Navbar() {
       if (Array.isArray(zustandItems) && zustandItems.length > 0) {
         return { hasProducts: true, data: zustandItems };
       }
-    } catch {}
+    } catch { }
 
     // 3. Check sessionStorage storedCheckedProductList
     const rawData = sessionStorage.getItem("storedCheckedProductList");
@@ -243,7 +250,7 @@ export default function Navbar() {
         ) {
           return { hasProducts: true, data: parsed };
         }
-      } catch {}
+      } catch { }
     }
 
     return { hasProducts: false, data: {} };
@@ -398,7 +405,14 @@ export default function Navbar() {
   const username = user?.user || "user";
   const initial = username[0]?.toUpperCase() || "U";
   // Filter navigation items based on user's roleName
-  const navItems = getNavigationItems(user?.roleName);
+  const navItems = getNavigationItems(user?.roleName).filter((item) => {
+    if (item.label === "Analytics") {
+      return hasAnalytics;
+    }
+
+
+    return true;
+  });
 
   return (
     <nav className="bg-primary relative z-50 px-4 py-2 shadow-md sm:px-6 lg:px-8">
@@ -427,24 +441,21 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setIsQuotationDropdownOpen((prev) => !prev)}
-                      className={`flex items-center gap-1 text-xs lg:text-sm font-medium transition-colors cursor-pointer ${
-                        location.pathname.includes("/quotation")
-                          ? "text-white font-bold"
-                          : "text-nav-inactive hover:text-white"
-                      }`}
+                      className={`flex items-center gap-1 text-xs lg:text-sm font-medium transition-colors cursor-pointer ${location.pathname.includes("/quotation")
+                        ? "text-white font-bold"
+                        : "text-nav-inactive hover:text-white"
+                        }`}
                     >
                       <span>Quotation</span>
                       <ChevronDown
-                        className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                          isQuotationDropdownOpen ? "rotate-180" : ""
-                        }`}
+                        className={`h-3.5 w-3.5 transition-transform duration-200 ${isQuotationDropdownOpen ? "rotate-180" : ""
+                          }`}
                       />
                     </button>
 
                     <div
-                      className={`absolute top-full left-0 mt-1.5 w-48 rounded-xl bg-white shadow-xl border border-gray-100 py-1.5 z-50 transition-all ${
-                        isQuotationDropdownOpen ? "block" : "hidden group-hover:block"
-                      }`}
+                      className={`absolute top-full left-0 mt-1.5 w-48 rounded-xl bg-white shadow-xl border border-gray-100 py-1.5 z-50 transition-all ${isQuotationDropdownOpen ? "block" : "hidden group-hover:block"
+                        }`}
                     >
                       <div className="py-1">
                         <NavLink
@@ -631,17 +642,15 @@ export default function Navbar() {
                   <div key={item.path} className="flex flex-col gap-2">
                     <div
                       onClick={() => setIsQuotationDropdownOpen((prev) => !prev)}
-                      className={`flex items-center justify-between text-xs lg:text-sm font-medium cursor-pointer ${
-                        location.pathname.includes("/quotation")
-                          ? "text-white font-bold"
-                          : "text-nav-inactive hover:text-white"
-                      }`}
+                      className={`flex items-center justify-between text-xs lg:text-sm font-medium cursor-pointer ${location.pathname.includes("/quotation")
+                        ? "text-white font-bold"
+                        : "text-nav-inactive hover:text-white"
+                        }`}
                     >
                       <span>Quotation</span>
                       <ChevronDown
-                        className={`h-4 w-4 transition-transform ${
-                          isQuotationDropdownOpen ? "rotate-180" : ""
-                        }`}
+                        className={`h-4 w-4 transition-transform ${isQuotationDropdownOpen ? "rotate-180" : ""
+                          }`}
                       />
                     </div>
                     {isQuotationDropdownOpen && (
@@ -689,9 +698,8 @@ export default function Navbar() {
                   </div>
                 </div>
                 <ChevronDown
-                  className={`h-4 w-4 text-white transition-transform duration-200 ${
-                    isProfileOpen ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 text-white transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""
+                    }`}
                 />
               </div>
 

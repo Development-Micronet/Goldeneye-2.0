@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPlans, getMyPlan, createPlan, deletePlan, updatePlan, assignPlan, type CreatePlanDto, type PlansResponse } from "../api/plans";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../utils/dataDecrypt";
+import { useEffect } from "react";
+import { usePlanStore } from "../../data/hooks/usePlanStore";
 
 // Helper function to extract, decrypt and format nested validation error responses
 const handleApiError = async (err: any, token: string): Promise<never> => {
@@ -79,20 +81,31 @@ export const usePlans = (options?: { enabled?: boolean }) => {
     });
 };
 
+
+
 export const useMyPlan = (options?: { enabled?: boolean }) => {
     const accessToken = useAuthStore((state) => state.accessToken);
+    const setPlan = usePlanStore((state) => state.setPlan);
+
     const token = accessToken?.replace("Bearer ", "").trim() || "";
 
-    return useQuery({
+    const query = useQuery({
         queryKey: ["my-plan"],
+
         queryFn: async () => {
-            if (!token) throw new Error("Missing Access Token");
+            if (!token) {
+                throw new Error("Missing Access Token");
+            }
 
             try {
                 const encryptedResponse = await getMyPlan();
 
                 if (typeof encryptedResponse.data === "string") {
-                    const decrypted = await decryptAESGCM(encryptedResponse.data, token);
+                    const decrypted = await decryptAESGCM(
+                        encryptedResponse.data,
+                        token
+                    );
+
                     return decrypted.data || decrypted;
                 }
 
@@ -101,11 +114,22 @@ export const useMyPlan = (options?: { enabled?: boolean }) => {
                 if (err.message && !err.response) {
                     throw err;
                 }
+
                 await handleApiError(err, token);
             }
         },
-        enabled: (options?.enabled !== false) && !!token,
+
+        enabled: options?.enabled !== false && !!token,
     });
+
+    // Sync React Query data -> Zustand
+    useEffect(() => {
+        if (query.data) {
+            setPlan(query.data);
+        }
+    }, [query.data, setPlan]);
+
+    return query;
 };
 
 export const useCreatePlanMutation = () => {

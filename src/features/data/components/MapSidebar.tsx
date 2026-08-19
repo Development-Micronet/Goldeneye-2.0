@@ -20,6 +20,7 @@ import { MyIndentMenu } from "./sidebar/menus/MyIndentMenu";
 import { MyOrderMenu } from "./sidebar/menus/MyOrderMenu";
 import { OrbitographyMenu } from "./sidebar/menus/orbitography/OrbitographyMenu";
 import { TaskingMenu } from "./sidebar/menus/TaskingMenu";
+import { usePlanStore } from "../hooks/usePlanStore";
 
 interface MapSidebarProps {
   activeIndex?: number | null;
@@ -36,14 +37,29 @@ export default function MapSidebar({
   const setActiveIndex = propSetActiveIndex || setInternalActiveIndex;
   const { user } = useAuthStore();
   const role = user?.roleName || "user";
+  const plan = usePlanStore((state) => state.plan);
+  const allowedServices = plan?.services ?? [];
+
+  const hasOrbitography = allowedServices.some(
+    (service) => service.toLowerCase() === "orbitography"
+  );
+
+  const hasSearch = allowedServices.some(
+    (service) => service.toLowerCase() === "search"
+  );
+
   const hasTasking = true; // Enabled by default, can be linked to api subscription check later
   const sidebarItems = [
-    {
-      id: 1,
-      icon: archiveIcon,
-      tooltip: "Archive Search",
-      status: true,
-    },
+    ...(
+      hasSearch ? [
+        {
+          id: 1,
+          icon: archiveIcon,
+          tooltip: "Archive Search",
+          status: true,
+        },
+      ] : []
+    ),
     ...(hasTasking
       ? [
         {
@@ -78,12 +94,22 @@ export default function MapSidebar({
       tooltip: "My Order",
       status: true,
     },
-    {
-      id: 7,
-      icon: orbitIcon,
-      tooltip: "Orbitography",
-      status: true,
-    },
+    // {
+    //   id: 7,
+    //   icon: orbitIcon,
+    //   tooltip: "Orbitography",
+    //   status: true,
+    // },
+    ...(hasOrbitography
+      ? [
+        {
+          id: 7,
+          icon: orbitIcon,
+          tooltip: "Orbitography",
+          status: true,
+        },
+      ]
+      : []),
   ];
   // Filter out ID 6 (My Indent) for superadmin role (business rule from Phase 2)
   const filteredItems = sidebarItems.filter((item) =>
