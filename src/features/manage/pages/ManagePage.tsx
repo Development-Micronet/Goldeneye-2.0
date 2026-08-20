@@ -12,7 +12,7 @@ import SubscriptionList from "../components/Subscription/SubscriptionList";
 import { PlanFormModal } from "../components/Plan/PlanFormModal";
 import { PlanTable } from "../components/Plan/PlanTable";
 import { buildManageTabSearch, getTabFromSearch } from "../utils/manageTabs";
-
+import { TenantPlansTable } from "../components/Plan/TenantPlansTable";
 
 export const ManagePage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
@@ -125,7 +125,12 @@ export const ManagePage: React.FC = () => {
             )}
             {activeTab === "provider & Contracts" && <ProviderTable />}
             {activeTab === "subscription" && <SubscriptionList />}
-            {activeTab === "plan" && <PlanTable onEdit={handleEditPlan} />}
+            {activeTab === "plan" && (
+              <>
+                <PlanTable onEdit={handleEditPlan} />
+                {roleName !== "admin" && <TenantPlansTable />}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -147,6 +152,7 @@ export const ManagePage: React.FC = () => {
           onClose={handleClosePlanModal}
           plan={selectedPlan}
         />
+
       )}
     </div>
   );

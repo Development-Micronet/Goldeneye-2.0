@@ -138,3 +138,14 @@ export const deleteCompany = async (
 
   return data;
 };
+
+/**
+ * GET
+ * /api/dashboard/tenant-plans/
+ */
+export const getTenantPlans = async (): Promise<EncryptedResponse> => {
+  const { data } = await apiClient.get<EncryptedResponse>(
+    "dashboard/tenant-plans/"
+  );
+  return data;
+};

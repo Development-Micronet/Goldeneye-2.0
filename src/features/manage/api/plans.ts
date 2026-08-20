@@ -69,3 +69,8 @@ export const getMyPlan = async (): Promise<EncryptedResponse> => {
   return data;
 };
 
+export const unassignPlan = async (planId: number, schemaName: string): Promise<any> => {
+  const { data } = await apiClient.delete<any>(`plans/${planId}/assign/${schemaName}/`);
+  return data;
+};
+
