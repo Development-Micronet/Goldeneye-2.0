@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getPlans, getMyPlan, createPlan, deletePlan, updatePlan, assignPlan, type CreatePlanDto, type PlansResponse } from "../api/plans";
+import { getPlans, getMyPlan, createPlan, deletePlan, updatePlan, assignPlan, unassignPlan, type CreatePlanDto, type PlansResponse } from "../api/plans";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../utils/dataDecrypt";
 import { useEffect } from "react";
 import { usePlanStore } from "../../data/hooks/usePlanStore";
+
 
 // Helper function to extract, decrypt and format nested validation error responses
 const handleApiError = async (err: any, token: string): Promise<never> => {
@@ -190,6 +191,7 @@ export const useUpdatePlanMutation = () => {
 };
 
 export const useAssignPlanMutation = () => {
+    const queryClient = useQueryClient(); // ← ye line missing hai, add karo
     const accessToken = useAuthStore((state) => state.accessToken);
     const token = accessToken?.replace("Bearer ", "").trim() || "";
 
@@ -204,6 +206,31 @@ export const useAssignPlanMutation = () => {
             } catch (err: any) {
                 await handleApiError(err, token);
             }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["plans"] });
+            queryClient.invalidateQueries({ queryKey: ["my-plan"] });
+            queryClient.invalidateQueries({ queryKey: ["tenant-plans"] });
+        },
+    });
+};
+export const useUnassignPlanMutation = () => {
+    const queryClient = useQueryClient();
+    const accessToken = useAuthStore((state) => state.accessToken);
+    const token = accessToken?.replace("Bearer ", "").trim() || "";
+
+    return useMutation({
+        mutationFn: async ({ planId, schemaName }: { planId: number; schemaName: string }) => {
+            try {
+                return await unassignPlan(planId, schemaName);
+            } catch (err: any) {
+                await handleApiError(err, token);
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["plans"] });
+            queryClient.invalidateQueries({ queryKey: ["my-plan"] });
+            queryClient.invalidateQueries({ queryKey: ["tenant-plans"] });
         },
     });
 };

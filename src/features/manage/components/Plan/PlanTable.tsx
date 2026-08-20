@@ -1,10 +1,10 @@
-import React from "react";
-import { Trash2, Edit2 } from "lucide-react";
+import React, { useState } from "react";
+import { Trash2, Edit2, UserPlus, UserMinus } from "lucide-react";  // ✅
 import { usePlans, useMyPlan, useDeletePlanMutation } from "../../hooks/usePlans";
 import { type Plan } from "../../api/plans";
 import { toast } from "react-toastify";
 import { useAuthStore } from "../../../../store/useAuthStore";
-
+import { AssignPlanModal } from "./AssignPlanModal";
 
 interface PlanTableProps {
     onEdit: (plan: Plan) => void;
@@ -24,7 +24,7 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
     });
 
     const deleteMutation = useDeletePlanMutation();
-
+    const [assignModal, setAssignModal] = useState<{ mode: "assign" | "unassign"; plan: Plan } | null>(null); // ← naya
     const plans = isAdmin
         ? (myPlanData ? [myPlanData] : [])
         : allPlans;
@@ -218,6 +218,24 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
 
+                                            {/* Assign Button ← naya */}
+                                            <button
+                                                onClick={() => setAssignModal({ mode: "assign", plan: p })}
+                                                className="p-1.5 hover:bg-green-50 rounded-md text-gray-400 hover:text-green-600 transition-colors cursor-pointer inline-flex items-center"
+                                                title="Assign to Company"
+                                            >
+                                                <UserPlus className="w-4 h-4" />
+                                            </button>
+
+                                            {/* Unassign Button ← naya */}
+                                            <button
+                                                onClick={() => setAssignModal({ mode: "unassign", plan: p })}
+                                                className="p-1.5 hover:bg-orange-50 rounded-md text-gray-400 hover:text-orange-600 transition-colors cursor-pointer inline-flex items-center"
+                                                title="Unassign from Company"
+                                            >
+                                                <UserMinus className="w-4 h-4" />
+                                            </button>
+
                                             {/* Delete Button */}
                                             <button
                                                 onClick={() => handleDelete(p.id, p.name)}
@@ -239,9 +257,24 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                                 </td>
                             </tr>
                         )}
+                        {plans.length === 0 && (
+                            <tr>
+                                <td colSpan={isAdmin ? 7 : 8} className="text-center py-8 text-sm text-gray-400 select-none">
+                                    No plans found.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
+
+            {/* Assign / Unassign Modal */}
+            <AssignPlanModal
+                open={!!assignModal}
+                mode={assignModal?.mode || "assign"}
+                plan={assignModal?.plan || null}
+                onClose={() => setAssignModal(null)}
+            />
         </div>
     );
 };

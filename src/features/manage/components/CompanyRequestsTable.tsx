@@ -248,7 +248,7 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
                     )}
 
                     {/* New Assign Plan Icon Button (Package) */}
-                    {(c.status.toLowerCase() === "active" || c.status.toLowerCase() === "approved") && (
+                    {/*{(c.status.toLowerCase() === "active" || c.status.toLowerCase() === "approved") && (
                       <button
                         onClick={() => handleAssignClick(c)} // ← trigger modal hook call
                         className="p-1 hover:bg-gray-100 rounded text-primary hover:text-[#1F4E57] transition-colors cursor-pointer"
@@ -256,7 +256,7 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
                       >
                         <Package className="w-4.5 h-4.5" />
                       </button>
-                    )}
+                    )}*/}
 
                     <button
                       onClick={() => handleDelete(c.id, c.name)}
