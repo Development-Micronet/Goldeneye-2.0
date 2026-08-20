@@ -40,13 +40,19 @@ export default function MapSidebar({
   const plan = usePlanStore((state) => state.plan);
   const allowedServices = plan?.services ?? [];
 
-  const hasOrbitography = allowedServices.some(
-    (service) => service.toLowerCase() === "orbitography"
-  );
+  const roleIsSuperadmin = role === "superadmin";
 
-  const hasSearch = allowedServices.some(
-    (service) => service.toLowerCase() === "search"
-  );
+  const hasOrbitography =
+    roleIsSuperadmin ||
+    allowedServices.some(
+      (service) => service.toLowerCase() === "orbitography"
+    );
+
+  const hasSearch =
+    roleIsSuperadmin ||
+    allowedServices.some(
+      (service) => service.toLowerCase() === "search"
+    );
 
   const hasTasking = true; // Enabled by default, can be linked to api subscription check later
   const sidebarItems = [
