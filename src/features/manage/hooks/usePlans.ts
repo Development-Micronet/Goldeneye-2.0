@@ -5,7 +5,6 @@ import { decryptAESGCM } from "../../../utils/dataDecrypt";
 import { useEffect } from "react";
 import { usePlanStore } from "../../data/hooks/usePlanStore";
 
-
 // Helper function to extract, decrypt and format nested validation error responses
 const handleApiError = async (err: any, token: string): Promise<never> => {
     let errorMessage = "An error occurred";
@@ -130,7 +129,12 @@ export const useMyPlan = (options?: { enabled?: boolean }) => {
         }
     }, [query.data, setPlan]);
 
-    return query;
+ return useQuery({
+    queryKey: ["my-plan"],
+    queryFn: getMyPlan,
+    enabled: options?.enabled ?? true,
+    retry: false,
+  });
 };
 
 export const useCreatePlanMutation = () => {
