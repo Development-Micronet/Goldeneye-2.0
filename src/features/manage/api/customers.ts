@@ -54,8 +54,8 @@ export const useApproveCustomerMutation = () => {
   });
 };
 
-const deleteCustomer = async (companyId: number): Promise<any> => {
-  const { data } = await apiClient.delete(`tenants/customer/${companyId}/delete/`);
+const deleteCustomer = async (company_id: number): Promise<any> => {
+  const { data } = await apiClient.post(`tenants/customer/${company_id}/delete/`);
   return data;
 };
 

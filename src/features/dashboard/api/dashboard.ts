@@ -6,6 +6,8 @@ import { apiClient } from "../../../api/apiClient";
 
 export interface Company {
   id: number;
+  company_id?: number;
+  customer_id?: number;
   username: string;
   email: string;
   schema_name: string;
@@ -130,10 +132,10 @@ export const updateCompanyUser = async (userId: number, payload: Partial<Company
  * /api/tenants/customer/{company_id}/delete/
  */
 export const deleteCompany = async (
-  companyId: number
+  company_id: number
 ): Promise<any> => {
   const { data } = await apiClient.post(
-    `tenants/customer/${companyId}/delete/`
+    `tenants/customer/${company_id}/delete/`
   );
 
   return data;

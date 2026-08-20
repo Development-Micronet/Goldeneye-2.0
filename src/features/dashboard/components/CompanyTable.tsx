@@ -46,7 +46,7 @@ const handleDelete = (companyId: number) => {
               <th className="px-3 py-3 text-left font-semibold">Username</th>
               <th className="px-3 py-3 text-left font-semibold">Email</th>
               <th className="px-3 py-3 text-left font-semibold">Schema Name</th>
-              {/* {isSuperAdmin && <th className="px-3 py-3 text-left font-semibold">Action</th>} */}
+              {isSuperAdmin && <th className="px-3 py-3 text-left font-semibold">Action</th>}
             </tr>
           </thead>
 
@@ -61,12 +61,12 @@ const handleDelete = (companyId: number) => {
                 <td className="px-3 py-4">{company.username}</td>
                 <td className="px-3 py-4">{company.email}</td>
                 <td className="px-3 py-4">{company.schema_name}</td>
-              {/* {isSuperAdmin && (
+              {isSuperAdmin && (
                 <td className="px-3 py-4">
                   <button
                     onClick={(e) => {
                       e.stopPropagation(); // avoid row select
-                      handleDelete(company.id);
+                      handleDelete(company.company_id ?? company.customer_id ?? company.id);
                     }}
                     className="text-red-600 hover:text-red-800"
                     title="Delete"
@@ -81,7 +81,7 @@ const handleDelete = (companyId: number) => {
                     </svg>
                   </button>
                 </td>
-              )} */}
+              )}
               </tr>
             ))}
           </tbody>
