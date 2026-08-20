@@ -111,7 +111,7 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-150">
                         {plans.map((p, index) => (
-                            <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                            <tr key={p.id ?? `plan-${index}`} className="hover:bg-gray-50/50 transition-colors">
                                 {/* Sr No. */}
                                 <td className="border border-gray-200 px-4 py-3 text-xs text-gray-800 text-center font-medium">
                                     {index + 1}
@@ -119,7 +119,7 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
 
                                 {/* Plan Name */}
                                 <td className="border border-gray-200 px-4 py-3 text-xs sm:text-sm text-gray-900 font-semibold">
-                                    {p.name}
+                                    {p.name || p.plan_name } 
                                 </td>
 
                                 {/* Description */}
