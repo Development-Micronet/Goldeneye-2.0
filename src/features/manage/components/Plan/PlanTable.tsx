@@ -257,13 +257,13 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                                 </td>
                             </tr>
                         )}
-                        {plans.length === 0 && (
+                        {/* {plans.length === 0 && (
                             <tr>
                                 <td colSpan={isAdmin ? 7 : 8} className="text-center py-8 text-sm text-gray-400 select-none">
                                     No plans found.
                                 </td>
                             </tr>
-                        )}
+                        )} */}
                     </tbody>
                 </table>
             </div>

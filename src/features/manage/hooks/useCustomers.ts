@@ -3,7 +3,7 @@ import { getCustomers, type CustomersResponse } from "../api/customers";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../utils/dataDecrypt";
 
-export const useCustomers = () => {
+export const useCustomers = (enabled = true) => {
   const accessToken = useAuthStore((state) => state.accessToken);
   const token = accessToken?.replace("Bearer ", "").trim() || "";
 
@@ -21,6 +21,7 @@ export const useCustomers = () => {
 
       return decrypted.data.customers; // Returns: Customer[]
     },
-    enabled: !!token,
+    // enabled: !!token,
+    enabled: !!token && enabled,
   });
 };
