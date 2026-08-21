@@ -22,16 +22,16 @@ export default function ProviderAccordion({
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [selectedProviderIdForContract, setSelectedProviderIdForContract] = useState("");
 
-  const validProviders = (providers ?? [])
+  const validProviders = (Array.isArray(providers) ? providers : [])
     .filter(
       (provider): provider is Record<string, any> => !!provider && typeof provider === "object",
     )
     .map((provider, index) => ({
       ...provider,
-      provider_id: provider.provider_id ?? `provider-${index}`,
-      name: provider.name ?? "Unnamed Provider",
-      description: provider.description ?? "",
-      is_active: provider.is_active ?? false,
+      provider_id: String(provider.provider_id ?? `provider-${index}`),
+      name: String(provider.name ?? "Unnamed Provider"),
+      description: String(provider.description ?? ""),
+      is_active: Boolean(provider.is_active ?? false),
     }));
 
   if (!validProviders.length) {
@@ -53,47 +53,45 @@ export default function ProviderAccordion({
           >
             {/* Header */}
 
-            <Accordion.Header>
-              <Accordion.Trigger asChild>
-                <button className="group flex w-full items-center justify-between bg-cyan-50 px-5 py-4 transition hover:bg-cyan-100">
-                  <div className="flex items-center gap-2">
-                    <ChevronDown className="h-5 w-5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                    <span className="font-semibold text-gray-800">{provider.name}</span>
-                  </div>
-
-                  <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                    {/* Add Contract */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedProviderIdForContract(provider.provider_id);
-                        setIsContractModalOpen(true);
-                      }}
-                      className="rounded p-2 text-blue-600 hover:bg-blue-100"
-                    >
-                      <Plus size={18} />
-                    </button>
-
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(provider.provider_id)}
-                      disabled={
-                        deleteMutation.isPending &&
-                        deleteMutation.variables === provider.provider_id
-                      }
-                      className="rounded p-2 text-red-600 hover:bg-red-100"
-                    >
-                      {deleteMutation.isPending &&
-                      deleteMutation.variables === provider.provider_id ? (
-                        <Loader2 size={18} className="animate-spin" />
-                      ) : (
-                        <Trash2 size={18} />
-                      )}
-                    </button>
-                  </div>
-                </button>
+            <Accordion.Header className="flex w-full items-center justify-between bg-cyan-50 px-5 py-4 transition hover:bg-cyan-100">
+              <Accordion.Trigger className="group flex flex-1 items-center gap-2 text-left cursor-pointer">
+                <ChevronDown className="h-5 w-5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                <span className="font-semibold text-gray-800">{provider.name}</span>
               </Accordion.Trigger>
+
+              <div className="flex items-center gap-3">
+                {/* Add Contract */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedProviderIdForContract(provider.provider_id);
+                    setIsContractModalOpen(true);
+                  }}
+                  className="rounded p-2 text-blue-600 hover:bg-blue-100"
+                  title="Add Contract"
+                >
+                  <Plus size={18} />
+                </button>
+
+                {/* Delete */}
+                <button
+                  type="button"
+                  onClick={() => handleDelete(provider.provider_id)}
+                  disabled={
+                    Boolean(deleteMutation?.isPending) &&
+                    deleteMutation?.variables === provider.provider_id
+                  }
+                  className="rounded p-2 text-red-600 hover:bg-red-100"
+                  title="Delete Provider"
+                >
+                  {Boolean(deleteMutation?.isPending) &&
+                  deleteMutation?.variables === provider.provider_id ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={18} />
+                  )}
+                </button>
+              </div>
             </Accordion.Header>
 
             {/* Content */}

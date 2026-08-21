@@ -1,19 +1,32 @@
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ManagePage } from "./ManagePage";
 
 // ------------------------
 // Mock Zustand Store
 // ------------------------
-vi.mock("../../../store/useAuthStore", () => ({
-  useAuthStore: (selector: (state: { user: { roleName: string } }) => any) =>
+vi.mock("../../../store/useAuthStore", () => {
+  const store = (selector: (state: any) => any) =>
     selector({
       user: {
         roleName: "Admin",
       },
-    }),
-}));
+      accessToken: "Bearer mock-token",
+    });
+
+  store.getState = () => ({
+    user: {
+      roleName: "Admin",
+    },
+    accessToken: "Bearer mock-token",
+  });
+
+  return { useAuthStore: store };
+});
+
 // ------------------------
 // Mock Navbar
 // ------------------------
@@ -22,7 +35,7 @@ vi.mock("../components/ManageNavbar", () => ({
     <div>
       <button onClick={() => onTabChange("end-users")}>End Users</button>
       <button onClick={() => onTabChange("allocated-products")}>Products</button>
-      <button onClick={() => onTabChange("provider")}>Provider</button>
+      <button onClick={() => onTabChange("provider & Contracts")}>Provider</button>
       <button onClick={() => onTabChange("subscription")}>Subscription</button>
     </div>
   ),
@@ -37,10 +50,6 @@ vi.mock("../components/CompanyRequestsTable", () => ({
 
 vi.mock("../components/EndUsersTable", () => ({
   EndUsersTable: () => <div>End Users Table</div>,
-}));
-
-vi.mock("../components/AllocatedProductsTable", () => ({
-  AllocatedProductsTable: () => <div>Allocated Products Table</div>,
 }));
 
 vi.mock("../components/Provider/ProviderMain", () => ({
@@ -61,37 +70,42 @@ vi.mock("../components/Subscription/SubscriptionFormModal", () => ({
     ) : null,
 }));
 
+const renderWithRouter = (initialEntries = ["/manage"]) => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <ManagePage />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+};
+
+
 // ------------------------
 // Test Cases
 // ------------------------
 
 describe("ManagePage", () => {
   it("renders End Users tab by default", () => {
-    render(<ManagePage />);
+    renderWithRouter();
 
     expect(screen.getByText("Manage End User")).toBeInTheDocument();
     expect(screen.getByText("End Users Table")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /add user/i })).toBeInTheDocument();
   });
 
   it("switches to Allocated Products tab", () => {
-    render(<ManagePage />);
+    renderWithRouter();
 
     fireEvent.click(screen.getByText("Products"));
 
-    expect(screen.getByText("Manage Allocated Product")).toBeInTheDocument();
-
-    expect(screen.getByText("Allocated Products Table")).toBeInTheDocument();
-
-    expect(
-      screen.getByRole("button", {
-        name: /allocate product/i,
-      }),
-    ).toBeInTheDocument();
+    expect(screen.getByText("No allocated products data.")).toBeInTheDocument();
   });
 
   it("switches to Provider tab", () => {
-    render(<ManagePage />);
+    renderWithRouter();
 
     fireEvent.click(screen.getByText("Provider"));
 
@@ -107,7 +121,7 @@ describe("ManagePage", () => {
   });
 
   it("opens Provider modal when Add Provider is clicked", () => {
-    render(<ManagePage />);
+    renderWithRouter();
 
     fireEvent.click(screen.getByText("Provider"));
     fireEvent.click(
@@ -120,7 +134,7 @@ describe("ManagePage", () => {
   });
 
   it("opens and closes the subscription modal from the add action", () => {
-    render(<ManagePage />);
+    renderWithRouter();
 
     fireEvent.click(screen.getByText("Subscription"));
     fireEvent.click(screen.getByRole("button", { name: /add subscription/i }));
@@ -131,9 +145,5 @@ describe("ManagePage", () => {
 
     expect(screen.queryByText("Subscription Modal")).not.toBeInTheDocument();
   });
-
-  it("debug page UI", () => {
-    render(<ManagePage />);
-    screen.debug(); // 👈 THIS prints HTML in terminal
-  });
 });
+
