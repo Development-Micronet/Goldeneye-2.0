@@ -150,12 +150,18 @@ export const ManagePage: React.FC = () => {
             )}
             {activeTab === "provider & Contracts" && <ProviderTable />}
             {activeTab === "subscription" && <SubscriptionList />}
-            {activeTab === "plan" && (
+            /* {activeTab === "plan" && (
               <>
                 <PlanTable onEdit={handleEditPlan} />
                 {roleName !== "admin" && <TenantPlansTable />}
               </>
-            )}
+            )} */
+
+            {activeTab === "plan" && (
+  <div className="p-4 text-gray-500">
+    Plan page loaded
+  </div>
+)}
           </div>
         </div>
       </div>
