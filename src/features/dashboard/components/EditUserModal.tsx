@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { updateCompanyUser, type CompanyUser } from "../api/dashboard";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../utils/dataDecrypt";
+import Swal from "sweetalert2";
 
 interface EditUserModalProps {
     open: boolean;
@@ -47,6 +48,15 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
         const { name, value } = e.target;
+        if (name === "username" && user && value !== user.username) {
+            Swal.fire({
+                title: "Warning",
+                text: "Username cannot be changed",
+                icon: "warning",
+                confirmButtonColor: "#2F6E7C",
+            });
+            return;
+        }
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
@@ -54,6 +64,16 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         e.preventDefault();
 
         if (!user) return;
+
+        if (formData.username !== user.username) {
+            Swal.fire({
+                title: "Warning",
+                text: "Username cannot be changed",
+                icon: "warning",
+                confirmButtonColor: "#2F6E7C",
+            });
+            return;
+        }
 
         if (
             !formData.username ||
@@ -157,8 +177,17 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                             name="username"
                             value={formData.username}
                             onChange={handleChange}
+                            onClick={() => {
+                                Swal.fire({
+                                    title: "Warning",
+                                    text: "Username cannot be changed",
+                                    icon: "warning",
+                                    confirmButtonColor: "#2F6E7C",
+                                });
+                            }}
+                            readOnly
                             required
-                            className="w-full h-10 px-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                            className="w-full h-10 px-3 text-sm border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed text-gray-500 focus:outline-none"
                         />
                     </div>
 

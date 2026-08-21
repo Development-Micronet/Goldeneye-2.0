@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { registerUser } from "../../api/enduser";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../utils/dataDecrypt";
+import Swal from "sweetalert2";
 
 interface EndUserFormModalProps {
     open: boolean;
@@ -113,8 +114,14 @@ export const EndUserFormModal: React.FC<EndUserFormModalProps> = ({
                 }
             }
 
-            // Show the decrypted message in a confirmation alert box
-            alert(successMessage);
+            // Show the decrypted message in a success alert box
+            await Swal.fire({
+                title: "Success!",
+                text: successMessage,
+                icon: "success",
+                timer: 1500,
+                showConfirmButton: false,
+            });
 
             if (onSuccess) onSuccess();
             onClose();

@@ -506,6 +506,31 @@ export default function MapView() {
       removeTooltip();
 
       const feature = event.feature;
+      const mapProjection = map.getView().getProjection();
+      const geojsonFormat = new GeoJSON();
+
+      // Convert raw drawn feature to EPSG:4326 GeoJSON for validation
+      const rawGeoJSON = geojsonFormat.writeFeatureObject(feature, {
+        featureProjection: mapProjection,
+        dataProjection: "EPSG:4326",
+      });
+
+      // 1. FIRST VALIDATION: Check raw drawn shape for self-intersecting lines (kinks)
+      try {
+        const kinks = turf.kinks(rawGeoJSON as any);
+        if (kinks && kinks.features && kinks.features.length > 0) {
+          toast.error(
+            "Invalid AOI: Self-intersecting lines detected. Please draw a valid boundary without crossing lines."
+          );
+          vectorSourceRef.current?.removeFeature(feature);
+          setTimeout(() => {
+            setActiveTool(null);
+          }, 50);
+          return; // STOP execution! Do not add layer or select AOI
+        }
+      } catch (err) {
+        console.error("AOI self-intersection validation error:", err);
+      }
 
       if (activeTool === "Point") {
         const geometry = feature.getGeometry();
@@ -540,10 +565,11 @@ export default function MapView() {
         if (geometry && geometry.getType() === "LineString") {
           const bufferVal = parseFloat(polylineBufferDistance) || 0;
           if (bufferVal > 0) {
-            const geojsonFormat = new GeoJSON();
-            const geojson = geojsonFormat.writeFeatureObject(feature);
-            const buffered = turf.buffer(geojson, bufferVal, { units: "kilometers" });
-            const bufferedFeature = geojsonFormat.readFeature(buffered);
+            const buffered = turf.buffer(rawGeoJSON as any, bufferVal, { units: "kilometers" });
+            const bufferedFeature = geojsonFormat.readFeature(buffered, {
+              dataProjection: "EPSG:4326",
+              featureProjection: mapProjection,
+            });
             const bufferedGeom = (bufferedFeature as any).getGeometry();
             if (bufferedGeom) {
               feature.setGeometry(bufferedGeom);
@@ -557,10 +583,11 @@ export default function MapView() {
         if (geometry && geometry.getType() === "Polygon") {
           const bufferVal = parseFloat(polygonBufferDistance) || 0;
           if (bufferVal > 0) {
-            const geojsonFormat = new GeoJSON();
-            const geojson = geojsonFormat.writeFeatureObject(feature);
-            const buffered = turf.buffer(geojson, bufferVal, { units: "kilometers" });
-            const bufferedFeature = geojsonFormat.readFeature(buffered);
+            const buffered = turf.buffer(rawGeoJSON as any, bufferVal, { units: "kilometers" });
+            const bufferedFeature = geojsonFormat.readFeature(buffered, {
+              dataProjection: "EPSG:4326",
+              featureProjection: mapProjection,
+            });
             const bufferedGeom = (bufferedFeature as any).getGeometry();
             if (bufferedGeom) {
               feature.setGeometry(bufferedGeom);
@@ -569,16 +596,27 @@ export default function MapView() {
         }
       }
 
-      // Serialize feature to GeoJSON and add to layers store
-      const geojsonFormat = new GeoJSON();
-      const geojson = geojsonFormat.writeFeatureObject(feature);
+      // Final GeoJSON object after buffering
+      const geojson = geojsonFormat.writeFeatureObject(feature, {
+        featureProjection: mapProjection,
+        dataProjection: "EPSG:4326",
+      });
+
       const geometry = feature.getGeometry();
       let area: number | undefined = undefined;
       if (
         geometry &&
-        (activeTool === "Polygon" || activeTool === "Box" || activeTool === "Point")
+        (activeTool === "Polygon" || activeTool === "Box" || activeTool === "Point" || activeTool === "Polyline")
       ) {
         area = getArea(geometry, { projection: "EPSG:4326" }) / 1000000;
+        if (area <= 0 || isNaN(area)) {
+          toast.error("Invalid AOI: Area must be greater than 0 sq km.");
+          vectorSourceRef.current?.removeFeature(feature);
+          setTimeout(() => {
+            setActiveTool(null);
+          }, 50);
+          return; // STOP execution! Do not add layer or select AOI
+        }
       }
 
       const newLayer = addLayer({
@@ -589,6 +627,15 @@ export default function MapView() {
 
       // Auto-select the newly drawn layer as the active AOI for Archive Search
       setSelectedAOI(newLayer.id);
+
+      // Smoothly zoom map to fit the newly drawn shape UI extent
+      if (geometry) {
+        map.getView().fit(geometry, {
+          padding: [80, 80, 80, 80],
+          duration: 800,
+          maxZoom: 10,
+        });
+      }
 
       toast.success(`${newLayer.label} plotted successfully`);
       setMaxZoom(18);
@@ -1083,6 +1130,30 @@ export default function MapView() {
 
     prevAoiCountRef.current = aoiLayers.length;
   }, [layers, setSelectedAOI]);
+
+  const selectedAOIId = useSelectedAOIStore((state) => state.selectedAOIId);
+
+  // Automatically zoom map to selected AOI shape when selected from list/sidebar
+  useEffect(() => {
+    if (!selectedAOIId || !mapInstance.current) return;
+    const selectedLayer = layers.find((l) => l.id === selectedAOIId);
+    if (selectedLayer && selectedLayer.geojson) {
+      try {
+        const geojsonFormat = new GeoJSON();
+        const feature = geojsonFormat.readFeature(selectedLayer.geojson);
+        const geometry = feature.getGeometry();
+        if (geometry) {
+          mapInstance.current.getView().fit(geometry, {
+            padding: [80, 80, 80, 80],
+            duration: 800,
+            maxZoom: 14,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to zoom to selected AOI:", err);
+      }
+    }
+  }, [selectedAOIId, layers]);
 
 
   useRasterLayers(mapState);

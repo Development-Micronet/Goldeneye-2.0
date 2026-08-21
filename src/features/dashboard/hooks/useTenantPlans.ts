@@ -19,8 +19,10 @@ export interface TenantPlanRow {
 }
 
 export const useTenantPlans = () => {
+    const user = useAuthStore((state) => state.user);
     const accessToken = useAuthStore((state) => state.accessToken);
     const token = accessToken?.replace("Bearer ", "").trim() || "";
+    const isSuperAdmin = user?.roleName?.toLowerCase() === "superadmin";
 
     return useQuery({
         queryKey: ["tenant-plans"],
@@ -32,6 +34,6 @@ export const useTenantPlans = () => {
 
             return (decrypted.data ?? decrypted) as TenantPlanRow[];
         },
-        enabled: !!token,
+        enabled: !!token && isSuperAdmin,
     });
 };

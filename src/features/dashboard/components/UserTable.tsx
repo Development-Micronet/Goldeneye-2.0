@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import type { CompanyUser } from "../api/dashboard";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Trash2, Users, UserPlus } from "lucide-react";
 import { useAuthStore } from "../../../store/useAuthStore";
+import Swal from "sweetalert2";
 
 interface UserTableProps {
   users: CompanyUser[];
@@ -9,10 +10,9 @@ interface UserTableProps {
   schemaName: string;
   isLoading: boolean;
   onAddUserClick?: () => void;
-  onDeleteUser?: (userId: number) => void; // <-- Add this line
+  onDeleteUser?: (userId: number) => void;
   onEditUser?: (user: CompanyUser) => void;
 }
-
 
 export function UserTable({
   users,
@@ -23,7 +23,7 @@ export function UserTable({
   onEditUser,
 }: UserTableProps) {
   const loggedInUser = useAuthStore((state) => state.user);
-  const isAdmin = loggedInUser?.roleName?.toLowerCase() === "admin"; // Check if role is 'admin' or 'Admin'
+  const isAdmin = loggedInUser?.roleName?.toLowerCase() === "admin";
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -36,142 +36,132 @@ export function UserTable({
   }, [users]);
 
   if (isLoading) {
-    return <div>Loading Users...</div>;
+    return (
+      <div className="flex h-[520px] flex-col items-center justify-center rounded-2xl bg-white p-6 shadow-sm border border-gray-200">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#2c6671]"></div>
+        <span className="mt-3 text-xs font-medium text-gray-500">Loading Users...</span>
+      </div>
+    );
   }
 
   return (
-    <div className="flex h-[530px] flex-col rounded-xl bg-white p-5 shadow-md">
-      <div className="flex items-center justify-between mb-1">
-        <h2 className="text-2xl font-bold">
-          Users of {companyName}
-        </h2>
-        {companyName && isAdmin && ( // <-- Added 'isAdmin' check here
+    <div className="flex h-[520px] flex-col rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <Users className="h-5 w-5 text-[#2c6671]" />
+            Users {companyName ? `of ${companyName}` : ""}
+          </h2>
+          <p className="text-xs text-[#2c6671] font-medium mt-0.5">
+            {companyName
+              ? `Displays all users registered under ${companyName}.`
+              : "Select a company from the list to view its users."}
+          </p>
+        </div>
+        {companyName && isAdmin && (
           <button
             onClick={onAddUserClick}
-            className="rounded-lg bg-teal-700 px-4 py-1 text-sm font-medium text-white hover:bg-teal-800 transition active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#2c6671] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#1f4e57] transition active:scale-95 shadow-xs cursor-pointer"
           >
-            Add User
+            <UserPlus className="h-4 w-4" /> Add User
           </button>
         )}
-
       </div>
 
-      <p className="mb-5 text-green-600">
-        Displays all users belonging to the selected company.
-      </p>
-
-      <div className="flex-1 overflow-auto">
-        <table className="w-full min-w-[800px] border-collapse">
-          <thead className="sticky top-0 bg-yellow-100">
-            <tr className="bg-yellow-100">
-              {/* <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
-                ID
-              </th> */}
-              <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
-                Username
-              </th>
-              <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
-                Email
-              </th>
-              <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
-                First Name
-              </th>
-              <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
-                Last Name
-              </th>
-              <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
-                Role
-              </th>
-              {isAdmin && ( // <-- Wrap Action header here
-                <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
-                  Action
-                </th>
+      <div className="mt-3 flex-1 overflow-auto rounded-xl border border-gray-200/80">
+        <table className="w-full min-w-[700px] border-collapse text-left text-xs">
+          <thead className="sticky top-0 bg-[#EFFBFD] border-b border-gray-200 z-10">
+            <tr>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">Username</th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">Email</th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">First Name</th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">Last Name</th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide text-center">Role</th>
+              {isAdmin && (
+                <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide text-center">Action</th>
               )}
-
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="divide-y divide-gray-100 bg-white">
             {sortedUsers.map((user) => (
-              <tr
-                key={user.id}
-                className="border border-gray-200 transition hover:bg-blue-50"
-              >
-
-
-                <td className="border border-gray-200 px-4 py-3">
-                  {user.username}
-                </td>
-
-                <td className="border border-gray-200 px-4 py-3">
-                  {user.email}
-                </td>
-
-                <td className="border border-gray-200 px-4 py-3">
-                  {user.first_name}
-                </td>
-
-                <td className="border border-gray-200 px-4 py-3">
-                  {user.last_name}
-                </td>
-
-                <td className="border border-gray-200 px-4 py-3">
+              <tr key={user.id} className="hover:bg-[#EFFBFD]/30 transition-colors">
+                <td className="px-4 py-3.5 font-semibold text-gray-900">{user.username}</td>
+                <td className="px-4 py-3.5 text-gray-600">{user.email}</td>
+                <td className="px-4 py-3.5 text-gray-700">{user.first_name || "-"}</td>
+                <td className="px-4 py-3.5 text-gray-700">{user.last_name || "-"}</td>
+                <td className="px-4 py-3.5 text-center">
                   <span
-                    className={`rounded-md px-3 py-1 text-xs font-medium ${user.tenant_role === "tenant_admin"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-blue-100 text-blue-700"
-                      }`}
+                    className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold capitalize ${
+                      user.tenant_role === "tenant_admin"
+                        ? "bg-amber-100 text-amber-800 border border-amber-200"
+                        : "bg-[#EFFBFD] text-[#2c6671] border border-[#2c6671]/20"
+                    }`}
                   >
-                    {user.tenant_role}
+                    {user.tenant_role ? user.tenant_role.replace("tenant_", "") : "-"}
                   </span>
                 </td>
 
-                {isAdmin && ( // <-- Wrap action cells here
-                  <td className="border border-gray-200 px-4 py-3">
-                    <div className="flex gap-3">
+                {isAdmin && (
+                  <td className="px-4 py-3.5 text-center">
+                    <div className="flex items-center justify-center gap-2">
                       <button
-                        onClick={() => onEditUser?.(user)} // <-- Add this onClick handler
-                        className="text-[#2F6E7C] hover:text-red-500 transition-colors cursor-pointer"
+                        onClick={() => onEditUser?.(user)}
+                        className="p-1 text-[#2c6671] hover:text-[#1f4e57] transition-colors rounded-md hover:bg-[#EFFBFD] cursor-pointer"
+                        title="Edit User"
                       >
-                        <Edit2 size={17} />
+                        <Edit2 className="h-4 w-4" />
                       </button>
-
 
                       {user.tenant_role !== "tenant_admin" && (
                         <button
-                          onClick={() => {
-                            if (window.confirm("Are you sure you want to delete this user?")) {
+                          onClick={async () => {
+                            const result = await Swal.fire({
+                              title: "Are you sure?",
+                              text: "This user will be permanently deleted.",
+                              icon: "warning",
+                              showCancelButton: true,
+                              confirmButtonColor: "#ef4444",
+                              cancelButtonColor: "#6b7280",
+                              confirmButtonText: "Yes, delete it",
+                              cancelButtonText: "Cancel",
+                              reverseButtons: true,
+                            });
+                            if (result.isConfirmed) {
                               onDeleteUser?.(user.id);
                             }
                           }}
-                          className="text-[#2F6E7C] hover:text-red-500 transition-colors cursor-pointer"
+                          className="p-1 text-gray-400 hover:text-rose-600 transition-colors rounded-md hover:bg-rose-50 cursor-pointer"
+                          title="Delete User"
                         >
-                          <Trash2 size={17} />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       )}
                     </div>
                   </td>
                 )}
-
               </tr>
             ))}
+            {sortedUsers.length === 0 && (
+              <tr>
+                <td colSpan={isAdmin ? 6 : 5} className="py-8 text-center text-gray-400">
+                  {companyName
+                    ? "No users found for this organization."
+                    : "Select a company to load users."}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      <div className="mt-8 flex items-center">
-        <div className="mr-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 font-bold text-white">
+      <div className="mt-4 flex items-center gap-3 pt-3 border-t border-gray-100">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2c6671] text-xs font-bold text-white shadow-xs">
           2
         </div>
-
         <div>
-          <p className="text-gray-700 font-medium">
-            Company Users
-          </p>
-
-          <p className="text-gray-500 text-sm">
-            Displays all users belonging to the selected company.
-          </p>
+          <p className="text-xs font-bold text-gray-800">Company Users</p>
+          <p className="text-[11px] text-gray-500">Displays all users belonging to the selected company.</p>
         </div>
       </div>
     </div>

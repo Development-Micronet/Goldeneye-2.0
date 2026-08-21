@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Trash2, Edit2, UserPlus, UserMinus } from "lucide-react";  // ✅
+import { Trash2, Edit2, UserPlus, UserMinus, Award, Calendar, Layers, ShieldCheck, CheckCircle2, XCircle } from "lucide-react";
 import { usePlans, useMyPlan, useDeletePlanMutation } from "../../hooks/usePlans";
 import { type Plan } from "../../api/plans";
-import { toast } from "react-toastify";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { AssignPlanModal } from "./AssignPlanModal";
+import Swal from "sweetalert2";
 
 interface PlanTableProps {
     onEdit: (plan: Plan) => void;
@@ -24,7 +24,8 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
     });
 
     const deleteMutation = useDeletePlanMutation();
-    const [assignModal, setAssignModal] = useState<{ mode: "assign" | "unassign"; plan: Plan } | null>(null); // ← naya
+    const [assignModal, setAssignModal] = useState<{ mode: "assign" | "unassign"; plan: Plan } | null>(null);
+
     const plans = isAdmin
         ? (myPlanData ? [myPlanData] : [])
         : allPlans;
@@ -32,35 +33,45 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
     const isError = isAdmin ? isErrorMy : isErrorAll;
     const error = isAdmin ? errorMy : errorAll;
 
-    const handleDelete = (id: number, name: string) => {
-        if (confirm(`Are you sure you want to delete plan "${name}"?`)) {
-            const toastId = toast.loading(`Deleting plan "${name}"...`);
+    const handleDelete = async (id: number, name: string) => {
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: `Plan "${name}" will be permanently deleted.`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: "Yes, delete it",
+            cancelButtonText: "Cancel",
+            reverseButtons: true,
+        });
 
-            deleteMutation.mutate(id, {
-                onSuccess: () => {
-                    toast.update(toastId, {
-                        render: `Plan "${name}" deleted successfully!`,
-                        type: "success",
-                        isLoading: false,
-                        autoClose: 3000,
-                    });
-                },
-                onError: (err: any) => {
-                    toast.update(toastId, {
-                        render: `Failed to delete: ${err.message || "Unknown error"}`,
-                        type: "error",
-                        isLoading: false,
-                        autoClose: 3000,
-                    });
-                },
-            });
-        }
+        if (!result.isConfirmed) return;
+
+        deleteMutation.mutate(id, {
+            onSuccess: () => {
+                Swal.fire({
+                    title: "Deleted!",
+                    text: `Plan "${name}" has been deleted successfully.`,
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+            },
+            onError: (err: any) => {
+                Swal.fire({
+                    title: "Error",
+                    text: err?.message || "Failed to delete plan.",
+                    icon: "error",
+                });
+            },
+        });
     };
 
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center py-12 select-none">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2c6671]"></div>
                 <span className="mt-3 text-xs text-gray-500 font-medium">Loading plans...</span>
             </div>
         );
@@ -68,7 +79,7 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
 
     if (isError) {
         return (
-            <div className="p-4 bg-red-50 text-red-700 rounded-lg text-xs font-semibold border border-red-100 select-none">
+            <div className="p-4 bg-red-50 text-red-700 rounded-2xl text-xs font-semibold border border-red-100 select-none">
                 ⚠️ Failed to load plans: {error?.message || "Unknown error occurred"}
             </div>
         );
@@ -76,86 +87,95 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
 
     return (
         <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
-            {/* Table Container */}
-            <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0  border-gray-150 shadow-xs">
-                <table className="min-w-full border-collapse border border-gray-200">
-                    <thead>
-                        <tr className="bg-gray-50/70 select-none border-b border-gray-200">
-                            <th className="border border-gray-200 px-4 py-3.5 text-left text-[11px] font-bold text-gray-700 w-16">
+            {/* Table Container Card */}
+            <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0 rounded-2xl border border-gray-200/80 bg-white shadow-sm">
+                <table className="w-full min-w-[900px] text-left text-xs border-collapse">
+                    <thead className="sticky top-0 bg-[#EFFBFD] border-b border-gray-200 z-10 select-none">
+                        <tr>
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-14 text-center">
                                 Sr. No.
                             </th>
-                            <th className="border border-gray-200 px-4 py-3.5 text-left text-[11px] font-bold text-gray-700 w-56">
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-48">
                                 Plan Name
                             </th>
-                            <th className="border border-gray-200 px-4 py-3.5 text-left text-[11px] font-bold text-gray-700">
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
                                 Description
                             </th>
-                            <th className="border border-gray-200 px-4 py-3.5 text-left text-[11px] font-bold text-gray-700 w-44">
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-44">
                                 Validity Dates
                             </th>
-                            <th className="border border-gray-200 px-4 py-3.5 text-left text-[11px] font-bold text-gray-700 w-64">
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-64">
                                 Allowed Providers & Sensors
                             </th>
-                            <th className="border border-gray-200 px-4 py-3.5 text-left text-[11px] font-bold text-gray-700 w-36">
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-36">
                                 Services
                             </th>
-                            <th className="border border-gray-200 px-4 py-3.5 text-left text-[11px] font-bold text-gray-700 w-28">
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-28 text-center">
                                 Status
                             </th>
                             {!isAdmin && (
-                                <th className="border border-gray-200 px-4 py-3.5 text-left text-[11px] font-bold text-gray-700 w-20">
+                                <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-24 text-center">
                                     Action
                                 </th>
                             )}
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-150">
+                    <tbody className="divide-y divide-gray-100 bg-white">
                         {plans.map((p, index) => (
-                            <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                            <tr key={p.id} className="hover:bg-[#EFFBFD]/30 transition-colors">
                                 {/* Sr No. */}
-                                <td className="border border-gray-200 px-4 py-3 text-xs text-gray-800 text-center font-medium">
+                                <td className="px-4 py-3.5 text-xs text-gray-500 font-medium text-center">
                                     {index + 1}
                                 </td>
 
                                 {/* Plan Name */}
-                                <td className="border border-gray-200 px-4 py-3 text-xs sm:text-sm text-gray-900 font-semibold">
-                                    {p.name}
+                                <td className="px-4 py-3.5 font-bold text-gray-900 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <Award className="h-4 w-4 text-[#2c6671] shrink-0" />
+                                        <span>{p.name}</span>
+                                    </div>
                                 </td>
 
                                 {/* Description */}
-                                <td className="border border-gray-200 px-4 py-3 text-xs text-gray-600 font-normal leading-relaxed">
+                                <td className="px-4 py-3.5 text-xs text-gray-600 font-normal leading-relaxed">
                                     {p.description || "—"}
                                 </td>
 
                                 {/* Dates */}
-                                <td className="border border-gray-200 px-4 py-3 text-xs text-gray-750 font-medium">
-                                    <div className="flex flex-col gap-0.5">
-                                        <span><strong className="text-gray-400 text-[10px]">START:</strong> {p.start_date}</span>
-                                        <span><strong className="text-gray-400 text-[10px]">END:</strong> {p.end_date}</span>
+                                <td className="px-4 py-3.5 text-xs text-gray-700">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="inline-flex items-center gap-1 font-medium text-gray-800">
+                                            <strong className="text-[#2c6671] text-[10px] uppercase font-bold">START:</strong> {p.start_date}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 font-medium text-gray-800">
+                                            <strong className="text-gray-400 text-[10px] uppercase font-bold">END:</strong> {p.end_date}
+                                        </span>
                                     </div>
                                 </td>
 
-                                {/* Providers & Sensors (Beautiful customized tag mapping) */}
-                                <td className="border border-gray-200 px-4 py-3 text-xs">
+                                {/* Providers & Sensors */}
+                                <td className="px-4 py-3.5 text-xs">
                                     <div className="flex flex-col gap-1.5 py-0.5">
                                         {p.allowed_providers?.map((provider) => {
                                             const sensors = p.allowed_sensors?.[provider] || [];
+                                            const provLower = provider.toLowerCase();
                                             return (
-                                                <div key={provider} className="flex items-center gap-1.5">
+                                                <div key={provider} className="flex items-center gap-1.5 flex-wrap">
                                                     <span
-                                                        className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold border capitalize select-none ${provider === "airbus"
-                                                            ? "bg-blue-50 text-blue-700 border-blue-200"
-                                                            : provider === "planet"
-                                                                ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                                                                : provider === "sentinel"
-                                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                                                    : "bg-gray-50 text-gray-600 border-gray-200"
-                                                            }`}
+                                                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize select-none ${
+                                                            provLower === "airbus"
+                                                                ? "bg-[#EFFBFD] text-[#2c6671] border-[#2c6671]/20"
+                                                                : provLower === "planet"
+                                                                ? "bg-indigo-50 text-indigo-800 border-indigo-200"
+                                                                : provLower === "sentinel"
+                                                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                                                : "bg-gray-100 text-gray-700 border-gray-200"
+                                                        }`}
                                                     >
                                                         {provider}
                                                     </span>
                                                     <span
-                                                        className="text-[10px] text-gray-400 font-normal truncate max-w-[200px]"
+                                                        className="text-[10px] text-gray-500 font-normal truncate max-w-[180px]"
                                                         title={sensors.join(", ")}
                                                     >
                                                         ({sensors.length > 0 ? sensors.join(", ") : "No sensors"})
@@ -167,12 +187,12 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                                 </td>
 
                                 {/* Services */}
-                                <td className="border border-gray-200 px-4 py-3 text-xs">
+                                <td className="px-4 py-3.5 text-xs">
                                     <div className="flex flex-wrap gap-1">
                                         {p.services?.map((svc) => (
                                             <span
                                                 key={svc}
-                                                className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase tracking-wider"
+                                                className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-wider"
                                             >
                                                 {svc.replace("_", " ")}
                                             </span>
@@ -181,24 +201,24 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                                 </td>
 
                                 {/* Status Badges */}
-                                <td className="border border-gray-200 px-4 py-3 text-xs">
-                                    <div className="flex flex-col items-start gap-1 select-none">
+                                <td className="px-4 py-3.5 text-xs text-center">
+                                    <div className="flex flex-col items-center gap-1 select-none">
                                         {p.is_active ? (
-                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-green-50 text-green-700 border border-green-200">
-                                                ACTIVE
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                <CheckCircle2 className="h-3 w-3" /> ACTIVE
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-red-50 text-red-700 border border-red-200">
-                                                INACTIVE
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                                <XCircle className="h-3 w-3" /> INACTIVE
                                             </span>
                                         )}
 
                                         {p.is_currently_valid ? (
-                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                                 VALID
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                                 EXPIRED
                                             </span>
                                         )}
@@ -207,30 +227,30 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
 
                                 {/* Action */}
                                 {!isAdmin && (
-                                    <td className="border border-gray-200 px-4 py-3 text-xs text-center">
-                                        <div className="flex items-center justify-center gap-3">
+                                    <td className="px-4 py-3.5 text-xs text-center">
+                                        <div className="flex items-center justify-center gap-1">
                                             {/* Edit Button */}
                                             <button
                                                 onClick={() => onEdit(p)}
-                                                className="p-1.5 hover:bg-blue-50 rounded-md text-gray-400 hover:text-blue-500 transition-colors cursor-pointer inline-flex items-center"
+                                                className="p-1.5 hover:bg-[#EFFBFD] rounded-lg text-gray-400 hover:text-[#2c6671] transition-colors cursor-pointer"
                                                 title="Edit Plan"
                                             >
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
 
-                                            {/* Assign Button ← naya */}
+                                            {/* Assign Button */}
                                             <button
                                                 onClick={() => setAssignModal({ mode: "assign", plan: p })}
-                                                className="p-1.5 hover:bg-green-50 rounded-md text-gray-400 hover:text-green-600 transition-colors cursor-pointer inline-flex items-center"
+                                                className="p-1.5 hover:bg-emerald-50 rounded-lg text-gray-400 hover:text-emerald-600 transition-colors cursor-pointer"
                                                 title="Assign to Company"
                                             >
                                                 <UserPlus className="w-4 h-4" />
                                             </button>
 
-                                            {/* Unassign Button ← naya */}
+                                            {/* Unassign Button */}
                                             <button
                                                 onClick={() => setAssignModal({ mode: "unassign", plan: p })}
-                                                className="p-1.5 hover:bg-orange-50 rounded-md text-gray-400 hover:text-orange-600 transition-colors cursor-pointer inline-flex items-center"
+                                                className="p-1.5 hover:bg-amber-50 rounded-lg text-gray-400 hover:text-amber-600 transition-colors cursor-pointer"
                                                 title="Unassign from Company"
                                             >
                                                 <UserMinus className="w-4 h-4" />
@@ -239,7 +259,7 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                                             {/* Delete Button */}
                                             <button
                                                 onClick={() => handleDelete(p.id, p.name)}
-                                                className="p-1.5 hover:bg-red-50 rounded-md text-gray-400 hover:text-red-500 transition-colors cursor-pointer inline-flex items-center"
+                                                className="p-1.5 hover:bg-rose-50 rounded-lg text-gray-400 hover:text-rose-600 transition-colors cursor-pointer"
                                                 title="Delete Plan"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -247,16 +267,8 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                                         </div>
                                     </td>
                                 )}
-
                             </tr>
                         ))}
-                        {plans.length === 0 && (
-                            <tr>
-                                <td colSpan={isAdmin ? 7 : 8} className="text-center py-8 text-sm text-gray-400 select-none">
-                                    No plans found.
-                                </td>
-                            </tr>
-                        )}
                         {plans.length === 0 && (
                             <tr>
                                 <td colSpan={isAdmin ? 7 : 8} className="text-center py-8 text-sm text-gray-400 select-none">

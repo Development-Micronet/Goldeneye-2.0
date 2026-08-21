@@ -1,18 +1,17 @@
-import React, { useState } from "react";
-import { Trash2, Check, Package, X } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Trash2, Check, Package, X, Building2, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useCustomers } from "../hooks/useCustomers";
 import { useApproveCustomerMutation, useDeleteCustomerMutation, type Customer } from "../api/customers";
 import { usePlans, useAssignPlanMutation } from "../hooks/usePlans";
 import { toast } from "react-toastify";
-
+import Swal from "sweetalert2";
 
 interface CompanyRequestsTableProps {
   onEdit: (customer: Customer) => void;
   onDelete?: (id: number) => void;
 }
 
-export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
-}) => {
+export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({}) => {
   const { data: customers = [], isLoading, isError, error } = useCustomers();
   const { mutate: approveCustomer, isPending: isApproving } = useApproveCustomerMutation();
   const { mutate: deleteCustomer, isPending: isDeleting } = useDeleteCustomerMutation();
@@ -22,13 +21,12 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
   const [selectedPlanId, setSelectedPlanId] = useState<number | "">("");
 
   const { data: plans = [], isLoading: isLoadingPlans } = usePlans();
-  // Filter out expired plans (end_date before today)
-  const activePlans = plans.filter(p => new Date(p.end_date) >= new Date());
+  const activePlans = plans.filter((p) => new Date(p.end_date) >= new Date());
   const { mutate: assignPlan, isPending: isAssigning } = useAssignPlanMutation();
 
   const handleAssignClick = (customer: Customer) => {
     setSelectedCustomer(customer);
-    setSelectedPlanId(""); // Reset any previously selected plan ID
+    setSelectedPlanId("");
     setIsAssignModalOpen(true);
   };
 
@@ -40,7 +38,7 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
     assignPlan(
       {
         planId: Number(selectedPlanId),
-        schemaName: selectedCustomer.schema_name, // Dynamic customer schema name
+        schemaName: selectedCustomer.schema_name,
       },
       {
         onSuccess: (res) => {
@@ -70,70 +68,98 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
     );
   };
 
+  const handleApprove = async (companyId: number, companyName: string) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: `You are about to approve the request for "${companyName}".`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#10b981",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, approve it",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
 
+    if (!result.isConfirmed) return;
 
-  const handleApprove = (companyId: number, companyName: string) => {
-    if (confirm(`Are you sure you want to approve the request for "${companyName}"?`)) {
-      const toastId = toast.loading(`Approving organization "${companyName}"...`);
-      approveCustomer(companyId, {
-        onSuccess: (res) => {
-          toast.update(toastId, {
-            render: res.message || `${companyName} request approved successfully!`,
-            type: "success",
-            isLoading: false,
-            autoClose: 3000,
-          });
-        },
-        onError: (err) => {
-          const apiError =
-            (err as any).response?.data?.message ||
-            err.message ||
-            "Approval failed. Please try again.";
-          toast.update(toastId, {
-            render: apiError,
-            type: "error",
-            isLoading: false,
-            autoClose: 3000,
-          });
-        },
-      });
-    }
+    approveCustomer(companyId, {
+      onSuccess: (res) => {
+        Swal.fire({
+          title: "Approved!",
+          text: res?.message || `Request for "${companyName}" has been approved successfully.`,
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      },
+      onError: (err) => {
+        const apiError =
+          (err as any).response?.data?.message ||
+          err.message ||
+          "Failed to approve request.";
+        Swal.fire({
+          title: "Error",
+          text: apiError,
+          icon: "error",
+        });
+      },
+    });
   };
 
-  const handleDelete = (companyId: number, companyName: string) => {
-    if (confirm(`Are you sure you want to delete the request for "${companyName}"?`)) {
-      const toastId = toast.loading(`Deleting organization "${companyName}"...`);
-      deleteCustomer(companyId, {
-        onSuccess: (res) => {
-          toast.update(toastId, {
-            render: res.message || `${companyName} request deleted successfully!`,
-            type: "success",
-            isLoading: false,
-            autoClose: 3000,
-          });
-        },
-        onError: (err) => {
-          const apiError =
-            (err as any).response?.data?.message ||
-            err.message ||
-            "Deletion failed. Please try again.";
-          toast.update(toastId, {
-            render: apiError,
-            type: "error",
-            isLoading: false,
-            autoClose: 3000,
-          });
-        },
-      });
-    }
+  const handleDelete = async (companyId: number, companyName: string) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: `This request for "${companyName}" will be permanently deleted.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete it",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    deleteCustomer(companyId, {
+      onSuccess: (res) => {
+        Swal.fire({
+          title: "Deleted!",
+          text: res?.message || `Request for "${companyName}" has been deleted successfully.`,
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      },
+      onError: (err) => {
+        const apiError =
+          (err as any).response?.data?.message ||
+          err.message ||
+          "Failed to delete request.";
+        Swal.fire({
+          title: "Error",
+          text: apiError,
+          icon: "error",
+        });
+      },
+    });
   };
 
+  const activeCount = useMemo(
+    () => customers.filter((c) => c.status.toLowerCase() === "active" || c.status.toLowerCase() === "approved").length,
+    [customers]
+  );
 
+  const pendingCount = useMemo(
+    () => customers.filter((c) => c.status.toLowerCase() === "pending").length,
+    [customers]
+  );
 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 select-none">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2c6671]"></div>
         <span className="mt-3 text-xs text-gray-500 font-medium">Loading company requests...</span>
       </div>
     );
@@ -141,7 +167,7 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
 
   if (isError) {
     return (
-      <div className="p-4 bg-red-50 text-red-700 rounded-lg text-xs font-semibold border border-red-100 select-none">
+      <div className="p-4 bg-red-50 text-red-700 rounded-2xl text-xs font-semibold border border-red-100 select-none">
         ⚠️ Failed to load company requests: {error?.message || "Unknown error occurred"}
       </div>
     );
@@ -149,132 +175,147 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
 
   const filteredCustomers = customers.filter((c) => {
     if (statusFilter === "All") return true;
+    if (statusFilter === "Active") return c.status.toLowerCase() === "active" || c.status.toLowerCase() === "approved";
     return c.status.toLowerCase() === statusFilter.toLowerCase();
   });
 
   return (
     <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
       {/* Status Filter Pill Buttons */}
-      <div className="flex gap-2 select-none border-b border-gray-100 pb-3 flex-shrink-0">
-        {(["All", "Active", "Pending"] as const).map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setStatusFilter(filter)}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${statusFilter === filter
-              ? "bg-primary text-white border-primary shadow-sm"
-              : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-750"
-              }`}
-          >
-            {filter === "All" ? "All Statuses" : filter}
-          </button>
-        ))}
+      <div className="flex items-center gap-2 select-none border-b border-gray-100 pb-3 shrink-0">
+        <button
+          onClick={() => setStatusFilter("All")}
+          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+            statusFilter === "All"
+              ? "bg-[#2c6671] text-white border-[#2c6671] shadow-xs"
+              : "bg-[#EFFBFD]/60 text-[#2c6671] border-[#2c6671]/20 hover:bg-[#EFFBFD]"
+          }`}
+        >
+          All Statuses ({customers.length})
+        </button>
+
+        <button
+          onClick={() => setStatusFilter("Active")}
+          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+            statusFilter === "Active"
+              ? "bg-[#2c6671] text-white border-[#2c6671] shadow-xs"
+              : "bg-[#EFFBFD]/60 text-[#2c6671] border-[#2c6671]/20 hover:bg-[#EFFBFD]"
+          }`}
+        >
+          Active ({activeCount})
+        </button>
+
+        <button
+          onClick={() => setStatusFilter("Pending")}
+          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+            statusFilter === "Pending"
+              ? "bg-[#2c6671] text-white border-[#2c6671] shadow-xs"
+              : "bg-[#EFFBFD]/60 text-[#2c6671] border-[#2c6671]/20 hover:bg-[#EFFBFD]"
+          }`}
+        >
+          Pending ({pendingCount})
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
-        <table className="min-w-full border-collapse border border-gray-200">
-          <thead>
-            <tr className="bg-white select-none">
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700 w-16">
+      {/* Table Container Card */}
+      <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0 rounded-2xl border border-gray-200/80 bg-white shadow-sm">
+        <table className="w-full min-w-[850px] text-left text-xs border-collapse">
+          <thead className="sticky top-0 bg-[#EFFBFD] border-b border-gray-200 z-10 select-none">
+            <tr>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-14 text-center">
                 Sr. No.
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
                 Company Name
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
                 Email ID
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
                 Domain
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
                 Org Type
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide text-center">
                 Status
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700">
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
                 Status Reason
               </th>
-              <th className="border border-gray-200 px-3 py-2.5 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-gray-700 w-24">
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-24 text-center">
                 Action
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white">
-            {filteredCustomers.map((c, index) => (
-              <tr key={c.id}>
-                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800 text-center font-medium">
-                  {index + 1}
-                </td>
-                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800 font-medium">
-                  {c.name}
-                </td>
-                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                  {c.email}
-                </td>
-                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                  {c.domainName || "—"}
-                </td>
-                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                  {c.type}
-                </td>
-                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                  <div className="flex items-center select-none">
-                    <span
-                      className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${c.status === "Active" || c.status === "Approved"
-                        ? "bg-[#10B981]"
-                        : c.status === "Pending"
-                          ? "bg-[#F59E0B]"
-                          : "bg-[#EF4444]"
-                        }`}
-                    />
-                    <span>{c.status}</span>
-                  </div>
-                </td>
-                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                  {c.statusReason || "—"}
-                </td>
-                <td className="border border-gray-200 px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-800">
-                  <div className="flex items-center gap-4">
-                    {c.status.toLowerCase() === "pending" && (
-                      <button
-                        onClick={() => handleApprove(c.id, c.name)}
-                        disabled={isApproving}
-                        className="p-1 hover:bg-gray-100 rounded text-green-600 hover:text-green-700 disabled:opacity-50 transition-colors cursor-pointer"
-                        title="Approve Request"
-                      >
-                        <Check className="w-4.5 h-4.5" />
-                      </button>
+
+          <tbody className="divide-y divide-gray-100 bg-white">
+            {filteredCustomers.map((c, index) => {
+              const statusLower = c.status.toLowerCase();
+              const isActive = statusLower === "active" || statusLower === "approved";
+              const isPending = statusLower === "pending";
+
+              return (
+                <tr key={c.id} className="hover:bg-[#EFFBFD]/30 transition-colors">
+                  <td className="px-4 py-3.5 text-gray-500 font-medium text-center">{index + 1}</td>
+                  <td className="px-4 py-3.5 font-bold text-gray-900">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-[#2c6671] shrink-0" />
+                      <span>{c.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 text-gray-600 font-medium">{c.email}</td>
+                  <td className="px-4 py-3.5 text-gray-500 font-mono text-[11px]">
+                    {c.domainName || "—"}
+                  </td>
+                  <td className="px-4 py-3.5 text-gray-700 font-medium">{c.type || "Enterprise"}</td>
+                  <td className="px-4 py-3.5 text-center">
+                    {isActive ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                        <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Active
+                      </span>
+                    ) : isPending ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-200">
+                        <Clock className="h-3 w-3 text-amber-600" /> Pending
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 border border-rose-200">
+                        <XCircle className="h-3 w-3 text-rose-600" /> {c.status}
+                      </span>
                     )}
+                  </td>
+                  <td className="px-4 py-3.5 text-gray-600 text-xs">
+                    {c.statusReason || "—"}
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      {isPending && (
+                        <button
+                          onClick={() => handleApprove(c.id, c.name)}
+                          disabled={isApproving}
+                          className="p-1 text-emerald-600 hover:text-emerald-700 transition-colors rounded-lg hover:bg-emerald-50 cursor-pointer disabled:opacity-50"
+                          title="Approve Request"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                      )}
 
-                    {/* New Assign Plan Icon Button (Package) */}
-                    {/*{(c.status.toLowerCase() === "active" || c.status.toLowerCase() === "approved") && (
                       <button
-                        onClick={() => handleAssignClick(c)} // ← trigger modal hook call
-                        className="p-1 hover:bg-gray-100 rounded text-primary hover:text-[#1F4E57] transition-colors cursor-pointer"
-                        title="Assign Plan"
+                        onClick={() => handleDelete(c.id, c.name)}
+                        disabled={isApproving || isDeleting}
+                        className="p-1 text-gray-400 hover:text-rose-600 transition-colors rounded-lg hover:bg-rose-50 cursor-pointer disabled:opacity-50"
+                        title="Delete Request"
                       >
-                        <Package className="w-4.5 h-4.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
-                    )}*/}
-
-                    <button
-                      onClick={() => handleDelete(c.id, c.name)}
-                      disabled={isApproving || isDeleting}
-                      className="p-1 hover:bg-gray-100 rounded text-gray-655 hover:text-red-500 disabled:opacity-50 transition-colors cursor-pointer"
-                      title="Delete Request"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-
-                  </div>
-                </td>
-
-              </tr>
-            ))}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
             {filteredCustomers.length === 0 && (
               <tr>
-                <td colSpan={8} className="text-center py-8 text-sm text-gray-400">
+                <td colSpan={8} className="text-center py-8 text-xs text-gray-400 select-none">
                   No {statusFilter !== "All" ? statusFilter.toLowerCase() : ""} company requests found.
                 </td>
               </tr>
@@ -285,28 +326,28 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
 
       {/* Assign Plan Modal */}
       {isAssignModalOpen && selectedCustomer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-100 select-none">
             {/* Modal Header */}
-            <div className="flex justify-between items-center border-b px-6 py-4 bg-gray-50/20">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
               <div>
-                <h3 className="font-semibold text-gray-900 text-base">Assign Plan</h3>
+                <h3 className="font-bold text-gray-900 text-base">Assign Plan</h3>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Select a plan to assign to {selectedCustomer.name}
                 </p>
               </div>
               <button
                 onClick={() => setIsAssignModalOpen(false)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition cursor-pointer"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                <label className="block text-xs font-bold text-gray-700 mb-2">
                   Choose a Plan
                 </label>
                 {isLoadingPlans ? (
@@ -314,30 +355,31 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
                 ) : activePlans.length === 0 ? (
                   <div className="text-xs text-gray-500 py-2">No active plans available.</div>
                 ) : (
-                  <div className="max-h-48 overflow-y-auto border rounded-lg border-gray-200 divide-y divide-gray-100 bg-white">
+                  <div className="max-h-48 overflow-y-auto border rounded-xl border-gray-200 divide-y divide-gray-100 bg-white">
                     {activePlans.map((plan) => {
                       const isSelected = selectedPlanId === plan.id;
                       return (
                         <div
                           key={plan.id}
                           onClick={() => setSelectedPlanId(plan.id)}
-                          className={`flex flex-col p-3 text-left cursor-pointer transition-colors ${isSelected
-                            ? "bg-[#1F4E57]/10 text-[#1F4E57] border-l-4 border-[#1F4E57]"
-                            : "hover:bg-gray-50 text-gray-750"
-                            }`}
+                          className={`flex flex-col p-3 text-left cursor-pointer transition-colors ${
+                            isSelected
+                              ? "bg-[#EFFBFD] text-[#2c6671] border-l-4 border-[#2c6671]"
+                              : "hover:bg-gray-50 text-gray-700"
+                          }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-xs sm:text-sm">{plan.name}</span>
+                            <span className="font-bold text-xs sm:text-sm">{plan.name}</span>
                             <input
                               type="radio"
                               name="selectedPlan"
                               checked={isSelected}
                               onChange={() => setSelectedPlanId(plan.id)}
-                              className="h-4 w-4 text-[#1F4E57] focus:ring-[#1F4E57] accent-[#1F4E57]"
+                              className="h-4 w-4 accent-[#2c6671]"
                             />
                           </div>
                           {plan.description && (
-                            <span className="text-[11px] text-gray-400 mt-1 line-clamp-2">
+                            <span className="text-[11px] text-gray-500 mt-1 line-clamp-2">
                               {plan.description}
                             </span>
                           )}
@@ -350,11 +392,11 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
             </div>
 
             {/* Modal Footer */}
-            <div className="flex justify-end gap-3 border-t px-6 py-4 bg-gray-50/50">
+            <div className="flex justify-end gap-2.5 border-t border-gray-100 pt-4 mt-4">
               <button
                 type="button"
                 onClick={() => setIsAssignModalOpen(false)}
-                className="border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-100 text-xs font-semibold cursor-pointer"
+                className="border border-gray-200 rounded-xl px-4 py-2 hover:bg-gray-50 text-xs font-semibold text-gray-600 transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -362,9 +404,9 @@ export const CompanyRequestsTable: React.FC<CompanyRequestsTableProps> = ({
                 type="button"
                 disabled={!selectedPlanId || isAssigning}
                 onClick={handleAssignSubmit}
-                className="bg-primary text-white rounded-lg px-5 py-2 hover:bg-[#1F4E57] disabled:opacity-50 text-xs font-semibold cursor-pointer"
+                className="bg-[#2c6671] text-white rounded-xl px-5 py-2 hover:bg-[#1f4e57] disabled:opacity-50 text-xs font-bold shadow-xs transition cursor-pointer"
               >
-                {isAssigning ? "Assigning..." : "Assign"}
+                {isAssigning ? "Assigning..." : "Assign Plan"}
               </button>
             </div>
           </div>
