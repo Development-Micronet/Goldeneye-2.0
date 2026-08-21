@@ -63,8 +63,8 @@ export const TenantPlansTable = () => {
                     <span className="text-gray-400 italic text-[11px]">No plan assigned</span>
                   )}
                 </td>
-                <td className="px-4 py-3.5 text-gray-600 text-[11px]">
-                  {row.plan_details ? `${row.plan_details.start_date} → ${row.plan_details.end_date}` : "—"}
+                <td className="px-4 py-3.5 text-gray-400 italic text-[11px]">
+                  {row.plan_details ? `${row.plan_details.start_date} → ${row.plan_details.end_date}` : "No validity date"}
                 </td>
                 <td className="px-4 py-3.5 text-center">
                   {row.plan_details ? (
