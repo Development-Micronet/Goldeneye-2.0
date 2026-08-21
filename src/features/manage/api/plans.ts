@@ -34,9 +34,28 @@ export interface PlansResponse {
   data: Plan[];
 }
 
+export interface MyPlanResponse {
+  success: boolean;
+  status_code: number;
+  message: string;
+  data: {
+    plan_id: number;
+    plan_name: string;
+    description: string;
+    start_date: string;
+    end_date: string;
+    allowed_providers: string[];
+    allowed_sensors: Record<string, string[]>;
+    services: string[];
+    is_active: boolean;
+    is_currently_valid: boolean;
+    assigned_at: string;
+  };
+}
 export interface EncryptedResponse {
   data: string;
 }
+
 
 // standard API request (No Decryption here)
 export const getPlans = async (): Promise<EncryptedResponse> => {
@@ -64,9 +83,26 @@ export const assignPlan = async (planId: number, payload: { schema_name: string 
   return data;
 };
 
-export const getMyPlan = async (): Promise<EncryptedResponse> => {
-  const { data } = await apiClient.get<EncryptedResponse>("plans/my-plan/");
-  return data;
+// export const getMyPlan = async (): Promise<EncryptedResponse> => {
+//   const { data } = await apiClient.get<EncryptedResponse>("plans/my-plan/");
+//   return data;
+// };
+
+export const getMyPlan = async (): Promise<MyPlanResponse | null> => {
+  try {
+    const { data } = await apiClient.get<MyPlanResponse>(
+      "plans/my-plan/"
+    );
+
+    return data;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      // No plan assigned = valid empty state
+      return null;
+    }
+
+    throw error;
+  }
 };
 
 export const unassignPlan = async (planId: number, schemaName: string): Promise<any> => {
