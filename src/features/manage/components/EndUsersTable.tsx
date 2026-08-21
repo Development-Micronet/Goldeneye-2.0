@@ -26,7 +26,19 @@ const CompanyUserAccordion: React.FC<{
   // Fetch users for the selected company
   const { data: users = [], isLoading, error } = useCompanyUsers(company.schema_name);
 
-  // Sort: Tenant Admin first, then regular users
+  // Check if company metadata itself matches search query
+  const companyMatchesSearch = useMemo(() => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      company.company_name?.toLowerCase().includes(q) ||
+      company.email?.toLowerCase().includes(q) ||
+      company.schema_name?.toLowerCase().includes(q) ||
+      company.username?.toLowerCase().includes(q)
+    );
+  }, [company, searchQuery]);
+
+  // Sort & filter users inside company by search query
   const sortedUsers = useMemo(() => {
     if (!users) return [];
     let list = [...users].sort((a, b) => {
@@ -39,8 +51,10 @@ const CompanyUserAccordion: React.FC<{
       const q = searchQuery.toLowerCase();
       list = list.filter(
         (u) =>
-          u.username.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q) ||
+          u.username?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q) ||
+          u.first_name?.toLowerCase().includes(q) ||
+          u.last_name?.toLowerCase().includes(q) ||
           `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase().includes(q)
       );
     }
@@ -48,12 +62,20 @@ const CompanyUserAccordion: React.FC<{
     return list;
   }, [users, searchQuery]);
 
-  // Automatically expand if search matches users
+  const isSearchActive = searchQuery.trim() !== "";
+  const hasMatchingUser = sortedUsers.length > 0;
+
+  // Automatically expand accordion if search matches users or company metadata
   React.useEffect(() => {
-    if (searchQuery.trim() !== "" && sortedUsers.length > 0) {
+    if (isSearchActive && (hasMatchingUser || companyMatchesSearch)) {
       setOpen(true);
     }
-  }, [searchQuery, sortedUsers.length]);
+  }, [isSearchActive, hasMatchingUser, companyMatchesSearch]);
+
+  // Hide company card completely if search is active and neither company nor any user inside matches
+  if (isSearchActive && !companyMatchesSearch && !hasMatchingUser && !isLoading) {
+    return null;
+  }
 
   return (
     <div className="rounded-2xl border border-gray-200/80 bg-white shadow-sm transition-all duration-300 hover:shadow-md overflow-hidden">
@@ -216,13 +238,38 @@ export const EndUsersTable: React.FC<EndUsersTableProps> = ({
   const filteredCompanies = useMemo(() => {
     if (!searchQuery.trim()) return companies;
     const q = searchQuery.toLowerCase();
-    return companies.filter(
-      (c) =>
-        c.company_name.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q) ||
-        c.schema_name.toLowerCase().includes(q)
-    );
-  }, [companies, searchQuery]);
+    return companies.filter((c) => {
+      // 1. Direct match on company properties
+      const matchCompany =
+        c.company_name?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.schema_name?.toLowerCase().includes(q) ||
+        c.username?.toLowerCase().includes(q);
+
+      if (matchCompany) return true;
+
+      // 2. Check React Query cached users for this company
+      const cachedUsers = queryClient.getQueryData<CompanyUser[]>([
+        "manage-company-users",
+        c.schema_name,
+      ]);
+
+      if (cachedUsers && Array.isArray(cachedUsers)) {
+        const matchUser = cachedUsers.some(
+          (u) =>
+            u.username?.toLowerCase().includes(q) ||
+            u.email?.toLowerCase().includes(q) ||
+            u.first_name?.toLowerCase().includes(q) ||
+            u.last_name?.toLowerCase().includes(q) ||
+            `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase().includes(q)
+        );
+        if (matchUser) return true;
+      }
+
+      // Keep mounted so CompanyUserAccordion can fetch & evaluate users if not in cache yet
+      return true;
+    });
+  }, [companies, searchQuery, queryClient]);
 
   if (isLoading) {
     return (
