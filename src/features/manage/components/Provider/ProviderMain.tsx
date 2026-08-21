@@ -8,6 +8,7 @@ import { useAuthStore } from "../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../utils/dataDecrypt";
 import ProviderAccordion from "./ProviderAccordion";
 import { logger } from "../../../../utils/logger";
+import ErrorBoundary from "../../../../components/common/ErrorBoundary";
 
 const ProviderMain = () => {
   const queryClient = useQueryClient();
@@ -34,7 +35,7 @@ const ProviderMain = () => {
     },
   });
 
-  const providers = data ?? []; // always array
+  const providers = Array.isArray(data) ? data : [];
   logger.log("Decrypted providers:", providers);
   const deleteMutation = useMutation({
     mutationFn: deleteProvider,
@@ -92,12 +93,14 @@ const ProviderMain = () => {
   return (
     <>
       <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
-        <ProviderAccordion
-          providers={providers}
-          deleteMutation={deleteMutation}
-          handleDelete={handleDelete}
-          setSelectedProviderId={setSelectedProviderId}
-        />
+        <ErrorBoundary componentName="ProviderAccordion">
+          <ProviderAccordion
+            providers={providers}
+            deleteMutation={deleteMutation}
+            handleDelete={handleDelete}
+            setSelectedProviderId={setSelectedProviderId}
+          />
+        </ErrorBoundary>
       </div>
       {selectedProviderId && (
         <ProviderViewAndEdit
