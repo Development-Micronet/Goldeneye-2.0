@@ -105,77 +105,105 @@ export default function ContractsTable({ providerId, providerName }: Props) {
 
   if (!contracts.length) {
     return (
-      <div className="rounded-lg border bg-white p-10 text-center text-gray-500">
-        No Contracts Found.
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-8 text-center select-none">
+        <p className="text-xs font-semibold text-gray-500">No contracts configured for this provider.</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
-        <table className="min-w-full">
-          <thead className="bg-gray-50">
-            <tr className="border-b">
-              <th className="px-4 py-3 text-left text-sm font-semibold">Sr. No</th>
-
-              <th className="px-4 py-3 text-left text-sm font-semibold">Contract Id</th>
-
-              <th className="px-4 py-3 text-left text-sm font-semibold">Contract Name</th>
-
-              <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
-
-              <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
-
-              <th className="px-4 py-3 text-left text-sm font-semibold">Contract Type</th>
-
-              <th className="px-4 py-3 text-left text-sm font-semibold">Expires At</th>
-
-              <th className="px-4 py-3 text-center text-sm font-semibold">Action</th>
+      <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-2xs">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead className="bg-[#EFFBFD] border-b border-gray-200/80">
+            <tr>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-14 text-center">
+                Sr. No.
+              </th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
+                Contract ID
+              </th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
+                Contract Name
+              </th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
+                Email
+              </th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide text-center">
+                Status
+              </th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
+                Contract Type
+              </th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
+                Expires At
+              </th>
+              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide text-center">
+                Action
+              </th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="divide-y divide-gray-100 bg-white">
             {contracts.map((contract, index) => (
-              <tr key={contract.id} className="border-b last:border-none hover:bg-gray-50">
-                <td className="px-4 py-4">{index + 1}</td>
+              <tr key={contract.id} className="hover:bg-[#EFFBFD]/30 transition-colors">
+                <td className="px-4 py-3 text-xs text-gray-500 font-medium text-center">
+                  {index + 1}
+                </td>
 
-                <td className="px-4 py-4">{contract.contractId}</td>
+                <td className="px-4 py-3 font-mono text-xs font-bold text-gray-900">
+                  {contract.contractId}
+                </td>
 
-                <td className="px-4 py-4">{contract.name}</td>
+                <td className="px-4 py-3 font-bold text-gray-800 text-xs">
+                  {contract.name}
+                </td>
 
-                <td className="px-4 py-4">{contract.email}</td>
+                <td className="px-4 py-3 text-xs text-gray-600">
+                  {contract.email}
+                </td>
 
-                <td className="px-4 py-4">
+                <td className="px-4 py-3 text-xs text-center">
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${
                       contract.status === "Active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-600"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-rose-50 text-rose-700 border-rose-200"
                     }`}
                   >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        contract.status === "Active" ? "bg-emerald-500" : "bg-rose-500"
+                      }`}
+                    />
                     {contract.status}
                   </span>
                 </td>
 
-                <td className="px-4 py-4">{contract.contractType ?? "-"}</td>
+                <td className="px-4 py-3 text-xs text-gray-700 font-medium">
+                  {contract.contractType ?? "—"}
+                </td>
 
-                <td className="px-4 py-4">{new Date(contract.expiresAt).toLocaleString()}</td>
+                <td className="px-4 py-3 text-xs text-gray-600">
+                  {new Date(contract.expiresAt).toLocaleString()}
+                </td>
 
-                <td className="px-4 py-4">
-                  <div className="flex justify-center gap-3">
+                <td className="px-4 py-3 text-xs text-center">
+                  <div className="flex items-center justify-center gap-1">
                     <button
                       onClick={() => setSelectedContract(contract)}
-                      className="text-teal-700 hover:text-teal-900"
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-[#EFFBFD] hover:text-[#2c6671] transition-colors cursor-pointer"
+                      title="Edit Contract"
                     >
-                      <Pencil size={18} />
+                      <Pencil className="h-4 w-4" />
                     </button>
 
                     <button
                       onClick={() => handleDelete(contract.contractId)}
-                      className="text-teal-700 hover:text-red-600"
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+                      title="Delete Contract"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </td>

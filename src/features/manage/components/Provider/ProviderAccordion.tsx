@@ -2,7 +2,7 @@ import { useState } from "react";
 import * as Accordion from "@radix-ui/react-accordion";
 import ContractsTable from "../Contracts/ContractsTable";
 import ContractFormModal from "../Contracts/ContractsFormModal";
-import { ChevronDown, Plus, Trash2, Edit2, Loader2 } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Edit2, Loader2, Building2, ShieldCheck, FileText, Info } from "lucide-react";
 
 type Props = {
   providers: any[];
@@ -36,158 +36,215 @@ export default function ProviderAccordion({
 
   if (!validProviders.length) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 text-center text-gray-500">
-        No providers available.
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#2c6671]/30 bg-[#EFFBFD]/30 p-10 text-center select-none">
+        <Building2 className="mb-2 h-10 w-10 text-[#2c6671]/40" />
+        <h4 className="text-sm font-bold text-gray-800">No Providers Found</h4>
+        <p className="mt-1 text-xs text-gray-500 max-w-sm">
+          No provider details available. Click the "Add Provider" button to configure a new GIS satellite provider.
+        </p>
       </div>
     );
   }
 
   return (
     <>
-      <Accordion.Root type="single" collapsible className="space-y-4">
-        {validProviders.map((provider) => (
-          <Accordion.Item
-            key={provider.provider_id}
-            value={provider.provider_id}
-            className="overflow-hidden rounded-lg border bg-white"
-          >
-            {/* Header */}
+      <Accordion.Root type="single" collapsible className="space-y-3.5 select-none">
+        {validProviders.map((provider) => {
+          const isCurrentTabContracts = activeTab[provider.provider_id] === "contracts";
 
-            <Accordion.Header className="flex w-full items-center justify-between bg-cyan-50 px-5 py-4 transition hover:bg-cyan-100">
-              <Accordion.Trigger className="group flex flex-1 items-center gap-2 text-left cursor-pointer">
-                <ChevronDown className="h-5 w-5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                <span className="font-semibold text-gray-800">{provider.name}</span>
-              </Accordion.Trigger>
+          return (
+            <Accordion.Item
+              key={provider.provider_id}
+              value={provider.provider_id}
+              className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-2xs transition-all duration-200 hover:border-[#2c6671]/30"
+            >
+              {/* Accordion Header */}
+              <Accordion.Header className="flex w-full items-center justify-between bg-[#EFFBFD] px-5 py-3.5 transition-colors">
+                <Accordion.Trigger className="group flex flex-1 items-center gap-3 text-left cursor-pointer">
+                  <ChevronDown className="h-4 w-4 text-[#2c6671] transition-transform duration-200 group-data-[state=open]:rotate-180 shrink-0" />
+                  <div className="flex items-center gap-2.5">
+                    <Building2 className="h-4 w-4 text-[#2c6671] shrink-0" />
+                    <span className="font-bold text-gray-900 text-sm sm:text-base">
+                      {provider.name}
+                    </span>
+                  </div>
 
-              <div className="flex items-center gap-3">
-                {/* Add Contract */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedProviderIdForContract(provider.provider_id);
-                    setIsContractModalOpen(true);
-                  }}
-                  className="rounded p-2 text-blue-600 hover:bg-blue-100"
-                  title="Add Contract"
-                >
-                  <Plus size={18} />
-                </button>
-
-                {/* Delete */}
-                <button
-                  type="button"
-                  onClick={() => handleDelete(provider.provider_id)}
-                  disabled={
-                    Boolean(deleteMutation?.isPending) &&
-                    deleteMutation?.variables === provider.provider_id
-                  }
-                  className="rounded p-2 text-red-600 hover:bg-red-100"
-                  title="Delete Provider"
-                >
-                  {Boolean(deleteMutation?.isPending) &&
-                  deleteMutation?.variables === provider.provider_id ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <Trash2 size={18} />
-                  )}
-                </button>
-              </div>
-            </Accordion.Header>
-
-            {/* Content */}
-
-            <Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-hidden">
-              <div className="p-5">
-                {/* Top Buttons */}
-                <div className="mb-4 flex gap-3">
-                  <button
-                    onClick={() =>
-                      setActiveTab((prev) => ({
-                        ...prev,
-                        [provider.provider_id]: "details",
-                      }))
-                    }
-                    className={`rounded-md px-4 py-2 text-sm font-medium ${
-                      activeTab[provider.provider_id] !== "contracts"
-                        ? "bg-primary text-white"
-                        : "bg-gray-200"
+                  {/* Status Badge */}
+                  <span
+                    className={`ml-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${
+                      provider.is_active
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-rose-50 text-rose-700 border-rose-200"
                     }`}
                   >
-                    Details
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        provider.is_active ? "bg-emerald-500" : "bg-rose-500"
+                      }`}
+                    />
+                    {provider.is_active ? "Active" : "Inactive"}
+                  </span>
+                </Accordion.Trigger>
+
+                {/* Right Action Buttons */}
+                <div className="flex items-center gap-2">
+                  {/* Add Contract Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedProviderIdForContract(provider.provider_id);
+                      setIsContractModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#2c6671] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#1f4e57] active:scale-[0.98] cursor-pointer"
+                    title="Add Contract to Provider"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add Contract</span>
                   </button>
 
+                  {/* Delete Provider Button */}
                   <button
-                    onClick={() =>
-                      setActiveTab((prev) => ({
-                        ...prev,
-                        [provider.provider_id]: "contracts",
-                      }))
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(provider.provider_id);
+                    }}
+                    disabled={
+                      Boolean(deleteMutation?.isPending) &&
+                      deleteMutation?.variables === provider.provider_id
                     }
-                    className={`rounded-md px-4 py-2 text-sm font-medium ${
-                      activeTab[provider.provider_id] === "contracts"
-                        ? "bg-primary text-white"
-                        : "bg-gray-200"
-                    }`}
+                    className="rounded-lg p-1.5 text-gray-400 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
+                    title="Delete Provider"
                   >
-                    Contracts
+                    {Boolean(deleteMutation?.isPending) &&
+                    deleteMutation?.variables === provider.provider_id ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-rose-600" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
+              </Accordion.Header>
 
-                {/* DETAILS */}
+              {/* Accordion Content */}
+              <Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-hidden border-t border-[#2c6671]/10">
+                <div className="p-4 sm:p-5 bg-white space-y-4">
+                  {/* Inner Sub-Navigation Tabs */}
+                  <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+                    <button
+                      onClick={() =>
+                        setActiveTab((prev) => ({
+                          ...prev,
+                          [provider.provider_id]: "details",
+                        }))
+                      }
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                        !isCurrentTabContracts
+                          ? "bg-[#2c6671] text-white shadow-xs"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                      <span>Details</span>
+                    </button>
 
-                {activeTab[provider.provider_id] !== "contracts" && (
-                  <table className="min-w-full border border-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="border p-3 text-left">Provider Name</th>
-                        <th className="border p-3 text-left">Description</th>
-                        <th className="border p-3 text-left">Status</th>
-                        <th className="border p-3 text-center">Action</th>
-                      </tr>
-                    </thead>
+                    <button
+                      onClick={() =>
+                        setActiveTab((prev) => ({
+                          ...prev,
+                          [provider.provider_id]: "contracts",
+                        }))
+                      }
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                        isCurrentTabContracts
+                          ? "bg-[#2c6671] text-white shadow-xs"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      <span>Contracts</span>
+                    </button>
+                  </div>
 
-                    <tbody>
-                      <tr>
-                        <td className="border p-3">{provider.name}</td>
+                  {/* DETAILS TAB */}
+                  {!isCurrentTabContracts && (
+                    <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-2xs">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-[#EFFBFD] border-b border-gray-200/80">
+                          <tr>
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-48">
+                              Provider Name
+                            </th>
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">
+                              Description
+                            </th>
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-32">
+                              Status
+                            </th>
+                            <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-24 text-center">
+                              Action
+                            </th>
+                          </tr>
+                        </thead>
 
-                        <td className="border p-3">{provider.description || "-"}</td>
+                        <tbody className="divide-y divide-gray-100 bg-white">
+                          <tr className="hover:bg-[#EFFBFD]/30 transition-colors">
+                            <td className="px-4 py-3.5 font-bold text-gray-900 text-xs sm:text-sm">
+                              <div className="flex items-center gap-2">
+                                <Building2 className="h-4 w-4 text-[#2c6671] shrink-0" />
+                                <span>{provider.name}</span>
+                              </div>
+                            </td>
 
-                        <td className="border p-3">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`h-2.5 w-2.5 rounded-full ${
-                                provider.is_active ? "bg-green-500" : "bg-yellow-500"
-                              }`}
-                            />
-                            {provider.is_active ? "Active" : "Inactive"}
-                          </div>
-                        </td>
+                            <td className="px-4 py-3.5 text-xs text-gray-600 font-normal leading-relaxed">
+                              {provider.description || "No description provided."}
+                            </td>
 
-                        <td className="border p-3">
-                          <div className="flex justify-center">
-                            <button
-                              onClick={() => setSelectedProviderId(provider.provider_id)}
-                              className="rounded-md p-2 text-blue-600 transition hover:bg-blue-100"
-                              title="Edit Provider"
-                            >
-                              <Edit2 size={17} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                )}
+                            <td className="px-4 py-3.5 text-xs">
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${
+                                  provider.is_active
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : "bg-rose-50 text-rose-700 border-rose-200"
+                                }`}
+                              >
+                                <span
+                                  className={`h-1.5 w-1.5 rounded-full ${
+                                    provider.is_active ? "bg-emerald-500" : "bg-rose-500"
+                                  }`}
+                                />
+                                {provider.is_active ? "Active" : "Inactive"}
+                              </span>
+                            </td>
 
-                {/* CONTRACTS */}
+                            <td className="px-4 py-3.5 text-xs text-center">
+                              <button
+                                onClick={() => setSelectedProviderId(provider.provider_id)}
+                                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#EFFBFD] hover:text-[#2c6671] transition-colors cursor-pointer"
+                                title="Edit Provider"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
 
-                {activeTab[provider.provider_id] === "contracts" && (
-                  <ContractsTable providerId={provider.provider_id} providerName={provider.name} />
-                )}
-              </div>
-            </Accordion.Content>
-          </Accordion.Item>
-        ))}
+                  {/* CONTRACTS TAB */}
+                  {isCurrentTabContracts && (
+                    <ContractsTable
+                      providerId={provider.provider_id}
+                      providerName={provider.name}
+                    />
+                  )}
+                </div>
+              </Accordion.Content>
+            </Accordion.Item>
+          );
+        })}
       </Accordion.Root>
 
       <ContractFormModal
@@ -201,3 +258,4 @@ export default function ProviderAccordion({
     </>
   );
 }
+
