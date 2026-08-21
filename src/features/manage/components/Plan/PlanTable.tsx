@@ -123,7 +123,6 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                     <tbody className="divide-y divide-gray-100 bg-white">
                         {plans.map((p, index) => (
                             <tr key={p.id} className="hover:bg-[#EFFBFD]/30 transition-colors">
-                            <tr key={p.id ?? `plan-${index}`} className="hover:bg-gray-50/50 transition-colors">
                                 {/* Sr No. */}
                                 <td className="px-4 py-3.5 text-xs text-gray-500 font-medium text-center">
                                     {index + 1}
@@ -135,8 +134,6 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                                         <Award className="h-4 w-4 text-[#2c6671] shrink-0" />
                                         <span>{p.name}</span>
                                     </div>
-                                <td className="border border-gray-200 px-4 py-3 text-xs sm:text-sm text-gray-900 font-semibold">
-                                    {p.name || p.plan_name } 
                                 </td>
 
                                 {/* Description */}
@@ -279,13 +276,6 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                                 </td>
                             </tr>
                         )}
-                        {/* {plans.length === 0 && (
-                            <tr>
-                                <td colSpan={isAdmin ? 7 : 8} className="text-center py-8 text-sm text-gray-400 select-none">
-                                    No plans found.
-                                </td>
-                            </tr>
-                        )} */}
                     </tbody>
                 </table>
             </div>
