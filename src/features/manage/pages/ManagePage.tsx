@@ -13,6 +13,7 @@ import { PlanFormModal } from "../components/Plan/PlanFormModal";
 import { PlanTable } from "../components/Plan/PlanTable";
 import { buildManageTabSearch, getTabFromSearch } from "../utils/manageTabs";
 import { TenantPlansTable } from "../components/Plan/TenantPlansTable";
+import Swal from "sweetalert2";
 
 export const ManagePage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
@@ -43,9 +44,12 @@ export const ManagePage: React.FC = () => {
   // Add Item Action Handlers
   const handleAddItem = () => {
     if (activeTab === "company-requests") {
-      alert(
-        "To register a new organization request, please use the public Organization Registration flow (/register-company).",
-      );
+      Swal.fire({
+        title: "Information",
+        text: "To register a new organization request, please use the public Organization Registration flow (/register-company).",
+        icon: "info",
+        confirmButtonColor: "#2F6E7C",
+      });
     } else if (activeTab === "provider & Contracts") {
       setshowProviderModalform(true);
     } else if (activeTab === "subscription") {
@@ -58,9 +62,12 @@ export const ManagePage: React.FC = () => {
 
   // Edit Action Handlers
   const handleEditRequest = (customer: Customer) => {
-    alert(
-      `Editing customer profile: ${customer.name}\nUsername: ${customer.userName}\nStatus: ${customer.status}`,
-    );
+    Swal.fire({
+      title: "Edit Customer",
+      text: `Editing customer profile: ${customer.name}\nUsername: ${customer.userName}\nStatus: ${customer.status}`,
+      icon: "info",
+      confirmButtonColor: "#2F6E7C",
+    });
   };
 
   const handleClosePlanModal = () => {
@@ -75,10 +82,28 @@ export const ManagePage: React.FC = () => {
 
 
   // Delete Action Handlers
-  const handleDeleteRequest = (id: number) => {
-    if (confirm(`Are you sure you want to delete customer ID ${id}?`)) {
-      alert("Delete action triggered for backend client ID: " + id);
-    }
+  const handleDeleteRequest = async (id: number) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: `Are you sure you want to delete customer ID ${id}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete it",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    Swal.fire({
+      title: "Deleted!",
+      text: "Delete action triggered for backend client ID: " + id,
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
+    });
   };
 
   return (

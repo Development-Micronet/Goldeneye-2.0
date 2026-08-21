@@ -203,5 +203,27 @@ export default function MapView() {
     );
   }
 
-  return <div ref={mapContainer} className="h-full w-full" />;
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      {/* MapLibre Canvas Container */}
+      <div ref={mapContainer} className="h-full w-full" />
+
+      {/* Professional Map Loading Overlay */}
+      {!mapLoaded && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-gray-900/10 backdrop-blur-xs transition-opacity duration-500">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-gray-200/80 bg-white/90 px-8 py-6 shadow-2xl backdrop-blur-md select-none animate-fadeIn">
+            <div className="relative flex h-10 w-10 items-center justify-center">
+              <div className="h-10 w-10 animate-spin rounded-full border-3 border-[#2c6671]/20 border-t-[#2c6671]"></div>
+            </div>
+            <div className="text-center">
+              <h4 className="text-sm font-bold text-gray-900">Loading Analytics Map</h4>
+              <p className="mt-0.5 text-xs font-medium text-[#2c6671]">
+                Initializing 3D tile layers & basemap...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
