@@ -16,7 +16,7 @@ export const PlanStatusChart: React.FC = () => {
     }
 
     const totalCompanies = tenantPlans.length;
-    
+
     // Calculate counts
     const validCount = tenantPlans.filter(
         (t) => t.plan_details && t.plan_details.is_currently_valid
@@ -232,7 +232,7 @@ export const PlanStatusChart: React.FC = () => {
                                                 {tp.plan_details ? (
                                                     `${tp.plan_details.start_date} → ${tp.plan_details.end_date}`
                                                 ) : (
-                                                    "—"
+                                                    "No validity date"
                                                 )}
                                             </td>
                                             <td className="px-4 py-2.5 text-center">
