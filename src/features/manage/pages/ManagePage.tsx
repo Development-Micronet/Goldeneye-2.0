@@ -10,7 +10,7 @@ import ProviderFormModal from "../components/Provider/ProviderFormModal";
 import SubscriptionFormModal from "../components/Subscription/SubscriptionFormModal";
 import SubscriptionList from "../components/Subscription/SubscriptionList";
 import { PlanFormModal } from "../components/Plan/PlanFormModal";
-import  PlanTable  from "../components/Plan/PlanTable";
+import { PlanTable } from "../components/Plan/PlanTable";
 import { buildManageTabSearch, getTabFromSearch } from "../utils/manageTabs";
 import { TenantPlansTable } from "../components/Plan/TenantPlansTable";
 import Swal from "sweetalert2";
@@ -150,18 +150,12 @@ export const ManagePage: React.FC = () => {
             )}
             {activeTab === "provider & Contracts" && <ProviderTable />}
             {activeTab === "subscription" && <SubscriptionList />}
-            /* {activeTab === "plan" && (
+            {activeTab === "plan" && (
               <>
                 <PlanTable onEdit={handleEditPlan} />
                 {roleName !== "admin" && <TenantPlansTable />}
               </>
-            )} */
-
-            {activeTab === "plan" && (
-  <div className="p-4 text-gray-500">
-    Plan page loaded
-  </div>
-)}
+            )}
           </div>
         </div>
       </div>
