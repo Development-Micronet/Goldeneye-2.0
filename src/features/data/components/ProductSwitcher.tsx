@@ -315,7 +315,12 @@ const ProductSwitcher: React.FC = () => {
                   Sensors
                   {currentProviderObj && (
                     <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
-                      {selectedSensors.length}/{currentProviderObj.sensors.length}
+                      {
+                        currentProviderObj.sensors.filter((s) =>
+                          selectedSensors.includes(s.id)
+                        ).length
+                      }
+                      /{currentProviderObj.sensors.length}
                     </span>
                   )}
                 </span>
