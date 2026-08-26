@@ -630,10 +630,17 @@ export default function MapView() {
 
       // Smoothly zoom map to fit the newly drawn shape UI extent
       if (geometry) {
+        const currentZoom = map.getView().getZoom() || 5;
+        const targetMaxZoom =
+          currentZoom <= 6
+            ? 7
+            : currentZoom > 10
+            ? Math.max(Math.ceil(currentZoom), 18)
+            : 10;
         map.getView().fit(geometry, {
-          padding: [80, 80, 80, 80],
+          padding: [120, 120, 120, 120],
           duration: 800,
-          maxZoom: 10,
+          maxZoom: targetMaxZoom,
         });
       }
 
@@ -1143,10 +1150,18 @@ export default function MapView() {
         const feature = geojsonFormat.readFeature(selectedLayer.geojson);
         const geometry = feature.getGeometry();
         if (geometry) {
-          mapInstance.current.getView().fit(geometry, {
-            padding: [80, 80, 80, 80],
+          const map = mapInstance.current;
+          const currentZoom = map.getView().getZoom() || 5;
+          const targetMaxZoom =
+            currentZoom <= 6
+              ? 7
+              : currentZoom > 10
+              ? Math.max(Math.ceil(currentZoom), 18)
+              : 10;
+          map.getView().fit(geometry, {
+            padding: [120, 120, 120, 120],
             duration: 800,
-            maxZoom: 14,
+            maxZoom: targetMaxZoom,
           });
         }
       } catch (err) {

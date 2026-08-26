@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { useProductStore } from "../features/data/hooks/useproductStore";
 
 export interface User {
   user: string;
@@ -32,8 +33,14 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       user: null,
-      setAuth: (accessToken, refreshToken, user) => set({ accessToken, refreshToken, user }),
-      clearAuth: () => set({ accessToken: null, refreshToken: null, user: null }),
+      setAuth: (accessToken, refreshToken, user) => {
+        useProductStore.getState().resetProductStore();
+        set({ accessToken, refreshToken, user });
+      },
+      clearAuth: () => {
+        useProductStore.getState().resetProductStore();
+        set({ accessToken: null, refreshToken: null, user: null });
+      },
     }),
     {
       name: "auth-storage",

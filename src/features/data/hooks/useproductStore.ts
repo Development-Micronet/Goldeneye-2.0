@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 export type SensorData = {
   id: string;
@@ -19,6 +20,8 @@ interface ProductStore {
   /** Selected product types (airbus only) */
   selectedProductTypes: string[];
 
+  isInitialized: boolean;
+
   setProviders: (providers: ProviderData[]) => void;
   setSelectedProvider: (provider: string) => void;
   setSelectedSensors: (sensors: string[]) => void;
@@ -26,69 +29,82 @@ interface ProductStore {
   setSelectedProductTypes: (types: string[]) => void;
   toggleProductType: (type: string) => void;
   clearProducts: () => void;
+  resetProductStore: () => void;
 }
 
-export const useProductStore = create<ProductStore>((set, get) => ({
-  providers: [],
-  selectedProvider: "airbus",
-  selectedSensors: [],
-  selectedProductTypes: [],
-
-  setProviders: (providers) => {
-    const state = get();
-    const matched = providers.find((p) => p.name === "airbus");
-    const defaultSensorIds = matched ? matched.sensors.map((s) => s.id) : [];
-    // Collect all productTypes for default provider
-    const defaultProductTypes = matched
-      ? [...new Set(matched.sensors.flatMap((s) => s.productTypes))]
-      : [];
-
-    set({
-      providers,
-      selectedSensors:
-        state.selectedSensors.length > 0 ? state.selectedSensors : defaultSensorIds,
-      selectedProductTypes:
-        state.selectedProductTypes.length > 0
-          ? state.selectedProductTypes
-          : defaultProductTypes,
-    });
-  },
-
-  setSelectedProvider: (provider) => {
-    const state = get();
-    const matched = state.providers.find((p) => p.name === provider);
-    const sensorIds = matched ? matched.sensors.map((s) => s.id) : [];
-    const allProductTypes = matched
-      ? [...new Set(matched.sensors.flatMap((s) => s.productTypes))]
-      : [];
-    set({
-      selectedProvider: provider,
-      selectedSensors: sensorIds,
-      selectedProductTypes: allProductTypes,
-    });
-  },
-
-  setSelectedSensors: (sensors) => set({ selectedSensors: sensors }),
-
-  toggleSensor: (sensorId) =>
-    set((state) => ({
-      selectedSensors: state.selectedSensors.includes(sensorId)
-        ? state.selectedSensors.filter((s) => s !== sensorId)
-        : [...state.selectedSensors, sensorId],
-    })),
-
-  setSelectedProductTypes: (types) => set({ selectedProductTypes: types }),
-
-  toggleProductType: (type) =>
-    set((state) => ({
-      selectedProductTypes: state.selectedProductTypes.includes(type)
-        ? state.selectedProductTypes.filter((t) => t !== type)
-        : [...state.selectedProductTypes, type],
-    })),
-
-  clearProducts: () =>
-    set({
+export const useProductStore = create<ProductStore>()(
+  persist(
+    (set, get) => ({
+      providers: [],
+      selectedProvider: "airbus",
       selectedSensors: [],
       selectedProductTypes: [],
+      isInitialized: false,
+
+      setProviders: (providers) => {
+        const state = get();
+        if (state.isInitialized) {
+          set({ providers });
+          return;
+        }
+
+        const allSensorIds = providers.flatMap((p) => p.sensors.map((s) => s.id));
+        const allProductTypes = [
+          ...new Set(
+            providers.flatMap((p) => p.sensors.flatMap((s) => s.productTypes ?? []))
+          ),
+        ];
+
+        set({
+          providers,
+          selectedSensors: allSensorIds,
+          selectedProductTypes: allProductTypes,
+          isInitialized: true,
+        });
+      },
+
+      setSelectedProvider: (provider) => {
+        set({
+          selectedProvider: provider,
+        });
+      },
+
+      setSelectedSensors: (sensors) => set({ selectedSensors: sensors }),
+
+      toggleSensor: (sensorId) =>
+        set((state) => ({
+          selectedSensors: state.selectedSensors.includes(sensorId)
+            ? state.selectedSensors.filter((s) => s !== sensorId)
+            : [...state.selectedSensors, sensorId],
+        })),
+
+      setSelectedProductTypes: (types) => set({ selectedProductTypes: types }),
+
+      toggleProductType: (type) =>
+        set((state) => ({
+          selectedProductTypes: state.selectedProductTypes.includes(type)
+            ? state.selectedProductTypes.filter((t) => t !== type)
+            : [...state.selectedProductTypes, type],
+        })),
+
+      clearProducts: () =>
+        set({
+          selectedSensors: [],
+          selectedProductTypes: [],
+        }),
+
+      resetProductStore: () =>
+        set({
+          providers: [],
+          selectedProvider: "airbus",
+          selectedSensors: [],
+          selectedProductTypes: [],
+          isInitialized: false,
+        }),
     }),
-}));
+    {
+      name: "product-selection-storage",
+      storage: createJSONStorage(() => sessionStorage),
+    }
+  )
+);

@@ -62,7 +62,7 @@ export const ArchiveSearchMenu: React.FC = () => {
   const queryClient = useQueryClient();
   const layers = useLayersStore((state) => state.layers);
   const { setFlyToProduct } = useMapStore();
-  const { selectedProvider, selectedSensors, selectedProductTypes } = useProductStore();
+  const { providers, selectedProvider, selectedSensors, selectedProductTypes } = useProductStore();
   const { accessToken } = useAuthStore();
   const provider = selectedProvider as SatelliteProvider;
   const token = accessToken?.replace("Bearer ", "").trim() || "";
@@ -166,7 +166,12 @@ export const ArchiveSearchMenu: React.FC = () => {
       ),
     ].join(",");
   }, [selectedProductTypes]);
-  const sensors = selectedSensors;
+  const sensors = useMemo(() => {
+    const currentProviderObj = providers.find((p) => p.name === selectedProvider);
+    if (!currentProviderObj) return selectedSensors;
+    const providerSensorIds = currentProviderObj.sensors.map((s) => s.id);
+    return selectedSensors.filter((id) => providerSensorIds.includes(id));
+  }, [providers, selectedProvider, selectedSensors]);
 
   const aoi = useMemo(() => {
     const layer = layers.find((l) => l.id === selectedAOIId);
