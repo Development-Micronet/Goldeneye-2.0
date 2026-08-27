@@ -635,8 +635,8 @@ export default function MapView() {
           currentZoom <= 6
             ? 7
             : currentZoom > 10
-            ? Math.max(Math.ceil(currentZoom), 18)
-            : 10;
+              ? Math.max(Math.ceil(currentZoom), 18)
+              : 10;
         map.getView().fit(geometry, {
           padding: [120, 120, 120, 120],
           duration: 800,
@@ -1156,8 +1156,8 @@ export default function MapView() {
             currentZoom <= 6
               ? 7
               : currentZoom > 10
-              ? Math.max(Math.ceil(currentZoom), 18)
-              : 10;
+                ? Math.max(Math.ceil(currentZoom), 18)
+                : 10;
           map.getView().fit(geometry, {
             padding: [120, 120, 120, 120],
             duration: 800,

@@ -5,6 +5,7 @@ import "react-tooltip/dist/react-tooltip.css";
 
 import { RasterIcon } from "../../../assets";
 import { AnalyticsMenu } from "./AnalyticsMenu";
+import { History } from "./History";
 
 interface MapSidebarProps {
   activeIndex?: number | null;
@@ -26,7 +27,8 @@ export default function MapSidebar({
     switch (index) {
       case 0:
         return <AnalyticsMenu />;
-
+      case 1:
+        return <History />;
       default:
         return null;
     }
@@ -35,6 +37,12 @@ export default function MapSidebar({
     {
       id: 0,
       name: "Raster",
+      icon: RasterIcon,
+      enabled: true,
+    },
+    {
+      id: 1,
+      name: "Historical Archive",
       icon: RasterIcon,
       enabled: true,
     },

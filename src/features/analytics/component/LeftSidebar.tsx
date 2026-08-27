@@ -1,11 +1,12 @@
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { useEffect, useRef, useState } from "react";
-import { RasterIcon, Baselayer } from "../../../assets";
+import { RasterIcon, Baselayer, drawIcon } from "../../../assets";
 
 import RasterPopup from "./RasterPopup";
 import { useMapStore } from "../../data/store/useMapStore";
 import BasemapPopup from "./BasemapPopup";
+import AnalyticsDrawPopup from "./AnalyticsDrawPopup";
 
 interface LeftSidebarProps {
   activeIndex?: number | null;
@@ -40,6 +41,11 @@ export default function LeftSidebar({
       id: 2,
       icon: Baselayer,
       tooltip: "Basemaps",
+    },
+    {
+      id: 3,
+      icon: drawIcon,
+      tooltip: "Draw AOI to GeoTIFF",
     },
   ];
 
@@ -106,6 +112,8 @@ export default function LeftSidebar({
                 {index === 0 && isActive && <RasterPopup onClose={() => setActiveIndex(null)} />}
 
                 {index === 1 && isActive && <BasemapPopup onClose={() => setActiveIndex(null)} />}
+
+                {index === 2 && isActive && <AnalyticsDrawPopup onClose={() => setActiveIndex(null)} />}
               </div>
             </li>
           );

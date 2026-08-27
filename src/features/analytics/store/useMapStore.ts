@@ -28,12 +28,15 @@ import type { Map } from "maplibre-gl";
 
 export type MapMode = string;
 export type Maptype = "2d" | "3d";
+export type AnalyticsDrawTool = "polygon" | "rectangle" | "circle" | null;
+
 interface MapStore {
   map: Map | null;
 
   // Selected layer
   mapMode: MapMode;
   Maptype: Maptype;
+  activeDrawTool: AnalyticsDrawTool;
 
   setMap: (map: Map) => void;
   buildingColor: string;
@@ -42,6 +45,7 @@ interface MapStore {
 
   setMapMode: (mode: MapMode) => void;
   setMaptype: (type: Maptype) => void;
+  setActiveDrawTool: (tool: AnalyticsDrawTool) => void;
   setBuildingColor: (color: string) => void;
 }
 
@@ -54,6 +58,7 @@ export const useMapStore = create<MapStore>()(
       mapMode: "osm",
       Maptype: "2d",
       buildingColor: "#2C6671",
+      activeDrawTool: null,
 
       setMap: (map) => set({ map }, false, "map/setMap"),
 
@@ -61,6 +66,7 @@ export const useMapStore = create<MapStore>()(
 
       setMapMode: (mode) => set({ mapMode: mode }, false, "map/setMapMode"),
       setMaptype: (type) => set({ Maptype: type }, false, "map/setMaptype"),
+      setActiveDrawTool: (tool) => set({ activeDrawTool: tool }, false, "map/setActiveDrawTool"),
       setBuildingColor: (color) =>
         set({ buildingColor: color }, false, "map/setBuildingColor"),
     }),

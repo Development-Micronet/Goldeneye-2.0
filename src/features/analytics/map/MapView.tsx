@@ -4,8 +4,12 @@ import { useMapStore } from "../store/useMapStore";
 import { useRasterLayers } from "../core/useRasterLayers";
 import { useLayerSync } from "../core/useLayerSync";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { TerraDraw, TerraDrawPolygonMode, TerraDrawRectangleMode, TerraDrawCircleMode, TerraDrawRenderMode } from "terra-draw";
+import { TerraDrawMapLibreGLAdapter } from "terra-draw-maplibre-gl-adapter";
+import { exportGeoTIFFFromMapLibreFeature } from "../../../utils/geoTiffExport";
 
 import { sanitizeMapStyle } from "../utils/sanitizeStyle";
+import { useRasterStore } from "../store/useRasterStore";
 // import { usebuildingcolor } from "../core/usebuildingcolor";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
@@ -68,6 +72,7 @@ export default function MapView() {
           zoom: 16,
           pitch: mapType === "3d" ? 60 : 0,
           bearing: mapType === "3d" ? -20 : 0,
+          preserveDrawingBuffer: true,
         });
 
         mapInstance.on("styleimagemissing", (e) => {
@@ -188,7 +193,170 @@ export default function MapView() {
   // Basemap and buildings first, rasters after.
   useLayerSync(mapLoaded ? map : null);
   useRasterLayers(mapLoaded ? map : null);
-  // usebuildingcolor()
+
+  const activeDrawTool = useMapStore((state) => state.activeDrawTool);
+  const setActiveDrawTool = useMapStore((state) => state.setActiveDrawTool);
+  const drawInstanceRef = useRef<TerraDraw | null>(null);
+
+  // Initialize and sync TerraDraw for AOI drawing
+  useEffect(() => {
+    if (!mapLoaded || !map) return;
+
+    try {
+      const draw = new TerraDraw({
+        adapter: new TerraDrawMapLibreGLAdapter({ map }),
+        modes: [
+          new TerraDrawRenderMode({ modeName: "render" }),
+          new TerraDrawPolygonMode(),
+          new TerraDrawRectangleMode(),
+          new TerraDrawCircleMode(),
+        ],
+      });
+
+      draw.start();
+
+      draw.on("finish", async (id: string | number) => {
+        // Capture the feature data first, before clearing
+        const snapshot = draw.getSnapshot();
+        const feature = snapshot.find((f: any) => f.id === id);
+
+        try {
+          if (feature && map) {
+            // 1. Switch mode to render (removes active tool UI)
+            draw.setMode("render");
+            // 2. Clear ALL drawn shapes from the TerraDraw sources on the map
+            draw.clear();
+
+            // 3. Wait for MapLibre to reach 'idle' — this fires only after all
+            //    pending source/layer removals are fully rendered, so the blue
+            //    overlay is completely gone before we capture the screenshot.
+            await new Promise<void>((resolve) => {
+              const onIdle = () => resolve();
+              map.once("idle", onIdle);
+              // safety fallback: if idle never fires, resolve after 2s
+              setTimeout(() => { map.off("idle", onIdle); resolve(); }, 2000);
+            });
+
+            // 4. Now export — canvas will be clean
+            await exportGeoTIFFFromMapLibreFeature(feature, "Analytics_AOI");
+          }
+        } catch (e) {
+          console.error("Error processing drawn AOI GeoTIFF:", e);
+        } finally {
+          setActiveDrawTool(null);
+        }
+      });
+
+      drawInstanceRef.current = draw;
+    } catch (err) {
+      console.error("Failed to initialize TerraDraw on MapLibre:", err);
+    }
+
+    return () => {
+      if (drawInstanceRef.current) {
+        try {
+          drawInstanceRef.current.stop();
+        } catch {}
+        drawInstanceRef.current = null;
+      }
+    };
+  }, [mapLoaded, map, setActiveDrawTool]);
+
+  // Sync activeDrawTool state to TerraDraw mode
+  useEffect(() => {
+    const draw = drawInstanceRef.current;
+    if (!draw) return;
+
+    try {
+      if (activeDrawTool === "polygon") {
+        draw.setMode("polygon");
+      } else if (activeDrawTool === "rectangle") {
+        draw.setMode("rectangle");
+      } else if (activeDrawTool === "circle") {
+        draw.setMode("circle");
+      } else {
+        draw.setMode("render");
+      }
+    } catch (err) {
+      console.warn("Error setting TerraDraw mode:", err);
+    }
+  }, [activeDrawTool]);
+
+  // Display drawn / active raster AOI boundary outline on map
+  const rasters = useRasterStore((state) => state.rasters);
+  const fitRasterId = useRasterStore((state) => state.fitRasterId);
+
+  useEffect(() => {
+    if (!mapLoaded || !map) return;
+
+    const sourceId = "analytics-aoi-outline-source";
+    const fillLayerId = "analytics-aoi-outline-fill";
+    const lineLayerId = "analytics-aoi-outline-line";
+
+    const targetRaster = rasters.find((r) => r.id === fitRasterId) || rasters[rasters.length - 1];
+
+    if (!targetRaster || !targetRaster.aoi || targetRaster.aoi.length !== 4) {
+      if (map.getLayer(lineLayerId)) map.removeLayer(lineLayerId);
+      if (map.getLayer(fillLayerId)) map.removeLayer(fillLayerId);
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
+      return;
+    }
+
+    const [minLon, minLat, maxLon, maxLat] = targetRaster.aoi;
+    const geojson: any = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [minLon, maxLat],
+                [maxLon, maxLat],
+                [maxLon, minLat],
+                [minLon, minLat],
+                [minLon, maxLat],
+              ],
+            ],
+          },
+          properties: {
+            name: targetRaster.name,
+          },
+        },
+      ],
+    };
+
+    if (map.getSource(sourceId)) {
+      (map.getSource(sourceId) as any).setData(geojson);
+    } else {
+      map.addSource(sourceId, {
+        type: "geojson",
+        data: geojson,
+      });
+
+      map.addLayer({
+        id: fillLayerId,
+        type: "fill",
+        source: sourceId,
+        paint: {
+          "fill-color": "#2c6671",
+          "fill-opacity": 0.08,
+        },
+      });
+
+      map.addLayer({
+        id: lineLayerId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": "#2c6671",
+          "line-width": 2,
+          "line-dasharray": [2, 2],
+        },
+      });
+    }
+  }, [mapLoaded, map, rasters, fitRasterId]);
 
   if (!isSupported) {
     return (
