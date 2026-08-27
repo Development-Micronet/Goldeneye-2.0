@@ -13,7 +13,6 @@ import { useProductStore } from "../../../features/data/hooks/useproductStore";
 import { useArchiveProductStore } from "../../../features/data/components/sidebar/store/useArchiveProductStore";
 import { useMapStore } from "../../../features/data/store/useMapStore";
 import { usePlanStore } from "../../../features/data/hooks/usePlanStore";
-import { exportSelectedAOIToGeoTIFF } from "../../../utils/geoTiffExport";
 
 const PRODUCT_NAME_MAP: Record<string, string> = {
   PNEO: "Pleiades-Neo-0.3m",
@@ -403,18 +402,7 @@ export default function Navbar() {
     toast.success("✅ Products added to quotation successfully!");
   };
 
-  const [isExportingGeoTIFF, setIsExportingGeoTIFF] = useState(false);
 
-  const handleExportGeoTIFF = async () => {
-    try {
-      setIsExportingGeoTIFF(true);
-      await exportSelectedAOIToGeoTIFF();
-    } catch (err: any) {
-      console.error("Export GeoTIFF failed:", err);
-    } finally {
-      setIsExportingGeoTIFF(false);
-    }
-  };
 
   const username = user?.user || "user";
   const initial = username[0]?.toUpperCase() || "U";
@@ -567,22 +555,7 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Export GeoTIFF Button
-          <button
-            type="button"
-            onClick={handleExportGeoTIFF}
-            disabled={isExportingGeoTIFF}
-            title="Export selected AOI screenshot as GeoTIFF"
-            className="flex items-center gap-1.5 rounded-md bg-[#2c6671]/30 hover:bg-[#2c6671] border border-[#2c6671]/60 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:shadow disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <FileDown className={`h-4 w-4 text-[#e0f2fe] ${isExportingGeoTIFF ? "animate-bounce" : ""}`} />
-            <span className="hidden xl:inline">
-              {isExportingGeoTIFF ? "Exporting..." : "Export GeoTIFF"}
-            </span>
-            <span className="inline xl:hidden">
-              {isExportingGeoTIFF ? "Exporting..." : "GeoTIFF"}
-            </span>
-          </button> */}
+
 
           {/* User Profile Container with Click Trigger */}
           <div className="profile-menu-container relative">
@@ -720,19 +693,7 @@ export default function Navbar() {
               );
             })}
 
-            {/* Mobile Export GeoTIFF button
-            <button
-              type="button"
-              onClick={() => {
-                closeMenu();
-                handleExportGeoTIFF();
-              }}
-              disabled={isExportingGeoTIFF}
-              className="flex w-full items-center gap-2 rounded bg-[#2c6671]/40 px-3 py-2 text-left text-xs font-semibold text-white transition-colors hover:bg-[#2c6671]"
-            >
-              <FileDown className="h-4 w-4 text-[#e0f2fe]" />
-              <span>{isExportingGeoTIFF ? "Exporting GeoTIFF..." : "Export AOI GeoTIFF"}</span>
-            </button> */}
+
 
             {/* Mobile User Profile */}
             <div className="profile-menu-container mt-1 border-t border-[#1f4e57] pt-3">
