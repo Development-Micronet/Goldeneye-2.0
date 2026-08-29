@@ -49,13 +49,11 @@ const Navbar: React.FC = () => {
   const [isQuotationDropdownOpen, setIsQuotationDropdownOpen] = useState(false);
   const quotationDropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: subscriptiondata } = useGetData(
-    `assign_subscription/${userName}/`,
-    ["subscription", userName]
-  );
-  const hasquotationaccess = subscriptiondata?.data?.some(
-    (sub: any) => sub.type === "quotation"
-  );
+  const { data: subscriptiondata } = useGetData(`assign_subscription/${userName}/`, [
+    "subscription",
+    userName,
+  ]);
+  const hasquotationaccess = subscriptiondata?.data?.some((sub: any) => sub.type === "quotation");
 
   const debouncedFetch = useRef(
     debounce(async (query: string) => {
@@ -63,16 +61,15 @@ const Navbar: React.FC = () => {
       if (!apiKey) return;
 
       try {
-        const response = await axios.get(
-          "https://api.opencagedata.com/geocode/v1/json",
-          { params: { q: query, key: apiKey } }
-        );
+        const response = await axios.get("https://api.opencagedata.com/geocode/v1/json", {
+          params: { q: query, key: apiKey },
+        });
         const results = response.data?.results;
         setSuggestions(results?.length ? results : []);
       } catch (error: any) {
         console.error("Geocode error", error);
       }
-    }, 1000)
+    }, 1000),
   ).current;
 
   const parseRange = (val: any) => {
@@ -159,7 +156,7 @@ const Navbar: React.FC = () => {
     acquisitionDate: string,
     base64Image: any,
     screenshotImage: any,
-    area: any
+    area: any,
   ) => {
     if (!data) return [];
     const result: any[] = [];
@@ -252,9 +249,7 @@ const Navbar: React.FC = () => {
 
   const handleAddQuotation = async () => {
     if (location.pathname !== "/data") {
-      toast.info(
-        "Please go to the Data page to select products and add to quotation."
-      );
+      toast.info("Please go to the Data page to select products and add to quotation.");
       navigate("/data");
       return;
     }
@@ -262,9 +257,7 @@ const Navbar: React.FC = () => {
     const { hasProducts, data } = checkHasSelectedProducts();
 
     if (!hasProducts) {
-      toast.warn(
-        "Please draw an AOI on the map and select products from search results first."
-      );
+      toast.warn("Please draw an AOI on the map and select products from search results first.");
       return;
     }
 
@@ -289,7 +282,7 @@ const Navbar: React.FC = () => {
       otherData?.acquisitionDate || "",
       null,
       null,
-      sessionStorage.getItem("area") || otherData?.area || ""
+      sessionStorage.getItem("area") || otherData?.area || "",
     );
 
     setQuotationItems([...quotationItem, ...formattedItems]);
@@ -364,10 +357,7 @@ const Navbar: React.FC = () => {
     isLoading: isprofileLoading,
     isError: isprofileError,
     error: profileError,
-  } = useGetData(userName ? `customers/profile/${userName}/` : "", [
-    "user-profile",
-    userName,
-  ]);
+  } = useGetData(userName ? `customers/profile/${userName}/` : "", ["user-profile", userName]);
 
   const profileImageRef = useRef<HTMLDivElement>(null);
 
@@ -384,7 +374,7 @@ const Navbar: React.FC = () => {
     const roleName = encodeURIComponent(user?.roleName || "");
     const accessToken = encodeURIComponent(user?.access || "");
     navigate(
-      `/ChangePassword?username=${username}&roleName=${roleName}&accessToken=${accessToken}`
+      `/ChangePassword?username=${username}&roleName=${roleName}&accessToken=${accessToken}`,
     );
   };
 
@@ -482,19 +472,19 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <div className="relative h-full z-50 ">
-      <nav className="bg-[#2c6671] h-full text-white px-6 flex items-center justify-between font-inter">
-        <div className="flex items-center justify-between w-full">
+    <div className="relative z-50 h-full">
+      <nav className="font-inter flex h-full items-center justify-between bg-[#2c6671] px-6 text-white">
+        <div className="flex w-full items-center justify-between">
           <div className="flex items-center space-x-4 lg:space-x-16">
             <img
               src={goldenEyeLogo}
               alt="Golden Eye Logo"
-              className="h-[4.5rem] w-auto relative top-[-.2rem] cursor-pointer"
+              className="relative top-[-.2rem] h-[4.5rem] w-auto cursor-pointer"
               onClick={handleToHome}
             />
 
             {access && (
-              <div className="hidden lg:flex space-x-8 items-center">
+              <div className="hidden items-center space-x-8 lg:flex">
                 {isAuthorizedEndUser() && (
                   <Link
                     to="/dashboard"
@@ -524,22 +514,19 @@ const Navbar: React.FC = () => {
                   </Link>
                 )}
                 {user?.roleName?.toLowerCase() === "superadmin" && hasquotationaccess && (
-                  <div
-                    ref={quotationDropdownRef}
-                    className="relative inline-block group"
-                  >
+                  <div ref={quotationDropdownRef} className="group relative inline-block">
                     <button
                       type="button"
                       onClick={() => setIsQuotationDropdownOpen((prev) => !prev)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                      className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
                         path.includes("/quotation")
-                          ? "text-white font-bold bg-[#204e57]"
-                          : "text-[#b8b8b8] hover:text-white hover:bg-[#204e57]/50"
+                          ? "bg-[#204e57] font-bold text-white"
+                          : "text-[#b8b8b8] hover:bg-[#204e57]/50 hover:text-white"
                       }`}
                     >
                       <span>Quotation</span>
                       <svg
-                        className={`w-3.5 h-3.5 fill-current opacity-80 transition-transform duration-200 ${
+                        className={`h-3.5 w-3.5 fill-current opacity-80 transition-transform duration-200 ${
                           isQuotationDropdownOpen ? "rotate-180" : ""
                         }`}
                         viewBox="0 0 20 20"
@@ -549,7 +536,7 @@ const Navbar: React.FC = () => {
                     </button>
 
                     <div
-                      className={`absolute top-full left-0 mt-1 w-48 rounded-xl bg-white shadow-xl border border-gray-100 py-1.5 z-50 transition-all ${
+                      className={`absolute top-full left-0 z-50 mt-1 w-48 rounded-xl border border-gray-100 bg-white py-1.5 shadow-xl transition-all ${
                         isQuotationDropdownOpen ? "block" : "hidden group-hover:block"
                       }`}
                     >
@@ -557,7 +544,7 @@ const Navbar: React.FC = () => {
                         <Link
                           to="/quotation"
                           onClick={() => setIsQuotationDropdownOpen(false)}
-                          className="block px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#2c6671]/10 hover:text-[#2c6671] transition-colors"
+                          className="block px-4 py-2.5 text-xs font-bold text-gray-700 transition-colors hover:bg-[#2c6671]/10 hover:text-[#2c6671]"
                         >
                           See All Quotations
                         </Link>
@@ -567,7 +554,7 @@ const Navbar: React.FC = () => {
                             setIsQuotationDropdownOpen(false);
                             handleAddQuotation();
                           }}
-                          className="block px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#2c6671]/10 hover:text-[#2c6671] cursor-pointer transition-colors"
+                          className="block cursor-pointer px-4 py-2.5 text-xs font-bold text-gray-700 transition-colors hover:bg-[#2c6671]/10 hover:text-[#2c6671]"
                         >
                           Add Quotation Item
                         </div>
@@ -579,13 +566,13 @@ const Navbar: React.FC = () => {
             )}
           </div>
 
-          <div className="relative w-full max-w-[200px] sm:max-w-[280px] lg:max-w-sm lg:absolute lg:right-[14rem] mx-auto z-20">
-            <div className="relative bg-white rounded-sm shadow px-3 py-2 flex items-center w-full text-black">
+          <div className="relative z-20 mx-auto w-full max-w-[200px] sm:max-w-[280px] lg:absolute lg:right-[14rem] lg:max-w-sm">
+            <div className="relative flex w-full items-center rounded-sm bg-white px-3 py-2 text-black shadow">
               <input
                 type="text"
                 name="locations"
                 placeholder="Go to place"
-                className="flex-grow pr-10 pl-2 py-1 text-sm rounded-sm outline-none"
+                className="flex-grow rounded-sm py-1 pr-10 pl-2 text-sm outline-none"
                 value={locations}
                 onChange={handleInputChange}
               />
@@ -593,7 +580,7 @@ const Navbar: React.FC = () => {
               {SearchCrossIcon && (
                 <FontAwesomeIcon
                   icon={faXmark}
-                  className="absolute right-10 text-gray-500 cursor-pointer hover:text-gray-700"
+                  className="absolute right-10 cursor-pointer text-gray-500 hover:text-gray-700"
                   onClick={clearInput}
                 />
               )}
@@ -601,17 +588,17 @@ const Navbar: React.FC = () => {
               <img
                 src={searchIcon}
                 alt="search"
-                className="w-4 h-4 cursor-pointer"
+                className="h-4 w-4 cursor-pointer"
                 onClick={handleSearch}
               />
             </div>
 
             {suggestions.length > 0 && (
-              <ul className="absolute w-full bg-white text-black mt-1 max-h-60 overflow-auto text-sm p-2">
+              <ul className="absolute mt-1 max-h-60 w-full overflow-auto bg-white p-2 text-sm text-black">
                 {suggestions.map((suggestion, index) => (
                   <li
                     key={index}
-                    className="py-2 w-full text-center hover:bg-gray-200 cursor-pointer"
+                    className="w-full cursor-pointer py-2 text-center hover:bg-gray-200"
                     onClick={() => handleSuggestionClick(suggestion)}
                   >
                     {suggestion.formatted}
@@ -623,12 +610,12 @@ const Navbar: React.FC = () => {
 
           {access && (
             <div className="flex items-center space-x-4">
-              <div className="hidden lg:flex justify-center items-center space-x-2">
-                <p className="p-0 m-0">{user?.user}</p>
+              <div className="hidden items-center justify-center space-x-2 lg:flex">
+                <p className="m-0 p-0">{user?.user}</p>
 
                 <div
                   ref={profileImageRef}
-                  className="h-8 w-8 flex items-center justify-center rounded-full border-2 border-white bg-[#2c6671] text-white font-semibold cursor-pointer"
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#2c6671] font-semibold text-white"
                   onClick={handleImageClick}
                 >
                   {user?.user?.charAt(0).toUpperCase()}
@@ -636,13 +623,10 @@ const Navbar: React.FC = () => {
               </div>
 
               <button
-                className="lg:hidden text-white focus:outline-none"
+                className="text-white focus:outline-none lg:hidden"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
-                <FontAwesomeIcon
-                  icon={isMobileMenuOpen ? faXmark : faBars}
-                  size="lg"
-                />
+                <FontAwesomeIcon icon={isMobileMenuOpen ? faXmark : faBars} size="lg" />
               </button>
             </div>
           )}
@@ -652,41 +636,38 @@ const Navbar: React.FC = () => {
       {isMobileMenuOpen && access && (
         <div
           ref={sidebarRef}
-          className={`fixed top-0 right-0 h-full w-2/3 sm:w-1/2 bg-white text-[#113646] py-6 px-6 space-y-6 text-center shadow-lg
-        transform transition-transform duration-500 ease-in-out z-20 ${
-          isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+          className={`fixed top-0 right-0 z-20 h-full w-2/3 transform space-y-6 bg-white px-6 py-6 text-center text-[#113646] shadow-lg transition-transform duration-500 ease-in-out sm:w-1/2 ${
+            isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          }`}
         >
           <button
-            className="absolute top-4 right-4 text-[#113646] hover:text-gray-700 transition-colors duration-200"
+            className="absolute top-4 right-4 text-[#113646] transition-colors duration-200 hover:text-gray-700"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <FontAwesomeIcon icon={faXmark} size="lg" />
           </button>
 
-          <header className="p-4 text-center border-b border-gray-300">
-            <div className="mx-auto flex items-center justify-center w-14 h-14 bg-[#2c6771] text-white text-2xl font-bold rounded-full transition-all duration-300">
+          <header className="border-b border-gray-300 p-4 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#2c6771] text-2xl font-bold text-white transition-all duration-300">
               {user?.user?.charAt(0).toUpperCase()}
             </div>
-            <h5 className="mt-3 text-xl font-semibold text-[#113646]">
-              {user?.user}
-            </h5>
+            <h5 className="mt-3 text-xl font-semibold text-[#113646]">{user?.user}</h5>
           </header>
 
           <nav className="space-y-4">
             <Link
               to="/"
-              className="block py-3 no-underline font-semibold text-[1.2rem] text-[#2c6771] hover:text-[#1e4d56] transition-colors duration-200"
+              className="block py-3 text-[1.2rem] font-semibold text-[#2c6771] no-underline transition-colors duration-200 hover:text-[#1e4d56]"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Dashboard
             </Link>
             <Link
               to={isAuthorized() ? "/data" : "#"}
-              className={`block py-3 no-underline font-semibold text-[1.2rem] text-[#2c6771] ${
+              className={`block py-3 text-[1.2rem] font-semibold text-[#2c6771] no-underline ${
                 !isAuthorized()
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:text-[#1e4d56] transition-colors duration-200"
+                  ? "cursor-not-allowed opacity-50"
+                  : "transition-colors duration-200 hover:text-[#1e4d56]"
               }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
@@ -695,14 +676,14 @@ const Navbar: React.FC = () => {
             {isAuthorizedEndUser() && (
               <Link
                 to="/manage"
-                className="block py-3 no-underline font-semibold text-[1.2rem] text-[#2c6771] hover:text-[#1e4d56] transition-colors duration-200"
+                className="block py-3 text-[1.2rem] font-semibold text-[#2c6771] no-underline transition-colors duration-200 hover:text-[#1e4d56]"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Manage
               </Link>
             )}
             <button
-              className="block w-full py-3 font-semibold text-[1.2rem] text-[#2c6771] text-center hover:text-[#1e4d56] transition-colors duration-200"
+              className="block w-full py-3 text-center text-[1.2rem] font-semibold text-[#2c6771] transition-colors duration-200 hover:text-[#1e4d56]"
               onClick={() => {
                 handleUpdateProfile();
                 setIsMobileMenuOpen(false);
@@ -711,7 +692,7 @@ const Navbar: React.FC = () => {
               Update Account
             </button>
             <button
-              className="block w-full py-3 font-semibold text-[1.2rem] text-[#2c6771] text-center hover:text-[#1e4d56] transition-colors duration-200"
+              className="block w-full py-3 text-center text-[1.2rem] font-semibold text-[#2c6771] transition-colors duration-200 hover:text-[#1e4d56]"
               onClick={() => {
                 handleChangePassword();
                 setIsMobileMenuOpen(false);
@@ -720,7 +701,7 @@ const Navbar: React.FC = () => {
               Change Password
             </button>
             <button
-              className="block w-full py-3 font-semibold text-[1.2rem] text-[#2c6771] text-center hover:text-[#1e4d56] transition-colors duration-200"
+              className="block w-full py-3 text-center text-[1.2rem] font-semibold text-[#2c6771] transition-colors duration-200 hover:text-[#1e4d56]"
               onClick={() => {
                 handleLogout();
                 setIsMobileMenuOpen(false);
@@ -735,7 +716,7 @@ const Navbar: React.FC = () => {
       {isVisible && (
         <div
           ref={profileModalRef}
-          className="absolute right-0 z-50 top-[-2.5rem]"
+          className="absolute top-[-2.5rem] right-0 z-50"
           onClick={() => setIsVisible(false)}
         >
           <UserProfile
@@ -752,9 +733,7 @@ const Navbar: React.FC = () => {
         title="Update Profile"
       >
         {isprofileLoading && <p>Loading...</p>}
-        {isprofileError && (
-          <p>Error fetching profile data: {profileError.message}</p>
-        )}
+        {isprofileError && <p>Error fetching profile data: {profileError.message}</p>}
         {!isprofileLoading && !profileError && (
           <UpdateProfile
             closeModal={closeUpdateProfileModal}

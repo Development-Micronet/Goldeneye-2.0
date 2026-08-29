@@ -37,7 +37,8 @@ export const AnalyticsDrawPopup: React.FC<AnalyticsDrawPopupProps> = ({ onClose 
           Draw AOI to GeoTIFF
         </div>
         <p className="text-[10px] text-gray-400">
-          Draw an area on the map. It will automatically capture screenshot, convert to GeoTIFF, and add to your Raster layer list.
+          Draw an area on the map. It will automatically capture screenshot, convert to GeoTIFF, and
+          add to your Raster layer list.
         </p>
 
         <div className="mt-1 flex flex-col space-y-1">
@@ -52,7 +53,9 @@ export const AnalyticsDrawPopup: React.FC<AnalyticsDrawPopupProps> = ({ onClose 
                   if (onClose) onClose();
                 }}
                 className={`group flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 transition-colors ${
-                  isSelected ? "bg-primary/10 text-primary font-semibold" : "text-gray-700 hover:bg-gray-50"
+                  isSelected
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 <div className="flex items-center gap-2 sm:gap-2.5">

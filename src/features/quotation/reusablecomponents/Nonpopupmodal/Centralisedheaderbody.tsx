@@ -23,7 +23,7 @@ const Centralisedheaderbody: React.FC<CentralisedheaderbodyProps> = ({
   return (
     <div className={`bg-gray-200 ${className}`}>
       <div
-        className="flex justify-between items-center px-2"
+        className="flex items-center justify-between px-2"
         style={{
           backgroundColor: headerBgColor,
           color: headerTextColor,
@@ -39,7 +39,7 @@ const Centralisedheaderbody: React.FC<CentralisedheaderbodyProps> = ({
         </div>
 
         {onClose && (
-          <button className="text-lg " onClick={onClose}>
+          <button className="text-lg" onClick={onClose}>
             &times;
           </button>
         )}

@@ -159,7 +159,6 @@
 //   });
 // }
 
-
 // /* ─────────────────────────────────────────────────────────────────────────────
 //  * SERVER-SIDE ALTERNATIVE (Puppeteer) — bypasses the Save dialog entirely,
 //  * produces a downloadable PDF blob. Use this if you want a direct file
@@ -185,10 +184,9 @@
 //  * so output is pixel-perfect. No dialog, no user interaction required.
 //  * ───────────────────────────────────────────────────────────────────────────── */
 
-
 export function downloadAsPDF(
   htmlContent: string,
-  filename: string = "quotation.pdf"
+  filename: string = "quotation.pdf",
 ): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
     const iframe = document.createElement("iframe");
@@ -213,13 +211,9 @@ export function downloadAsPDF(
       return;
     }
 
-    const styleBlocks = (
-      htmlContent.match(/<style[\s\S]*?<\/style>/gi) || []
-    ).join("\n");
+    const styleBlocks = (htmlContent.match(/<style[\s\S]*?<\/style>/gi) || []).join("\n");
 
-    const bodyMatch = htmlContent.match(
-      /<body[^>]*>([\s\S]*)<\/body>/i
-    );
+    const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
 
     const innerHTML = bodyMatch ? bodyMatch[1] : htmlContent;
 
@@ -320,15 +314,14 @@ ${innerHTML}
         const images = Array.from(doc.querySelectorAll<HTMLImageElement>("img"));
 
         await Promise.all(
-          images.map(
-            (img) =>
-              img.complete
-                ? Promise.resolve()
-                : new Promise<void>((res) => {
-                    img.onload = () => res();
-                    img.onerror = () => res();
-                  })
-          )
+          images.map((img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise<void>((res) => {
+                  img.onload = () => res();
+                  img.onerror = () => res();
+                }),
+          ),
         );
 
         // Wait for web fonts
@@ -338,9 +331,7 @@ ${innerHTML}
 
         // Wait two animation frames for layout
         await new Promise<void>((res) =>
-          win.requestAnimationFrame(() =>
-            win.requestAnimationFrame(() => res())
-          )
+          win.requestAnimationFrame(() => win.requestAnimationFrame(() => res())),
         );
 
         win.focus();

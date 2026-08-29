@@ -29,23 +29,21 @@ export const LoginPage: React.FC = () => {
   const setAuth = useAuthStore((state) => state.setAuth);
   const { mutate: login, isPending } = useLoginMutation();
 
-// Redirect if already logged in
-useEffect(() => {
-  if (token) {
-    if (user?.must_reset_password) {
-      navigate("/force-reset-password");
-    } else {
-      const role = user?.roleName?.toLowerCase();
-      if (role === "user") {
-        navigate("/data");
+  // Redirect if already logged in
+  useEffect(() => {
+    if (token) {
+      if (user?.must_reset_password) {
+        navigate("/force-reset-password");
       } else {
-        navigate("/dashboard");
+        const role = user?.roleName?.toLowerCase();
+        if (role === "user") {
+          navigate("/data");
+        } else {
+          navigate("/dashboard");
+        }
       }
     }
-  }
-}, [token, user, navigate]);
-
-
+  }, [token, user, navigate]);
 
   // Form states
   const [username, setUsername] = useState("");
@@ -345,7 +343,7 @@ useEffect(() => {
                     <button
                       type="button"
                       onClick={() => setView("forgot")}
-                      className="text-primary text-xs font-medium hover:text-[#1f4e57] hover:underline cursor-pointer bg-transparent border-0 outline-none"
+                      className="text-primary cursor-pointer border-0 bg-transparent text-xs font-medium outline-none hover:text-[#1f4e57] hover:underline"
                     >
                       Forgot Password?
                     </button>
@@ -417,7 +415,10 @@ useEffect(() => {
                 {/* Register Company */}
                 <div className="pt-2 text-xs text-gray-500 select-none">
                   Not Register?{" "}
-                  <Link to="/register-company" className="text-primary font-semibold hover:underline">
+                  <Link
+                    to="/register-company"
+                    className="text-primary font-semibold hover:underline"
+                  >
                     Register Company
                   </Link>
                 </div>
@@ -430,13 +431,14 @@ useEffect(() => {
               </h2>
 
               <form onSubmit={handleForgotPassword} className="space-y-4 sm:space-y-6">
-                <p className="text-xs text-gray-600 leading-relaxed select-none">
-                  Enter the email address associated with your account. We will send you instructions to reset your password.
+                <p className="text-xs leading-relaxed text-gray-600 select-none">
+                  Enter the email address associated with your account. We will send you
+                  instructions to reset your password.
                 </p>
 
                 {/* Email Field */}
                 <div>
-                  <label htmlFor="forgot-email" className="text-sm text-gray-700 block mb-1.5">
+                  <label htmlFor="forgot-email" className="mb-1.5 block text-sm text-gray-700">
                     Email Address
                   </label>
                   <input
@@ -463,7 +465,7 @@ useEffect(() => {
                     type="button"
                     onClick={() => setView("login")}
                     disabled={forgotLoading}
-                    className="text-primary text-xs font-semibold hover:underline mt-2 text-center cursor-pointer bg-transparent border-0 outline-none"
+                    className="text-primary mt-2 cursor-pointer border-0 bg-transparent text-center text-xs font-semibold outline-none hover:underline"
                   >
                     Back to Login
                   </button>
@@ -472,7 +474,6 @@ useEffect(() => {
             </>
           )}
         </div>
-
 
         {/* Bottom Footer Section */}
         <div className="mt-10 w-full max-w-[420px] text-center select-none md:mt-0 md:text-center">

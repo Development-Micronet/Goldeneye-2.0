@@ -15,7 +15,6 @@ import MapLayout from "../features/analytics/map/MapLayout";
 import { useMyPlan } from "../features/manage/hooks/usePlans";
 import { usePlanStore } from "../features/data/hooks/usePlanStore";
 
-
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
@@ -84,10 +83,7 @@ interface PlanRouteProps {
   requiredService: string;
 }
 
-const PlanRoute: React.FC<PlanRouteProps> = ({
-  children,
-  requiredService,
-}) => {
+const PlanRoute: React.FC<PlanRouteProps> = ({ children, requiredService }) => {
   const plan = usePlanStore((state) => state.plan);
   const user = useAuthStore((state) => state.user);
 
@@ -101,8 +97,7 @@ const PlanRoute: React.FC<PlanRouteProps> = ({
   const allowedServices = plan?.services ?? [];
 
   const hasAccess = allowedServices.some(
-    (service) =>
-      service?.toLowerCase() === requiredService.toLowerCase()
+    (service) => service?.toLowerCase() === requiredService.toLowerCase(),
   );
 
   if (!hasAccess) {
@@ -112,10 +107,8 @@ const PlanRoute: React.FC<PlanRouteProps> = ({
   return <>{children}</>;
 };
 
-
 export const AppRoutes: React.FC = () => {
   const accessToken = useAuthStore((state) => state.accessToken);
-
 
   useMyPlan({
     enabled: !!accessToken,

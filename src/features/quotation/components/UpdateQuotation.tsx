@@ -128,13 +128,15 @@ function Toggle({ checked, onChange, label }: ToggleProps) {
   return (
     <label className="flex cursor-pointer items-center gap-2 select-none">
       <div
-        className={`relative h-5 w-9 rounded-full transition-colors duration-200 ${checked ? "bg-[#2c6671]" : "bg-gray-300"
-          }`}
+        className={`relative h-5 w-9 rounded-full transition-colors duration-200 ${
+          checked ? "bg-[#2c6671]" : "bg-gray-300"
+        }`}
         onClick={() => onChange(!checked)}
       >
         <div
-          className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-200 ${checked ? "translate-x-4" : "translate-x-0"
-            }`}
+          className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-200 ${
+            checked ? "translate-x-4" : "translate-x-0"
+          }`}
         />
       </div>
       {label && <span className="text-xs font-bold text-[#2c6671]">{label}</span>}
@@ -374,19 +376,19 @@ const UpdateQuotation = () => {
     setExistingImages(
       Array.isArray(data.images)
         ? data.images.map((img) => ({
-          id: img.id,
-          url: img.image?.url ?? "",
-          caption: img.captions ?? img.caption ?? "",
-          // Server-side files (already saved)
-          kml_file: img.kml_file ?? null,
-          html_file: img.html_file ?? null,
-          jpg_file: img.jpg_file ?? null,
-          // Pending local replacements (not yet uploaded)
-          new_kml_file: null,
-          new_html_file: null,
-          new_jpg_file: null,
-          _deleted: false,
-        }))
+            id: img.id,
+            url: img.image?.url ?? "",
+            caption: img.captions ?? img.caption ?? "",
+            // Server-side files (already saved)
+            kml_file: img.kml_file ?? null,
+            html_file: img.html_file ?? null,
+            jpg_file: img.jpg_file ?? null,
+            // Pending local replacements (not yet uploaded)
+            new_kml_file: null,
+            new_html_file: null,
+            new_jpg_file: null,
+            _deleted: false,
+          }))
         : [],
     );
   }, [data]);
@@ -1246,10 +1248,11 @@ const UpdateQuotation = () => {
                   {existingImages.map((img) => (
                     <div
                       key={img.id}
-                      className={`group relative overflow-hidden rounded-lg border transition-all ${img._deleted
+                      className={`group relative overflow-hidden rounded-lg border transition-all ${
+                        img._deleted
                           ? "border-red-300 opacity-40"
                           : "border-light-200 hover:shadow-md"
-                        }`}
+                      }`}
                     >
                       <img
                         src={img.url}
@@ -1441,7 +1444,7 @@ const UpdateQuotation = () => {
                   <span className="bg-primary-600 inline-block h-2 w-2 rounded-full" />
                   New Images ({newImages.length})
                 </span>
-                <label className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#204e57] transition-all">
+                <label className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#204e57]">
                   <FiUploadCloud className="h-4 w-4" /> Upload
                   <input
                     type="file"
@@ -1461,12 +1464,10 @@ const UpdateQuotation = () => {
                     e.preventDefault();
                     handleNewImageFiles(e.dataTransfer.files);
                   }}
-                  className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#2c6671]/40 bg-[#2c6671]/5 py-10 text-center transition-all duration-200 hover:border-[#2c6671] hover:bg-[#2c6671]/15 group"
+                  className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#2c6671]/40 bg-[#2c6671]/5 py-10 text-center transition-all duration-200 hover:border-[#2c6671] hover:bg-[#2c6671]/15"
                 >
                   <FiUploadCloud className="h-8 w-8 text-[#2c6671] transition-transform duration-200 group-hover:scale-110" />
-                  <p className="text-xs font-bold text-[#2c6671]">
-                    Click or drag new images here
-                  </p>
+                  <p className="text-xs font-bold text-[#2c6671]">Click or drag new images here</p>
                   <input
                     type="file"
                     multiple
@@ -1553,10 +1554,11 @@ const UpdateQuotation = () => {
                         handleTermChange(i, "text", e.target.value)
                       }
                       rows={2}
-                      className={`w-3/4 resize-none rounded-md border px-2 py-1 text-sm focus:outline-none ${!editMode || !term.editable
+                      className={`w-3/4 resize-none rounded-md border px-2 py-1 text-sm focus:outline-none ${
+                        !editMode || !term.editable
                           ? "cursor-not-allowed border-transparent bg-gray-100 text-gray-500"
                           : "border-blue-200 focus:ring-1 focus:ring-blue-400"
-                        }`}
+                      }`}
                     />
                   </div>
                 ))}
@@ -1569,7 +1571,7 @@ const UpdateQuotation = () => {
         {step === 2 && (
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-xs">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#2c6671]">
+              <span className="text-xs font-bold tracking-wider text-[#2c6671] uppercase">
                 Review before updating
               </span>
               <div className="flex flex-wrap items-center gap-2">
@@ -1581,7 +1583,7 @@ const UpdateQuotation = () => {
                 <button
                   type="button"
                   onClick={() => setPreviewOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs hover:bg-gray-50 transition-all cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs transition-all hover:bg-gray-50"
                 >
                   <FiEye className="h-3.5 w-3.5 stroke-[2.5]" /> Preview
                 </button>
@@ -1589,7 +1591,7 @@ const UpdateQuotation = () => {
                   type="button"
                   onClick={handleManualPDF}
                   disabled={pdfLoading}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs hover:bg-gray-50 disabled:opacity-50 transition-all cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs transition-all hover:bg-gray-50 disabled:opacity-50"
                 >
                   {pdfLoading ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#2c6671] border-t-transparent" />
@@ -1602,7 +1604,7 @@ const UpdateQuotation = () => {
                   type="button"
                   onClick={fetchSpecification}
                   disabled={gettechspec.isPending}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs hover:bg-gray-50 disabled:opacity-50 transition-all cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs transition-all hover:bg-gray-50 disabled:opacity-50"
                 >
                   {gettechspec.isPending ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#2c6671] border-t-transparent" />
@@ -1614,7 +1616,7 @@ const UpdateQuotation = () => {
                 <button
                   type="button"
                   onClick={() => setIframeKey((p) => p + 1)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs hover:bg-gray-50 transition-all cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs transition-all hover:bg-gray-50"
                 >
                   <FiRefreshCw className="h-3.5 w-3.5 stroke-[2.5]" /> Refresh
                 </button>
@@ -1622,7 +1624,7 @@ const UpdateQuotation = () => {
                   type="button"
                   onClick={handleSubmit}
                   disabled={mutation.isLoading}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#2c6671] hover:bg-[#204e57] px-4 py-1.5 text-xs font-bold text-white shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-4 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#204e57] disabled:opacity-50"
                 >
                   {mutation.isLoading ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -1649,12 +1651,12 @@ const UpdateQuotation = () => {
       </div>
 
       {/* ── Sticky bottom nav ── */}
-      <div className="flex-shrink-0 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-2.5 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] z-20">
+      <div className="z-20 flex flex-shrink-0 items-center justify-between border-t border-gray-200 bg-white px-4 py-2.5 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
         <button
           type="button"
           onClick={goBack}
           disabled={step === 0}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-[#2c6671] hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs"
+          className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-[#2c6671] shadow-xs transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <FiChevronLeft className="h-4 w-4 stroke-[2.5]" /> Back
         </button>
@@ -1664,12 +1666,13 @@ const UpdateQuotation = () => {
               key={i}
               type="button"
               onClick={() => goStep(i)}
-              className={`rounded-full transition-all duration-200 ${i === step
-                  ? "w-5 h-2 bg-[#2c6671]"
+              className={`rounded-full transition-all duration-200 ${
+                i === step
+                  ? "h-2 w-5 bg-[#2c6671]"
                   : i < step
-                    ? "w-2 h-2 bg-[#2c6671]/40"
-                    : "w-2 h-2 bg-gray-300"
-                }`}
+                    ? "h-2 w-2 bg-[#2c6671]/40"
+                    : "h-2 w-2 bg-gray-300"
+              }`}
             />
           ))}
         </div>
@@ -1677,7 +1680,7 @@ const UpdateQuotation = () => {
           <button
             type="button"
             onClick={goNext}
-            className="flex items-center gap-1.5 rounded-lg bg-[#2c6671] hover:bg-[#204e57] px-5 py-2 text-xs font-bold text-white shadow-md transition-all cursor-pointer"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-5 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#204e57]"
           >
             Next <FiChevronRight className="h-4 w-4 stroke-[2.5]" />
           </button>
@@ -1686,7 +1689,7 @@ const UpdateQuotation = () => {
             type="button"
             onClick={handleSubmit}
             disabled={mutation.isLoading}
-            className="flex items-center gap-1.5 rounded-lg bg-[#2c6671] hover:bg-[#204e57] px-5 py-2 text-xs font-bold text-white shadow-md transition-all cursor-pointer disabled:opacity-50"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-5 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#204e57] disabled:opacity-50"
           >
             {mutation.isLoading ? (
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -1701,16 +1704,14 @@ const UpdateQuotation = () => {
       {/* ── Full-screen preview modal ── */}
       {previewOpen && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/80">
-          <div className="flex-shrink-0 flex items-center justify-between border-b border-[#16373e] bg-[#1c474f] px-4 py-2.5 shadow-md">
-            <span className="text-xs font-bold text-white tracking-wide">
-              Preview — {quote_no}
-            </span>
+          <div className="flex flex-shrink-0 items-center justify-between border-b border-[#16373e] bg-[#1c474f] px-4 py-2.5 shadow-md">
+            <span className="text-xs font-bold tracking-wide text-white">Preview — {quote_no}</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleManualPDF}
                 disabled={pdfLoading}
-                className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-white/20 disabled:opacity-50 transition-all cursor-pointer"
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-white/20 disabled:opacity-50"
               >
                 {pdfLoading ? (
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -1722,14 +1723,14 @@ const UpdateQuotation = () => {
               <button
                 type="button"
                 onClick={() => setPreviewOpen(false)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-white/20 transition-all cursor-pointer"
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-white/20"
               >
                 <FiX className="h-4 w-4 stroke-[2.5]" /> Close
               </button>
               <button
                 type="button"
                 onClick={() => setIframeKey((p) => p + 1)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-white/20 transition-all cursor-pointer"
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-white/20"
               >
                 <FiRefreshCw className="h-3.5 w-3.5 stroke-[2.5]" /> Refresh
               </button>
@@ -1740,7 +1741,7 @@ const UpdateQuotation = () => {
               ref={iframeRef}
               srcDoc={previewHTML}
               title="Full Preview"
-              className="mx-auto block w-full max-w-[850px] rounded-xl border-none shadow-2xl bg-white"
+              className="mx-auto block w-full max-w-[850px] rounded-xl border-none bg-white shadow-2xl"
               style={{ minHeight: "calc(100dvh - 80px)" }}
             />
           </div>

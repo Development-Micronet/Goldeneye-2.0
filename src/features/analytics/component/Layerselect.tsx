@@ -29,7 +29,6 @@ export const LayerSelect: React.FC<LayerSelectProps> = ({
 
   const selected = layers.find((layer) => layer.id === fitRasterId);
 
-  
   // console.log("selected", layers,fitRasterId,selected);
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -188,8 +187,9 @@ export const LayerSelect: React.FC<LayerSelectProps> = ({
 
         <ChevronDown
           size={15}
-          className={`text-text-secondary shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""
-            }`}
+          className={`text-text-secondary shrink-0 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
         />
       </button>
 
@@ -210,19 +210,12 @@ export const LayerSelect: React.FC<LayerSelectProps> = ({
               aria-expanded
               aria-controls={listId}
               aria-autocomplete="list"
-              aria-activedescendant={
-                filtered[cursor] ? optionId(filtered[cursor].id) : undefined
-              }
+              aria-activedescendant={filtered[cursor] ? optionId(filtered[cursor].id) : undefined}
               className="text-text-muted placeholder:text-text-secondary w-full bg-transparent text-[12px] outline-none"
             />
           </div>
 
-          <ul
-            ref={listRef}
-            id={listId}
-            role="listbox"
-            className="max-h-56 overflow-y-auto p-1"
-          >
+          <ul ref={listRef} id={listId} role="listbox" className="max-h-56 overflow-y-auto p-1">
             {filtered.length === 0 && (
               <li className="text-text-secondary px-2.5 py-4 text-center text-[12px]">
                 No layer matches “{query}”
@@ -249,12 +242,13 @@ export const LayerSelect: React.FC<LayerSelectProps> = ({
                   data-cursor={isCursor || undefined}
                   onMouseEnter={() => setCursor(index)}
                   onClick={() => commit(layer.id)}
-                  className={`flex w-full cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors duration-100 ${isSelected
-                    ? "border-primary bg-primary-100 text-primary"
-                    : isCursor
-                      ? "bg-primary-100/60 text-text-muted border-transparent"
-                      : "text-text-muted border-transparent"
-                    } `}
+                  className={`flex w-full cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors duration-100 ${
+                    isSelected
+                      ? "border-primary bg-primary-100 text-primary"
+                      : isCursor
+                        ? "bg-primary-100/60 text-text-muted border-transparent"
+                        : "text-text-muted border-transparent"
+                  } `}
                 >
                   <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                     {isSelected && <Check size={13} className="text-primary" />}
@@ -262,8 +256,9 @@ export const LayerSelect: React.FC<LayerSelectProps> = ({
 
                   <span className="min-w-0 flex-1">
                     <span
-                      className={`block truncate text-[12px] ${isSelected ? "font-semibold" : "font-medium"
-                        }`}
+                      className={`block truncate text-[12px] ${
+                        isSelected ? "font-semibold" : "font-medium"
+                      }`}
                     >
                       {layer.name}
                     </span>

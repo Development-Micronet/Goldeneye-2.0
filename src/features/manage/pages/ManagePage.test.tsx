@@ -83,7 +83,6 @@ const renderWithRouter = (initialEntries = ["/manage"]) => {
   );
 };
 
-
 // ------------------------
 // Test Cases
 // ------------------------
@@ -146,4 +145,3 @@ describe("ManagePage", () => {
     expect(screen.queryByText("Subscription Modal")).not.toBeInTheDocument();
   });
 });
-

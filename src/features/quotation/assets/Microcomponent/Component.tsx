@@ -28,41 +28,23 @@ interface StepBarProps {
   onStepClick: (stepIndex: number) => void;
 }
 
-export function Field({
-  label,
-  required,
-  hint,
-  error,
-  children,
-  className = "",
-}: FieldProps) {
+export function Field({ label, required, hint, error, children, className = "" }: FieldProps) {
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-      <div className="relative group inline-block">
-        <label className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.12em] text-gray-700 cursor-pointer">
+      <div className="group relative inline-block">
+        <label className="flex cursor-pointer items-center gap-1 text-[11px] font-bold tracking-[0.12em] text-gray-700 uppercase">
           {label}
 
-          {required && (
-            <span className="text-red-500 text-[10px]">*</span>
-          )}
+          {required && <span className="text-[10px] text-red-500">*</span>}
 
           {hint && (
-            <span
-              title={hint}
-              className="text-gray-400 cursor-help"
-            >
-              <FiInfo className="w-3 h-3" />
+            <span title={hint} className="cursor-help text-gray-400">
+              <FiInfo className="h-3 w-3" />
             </span>
           )}
         </label>
 
-        <span
-          className="absolute left-0 -top-6 z-50 
-                     hidden group-hover:block
-                     bg-black text-white text-[10px] 
-                     px-2 py-1 rounded shadow-lg 
-                     whitespace-nowrap"
-        >
+        <span className="absolute -top-6 left-0 z-50 hidden rounded bg-black px-2 py-1 text-[10px] whitespace-nowrap text-white shadow-lg group-hover:block">
           {label}
         </span>
       </div>
@@ -70,8 +52,8 @@ export function Field({
       {children}
 
       {error && (
-        <span className="flex items-center gap-1 text-[11px] text-red-500 animate-[fadeIn_0.2s_ease]">
-          <FiAlertCircle className="w-3 h-3 flex-shrink-0" />
+        <span className="flex animate-[fadeIn_0.2s_ease] items-center gap-1 text-[11px] text-red-500">
+          <FiAlertCircle className="h-3 w-3 flex-shrink-0" />
           {error}
         </span>
       )}
@@ -83,15 +65,13 @@ export function SectionDivider({ icon: Icon, title, subtitle }: SectionDividerPr
   return (
     <div className="flex items-center gap-3 py-1">
       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#2c6671]/10 text-[#2c6671]">
-        <Icon className="w-4 h-4" />
+        <Icon className="h-4 w-4" />
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="text-[13px] font-bold text-[#2c6671]">{title}</div>
-        {subtitle && (
-          <div className="text-[11px] text-gray-500 truncate">{subtitle}</div>
-        )}
+        {subtitle && <div className="truncate text-[11px] text-gray-500">{subtitle}</div>}
       </div>
-      <div className="flex-1 h-px bg-gray-200 hidden sm:block" />
+      <div className="hidden h-px flex-1 bg-gray-200 sm:block" />
     </div>
   );
 }
@@ -110,9 +90,9 @@ export function Pill({ children, onRemove, color = "primary" }: PillProps) {
       {onRemove && (
         <button
           onClick={onRemove}
-          className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-current/20 hover:bg-current/40 transition-colors text-inherit opacity-70 hover:opacity-100"
+          className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-current/20 text-inherit opacity-70 transition-colors hover:bg-current/40 hover:opacity-100"
         >
-          <FiX className="w-2 h-2" />
+          <FiX className="h-2 w-2" />
         </button>
       )}
     </span>
@@ -130,32 +110,17 @@ export function StepBar({ step, steps, onStepClick }: StepBarProps) {
           <button
             key={i}
             onClick={() => onStepClick(i)}
-            className={`
-              group relative flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5
-              text-[12px] transition-all duration-200
-              ${active ? "bg-[#2c6671] text-white shadow-md font-bold" : ""}
-              ${done ? "text-[#2c6671] bg-[#2c6671]/10 hover:bg-[#2c6671]/15 font-semibold" : ""}
-              ${!active && !done ? "text-gray-600 hover:bg-gray-100 font-medium" : ""}
-            `}
+            className={`group relative flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[12px] transition-all duration-200 ${active ? "bg-[#2c6671] font-bold text-white shadow-md" : ""} ${done ? "bg-[#2c6671]/10 font-semibold text-[#2c6671] hover:bg-[#2c6671]/15" : ""} ${!active && !done ? "font-medium text-gray-600 hover:bg-gray-100" : ""} `}
           >
             <span
-              className={`
-              inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200
-              ${active ? "bg-white/20 text-white" : ""}
-              ${done ? "bg-[#2c6671] text-white" : ""}
-              ${!active && !done ? "bg-gray-200 text-gray-500" : ""}
-            `}
+              className={`inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200 ${active ? "bg-white/20 text-white" : ""} ${done ? "bg-[#2c6671] text-white" : ""} ${!active && !done ? "bg-gray-200 text-gray-500" : ""} `}
             >
-              {done ? (
-                <FiCheck className="w-3 h-3 text-white" />
-              ) : (
-                <Icon className="w-3 h-3" />
-              )}
+              {done ? <FiCheck className="h-3 w-3 text-white" /> : <Icon className="h-3 w-3" />}
             </span>
-            <span className="hidden sm:inline truncate">{s.title}</span>
+            <span className="hidden truncate sm:inline">{s.title}</span>
             <span className="sm:hidden">{i + 1}</span>
             {active && (
-              <span className="absolute bottom-1 left-1/2 h-0.5 w-10 -translate-x-1/2 rounded-full bg-white/70 animate-pulse" />
+              <span className="absolute bottom-1 left-1/2 h-0.5 w-10 -translate-x-1/2 animate-pulse rounded-full bg-white/70" />
             )}
           </button>
         );

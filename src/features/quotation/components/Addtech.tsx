@@ -59,10 +59,10 @@ const Addtech: React.FC = () => {
   const images = Array.isArray(imagesData)
     ? imagesData
     : imagesData?.results && Array.isArray(imagesData.results)
-    ? imagesData.results
-    : imagesData?.data && Array.isArray(imagesData.data)
-    ? imagesData.data
-    : [];
+      ? imagesData.results
+      : imagesData?.data && Array.isArray(imagesData.data)
+        ? imagesData.data
+        : [];
 
   // POST Upload mutation using TanStack Query v5 object syntax
   const uploadMutation = useMutation({
@@ -198,20 +198,20 @@ const Addtech: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#edf2f7] p-4 sm:p-6 lg:p-8">
       {/* Top Header Bar with Back Button */}
-      <div className="max-w-4xl mx-auto mb-4 flex items-center justify-between">
+      <div className="mx-auto mb-4 flex max-w-4xl items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-xs font-semibold text-[#1b5e65] hover:text-[#154b51] bg-white px-3 py-1.5 rounded-md shadow-sm border border-slate-200 transition-colors"
+          className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#1b5e65] shadow-sm transition-colors hover:text-[#154b51]"
         >
-          <FiArrowLeft className="w-3.5 h-3.5" /> Back
+          <FiArrowLeft className="h-3.5 w-3.5" /> Back
         </button>
       </div>
 
       {/* Main UI Card */}
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6 border border-slate-100">
+      <div className="mx-auto max-w-4xl rounded-xl border border-slate-100 bg-white p-6 shadow-md">
         {/* Form Title matching design in Image 1 */}
-        <h2 className="text-xl font-bold text-[#1b5e65] mb-5 flex items-center gap-2">
-          <FiUpload className="text-[#1b5e65] w-5 h-5" /> Upload Technical Specification
+        <h2 className="mb-5 flex items-center gap-2 text-xl font-bold text-[#1b5e65]">
+          <FiUpload className="h-5 w-5 text-[#1b5e65]" /> Upload Technical Specification
         </h2>
 
         {/* Upload Form */}
@@ -220,11 +220,9 @@ const Addtech: React.FC = () => {
             <input
               type="text"
               placeholder="Product Name"
-              className="w-full px-3 py-2 border border-slate-200 rounded-md text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1b5e65] focus:border-[#1b5e65]"
+              className="w-full rounded-md border border-slate-200 px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-[#1b5e65] focus:ring-1 focus:ring-[#1b5e65] focus:outline-none sm:text-sm"
               value={productName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setProductName(e.target.value)
-              }
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProductName(e.target.value)}
               required
             />
           </div>
@@ -233,11 +231,9 @@ const Addtech: React.FC = () => {
             <input
               type="text"
               placeholder="Caption"
-              className="w-full px-3 py-2 border border-slate-200 rounded-md text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1b5e65] focus:border-[#1b5e65]"
+              className="w-full rounded-md border border-slate-200 px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-[#1b5e65] focus:ring-1 focus:ring-[#1b5e65] focus:outline-none sm:text-sm"
               value={caption}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setCaption(e.target.value)
-              }
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCaption(e.target.value)}
             />
           </div>
 
@@ -245,7 +241,7 @@ const Addtech: React.FC = () => {
             <input
               type="number"
               placeholder="0"
-              className="w-full px-3 py-2 border border-slate-200 rounded-md text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1b5e65] focus:border-[#1b5e65]"
+              className="w-full rounded-md border border-slate-200 px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-[#1b5e65] focus:ring-1 focus:ring-[#1b5e65] focus:outline-none sm:text-sm"
               value={order}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setOrder(Number(e.target.value))
@@ -261,7 +257,7 @@ const Addtech: React.FC = () => {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setImage(e.target.files ? e.target.files[0] : null)
               }
-              className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+              className="cursor-pointer text-xs text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
               required
             />
           </div>
@@ -270,11 +266,11 @@ const Addtech: React.FC = () => {
             <button
               type="submit"
               disabled={uploadMutation.isPending}
-              className="bg-[#1b5e65] hover:bg-[#154b51] text-white px-5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-colors duration-200 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-md bg-[#1b5e65] px-5 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[#154b51] disabled:opacity-50 sm:text-sm"
             >
               {uploadMutation.isPending ? (
                 <>
-                  <FiRefreshCw className="animate-spin w-3.5 h-3.5" /> Uploading...
+                  <FiRefreshCw className="h-3.5 w-3.5 animate-spin" /> Uploading...
                 </>
               ) : (
                 "Upload"
@@ -284,81 +280,81 @@ const Addtech: React.FC = () => {
         </form>
 
         {/* Preview Header matching Image 1 design */}
-        <div className="mt-8 pt-6 border-t border-slate-100">
-          <h3 className="text-base font-bold text-[#1b5e65] mb-4 flex items-center gap-2">
-            <FiImage className="text-[#1b5e65] w-4 h-4" /> Preview
+        <div className="mt-8 border-t border-slate-100 pt-6">
+          <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-[#1b5e65]">
+            <FiImage className="h-4 w-4 text-[#1b5e65]" /> Preview
           </h3>
 
           {/* Loading State */}
           {isLoading ? (
-            <p className="text-xs text-slate-500 py-2">Loading images...</p>
+            <p className="py-2 text-xs text-slate-500">Loading images...</p>
           ) : isError ? (
-            <p className="text-xs text-red-500 py-2">
+            <p className="py-2 text-xs text-red-500">
               {(error as any)?.response?.data?.error || "Error fetching images"}
             </p>
           ) : images.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {images.map((img: any, idx: number) => {
                 const imgId = img.id || img.techspec_id || img.pk || idx;
                 const imgSrc = img.image || img.image_url || img.file || img.url;
                 return (
                   <div
                     key={imgId}
-                    className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow transition-shadow group flex flex-col justify-between"
+                    className="group flex flex-col justify-between overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm transition-shadow hover:shadow"
                   >
-                    <div className="relative aspect-video bg-slate-100 overflow-hidden">
+                    <div className="relative aspect-video overflow-hidden bg-slate-100">
                       {imgSrc ? (
                         <img
                           src={imgSrc}
                           alt={img.caption || "Technical Specification"}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 cursor-pointer"
+                          className="h-full w-full cursor-pointer object-cover transition-transform duration-200 group-hover:scale-105"
                           onClick={() => setPreviewImageUrl(imgSrc)}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+                        <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
                           No Image Preview
                         </div>
                       )}
                       {img.order !== undefined && (
-                        <span className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
+                        <span className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white">
                           Order: {img.order}
                         </span>
                       )}
                     </div>
 
                     <div className="p-3">
-                      <p className="text-xs font-semibold text-slate-800 line-clamp-1">
+                      <p className="line-clamp-1 text-xs font-semibold text-slate-800">
                         {img.caption || "No caption"}
                       </p>
                       {img.product_name && (
-                        <p className="text-[10px] text-slate-500 mt-0.5">
+                        <p className="mt-0.5 text-[10px] text-slate-500">
                           Product: {img.product_name}
                         </p>
                       )}
 
                       {/* Action buttons (Edit PUT, Delete DELETE, View GET by ID) */}
-                      <div className="flex items-center justify-between gap-1 mt-3 pt-2 border-t border-slate-200/60">
+                      <div className="mt-3 flex items-center justify-between gap-1 border-t border-slate-200/60 pt-2">
                         <button
                           onClick={() => handleViewDetails(img)}
-                          className="flex items-center gap-1 text-[11px] text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2 py-1 rounded"
+                          className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 hover:text-slate-900"
                           title="View Details (GET by ID)"
                         >
-                          <FiEye className="w-3 h-3 text-slate-500" /> View
+                          <FiEye className="h-3 w-3 text-slate-500" /> View
                         </button>
                         <button
                           onClick={() => handleOpenEdit(img)}
-                          className="flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 bg-white border border-blue-200 px-2 py-1 rounded"
+                          className="flex items-center gap-1 rounded border border-blue-200 bg-white px-2 py-1 text-[11px] text-blue-600 hover:text-blue-800"
                           title="Edit Technical Image (PUT)"
                         >
-                          <FiEdit3 className="w-3 h-3 text-blue-600" /> Edit
+                          <FiEdit3 className="h-3 w-3 text-blue-600" /> Edit
                         </button>
                         <button
                           onClick={() => handleDelete(img)}
                           disabled={deleteMutation.isPending}
-                          className="flex items-center gap-1 text-[11px] text-red-600 hover:text-red-800 bg-white border border-red-200 px-2 py-1 rounded"
+                          className="flex items-center gap-1 rounded border border-red-200 bg-white px-2 py-1 text-[11px] text-red-600 hover:text-red-800"
                           title="Delete Technical Image (DELETE)"
                         >
-                          <FiTrash2 className="w-3 h-3 text-red-600" /> Delete
+                          <FiTrash2 className="h-3 w-3 text-red-600" /> Delete
                         </button>
                       </div>
                     </div>
@@ -367,7 +363,7 @@ const Addtech: React.FC = () => {
               })}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 py-2">
+            <p className="py-2 text-xs text-slate-500">
               {productName
                 ? `No technical specification images found for "${productName}".`
                 : "No images found for this product."}
@@ -378,29 +374,29 @@ const Addtech: React.FC = () => {
 
       {/* Edit Modal (PUT) */}
       {editItem && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-5 border border-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-[#1b5e65] flex items-center gap-1.5">
-                <FiEdit3 className="w-4 h-4" /> Edit Technical Specification (PUT)
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="flex items-center gap-1.5 text-sm font-bold text-[#1b5e65]">
+                <FiEdit3 className="h-4 w-4" /> Edit Technical Specification (PUT)
               </h3>
               <button
                 onClick={() => setEditItem(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="p-1 text-slate-400 hover:text-slate-600"
               >
-                <FiX className="w-4 h-4" />
+                <FiX className="h-4 w-4" />
               </button>
             </div>
 
             <form onSubmit={handleUpdateSubmit} className="mt-4 space-y-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">
                   Caption
                 </label>
                 <input
                   type="text"
                   placeholder="Updated caption"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#1b5e65]"
+                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-xs text-slate-800 focus:ring-1 focus:ring-[#1b5e65] focus:outline-none"
                   value={editCaption}
                   onChange={(e) => setEditCaption(e.target.value)}
                   required
@@ -408,31 +404,29 @@ const Addtech: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">
                   New Image (Optional)
                 </label>
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) =>
-                    setEditImage(e.target.files ? e.target.files[0] : null)
-                  }
-                  className="text-xs text-slate-600 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-slate-100"
+                  onChange={(e) => setEditImage(e.target.files ? e.target.files[0] : null)}
+                  className="text-xs text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
                 <button
                   type="button"
                   onClick={() => setEditItem(null)}
-                  className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded text-xs font-medium hover:bg-slate-50"
+                  className="rounded border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={updateMutation.isPending}
-                  className="px-4 py-1.5 bg-[#1b5e65] text-white rounded text-xs font-semibold hover:bg-[#154b51] disabled:opacity-50 flex items-center gap-1"
+                  className="flex items-center gap-1 rounded bg-[#1b5e65] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#154b51] disabled:opacity-50"
                 >
                   {updateMutation.isPending ? "Updating..." : "Save Changes"}
                 </button>
@@ -444,48 +438,48 @@ const Addtech: React.FC = () => {
 
       {/* View Details Modal (GET by ID) */}
       {detailItem && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-5 border border-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-[#1b5e65] flex items-center gap-1.5">
-                <FiEye className="w-4 h-4" /> Technical Specification Details (GET by ID)
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="flex items-center gap-1.5 text-sm font-bold text-[#1b5e65]">
+                <FiEye className="h-4 w-4" /> Technical Specification Details (GET by ID)
               </h3>
               <button
                 onClick={() => setDetailItem(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="p-1 text-slate-400 hover:text-slate-600"
               >
-                <FiX className="w-4 h-4" />
+                <FiX className="h-4 w-4" />
               </button>
             </div>
 
             {isDetailLoading ? (
-              <div className="py-8 text-center text-xs text-slate-500">
-                Loading details...
-              </div>
+              <div className="py-8 text-center text-xs text-slate-500">Loading details...</div>
             ) : (
               <div className="mt-4 space-y-3">
-                <div className="rounded-lg overflow-hidden bg-slate-100 aspect-video">
+                <div className="aspect-video overflow-hidden rounded-lg bg-slate-100">
                   <img
-                    src={detailItem.image || detailItem.image_url || detailItem.file || detailItem.url}
+                    src={
+                      detailItem.image || detailItem.image_url || detailItem.file || detailItem.url
+                    }
                     alt={detailItem.caption || "Image"}
-                    className="w-full h-full object-contain"
+                    className="h-full w-full object-contain"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-50 p-2 rounded border border-slate-100">
-                    <span className="text-slate-400 block text-[10px]">ID</span>
+                  <div className="rounded border border-slate-100 bg-slate-50 p-2">
+                    <span className="block text-[10px] text-slate-400">ID</span>
                     <span className="font-semibold text-slate-700">
                       {detailItem.id || detailItem.techspec_id || detailItem.pk}
                     </span>
                   </div>
-                  <div className="bg-slate-50 p-2 rounded border border-slate-100">
-                    <span className="text-slate-400 block text-[10px]">Product Name</span>
+                  <div className="rounded border border-slate-100 bg-slate-50 p-2">
+                    <span className="block text-[10px] text-slate-400">Product Name</span>
                     <span className="font-semibold text-slate-700">
                       {detailItem.product_name || "N/A"}
                     </span>
                   </div>
-                  <div className="bg-slate-50 p-2 rounded border border-slate-100 col-span-2">
-                    <span className="text-slate-400 block text-[10px]">Caption</span>
+                  <div className="col-span-2 rounded border border-slate-100 bg-slate-50 p-2">
+                    <span className="block text-[10px] text-slate-400">Caption</span>
                     <span className="font-semibold text-slate-700">
                       {detailItem.caption || "No caption"}
                     </span>
@@ -495,7 +489,7 @@ const Addtech: React.FC = () => {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={() => setDetailItem(null)}
-                    className="px-4 py-1.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold hover:bg-slate-200"
+                    className="rounded bg-slate-100 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200"
                   >
                     Close
                   </button>
@@ -509,20 +503,20 @@ const Addtech: React.FC = () => {
       {/* Lightbox / Full Image Modal */}
       {previewImageUrl && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
           onClick={() => setPreviewImageUrl(null)}
         >
-          <div className="relative max-w-4xl w-full max-h-[90vh] flex items-center justify-center">
+          <div className="relative flex max-h-[90vh] w-full max-w-4xl items-center justify-center">
             <img
               src={previewImageUrl}
               alt="Enlarged preview"
-              className="max-w-full max-h-[85vh] object-contain rounded"
+              className="max-h-[85vh] max-w-full rounded object-contain"
             />
             <button
               onClick={() => setPreviewImageUrl(null)}
-              className="absolute -top-10 right-0 text-white bg-white/20 hover:bg-white/40 p-2 rounded-full"
+              className="absolute -top-10 right-0 rounded-full bg-white/20 p-2 text-white hover:bg-white/40"
             >
-              <FiX className="w-5 h-5" />
+              <FiX className="h-5 w-5" />
             </button>
           </div>
         </div>

@@ -120,7 +120,12 @@ export const useDeleteData = (url: string, refetchQueryKey?: any) => {
   };
 };
 
-export const useDatawithpost = (url: string, payload: any, queryKey: any[], isValidSearch: boolean) => {
+export const useDatawithpost = (
+  url: string,
+  payload: any,
+  queryKey: any[],
+  isValidSearch: boolean,
+) => {
   const access = getAccessToken();
 
   const fetchData = async () => {
@@ -157,9 +162,7 @@ export const useDeleteUser = (url: string, refetchQueryKey?: any) => {
         config.data = payload;
       }
 
-      const requestUrl = userId
-        ? `${Base_Url}/${url}/${userId}`
-        : `${Base_Url}/${url}`;
+      const requestUrl = userId ? `${Base_Url}/${url}/${userId}` : `${Base_Url}/${url}`;
 
       const response = await axios.delete(requestUrl, config);
       return response.data;

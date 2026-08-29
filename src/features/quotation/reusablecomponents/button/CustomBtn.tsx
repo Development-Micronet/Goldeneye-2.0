@@ -17,12 +17,7 @@ const CustomBtn: React.FC<CustomBtnProps> = ({
   disabled = false,
 }) => {
   return (
-    <button
-      disabled={disabled}
-      type={type}
-      className={className}
-      onClick={onClick}
-    >
+    <button disabled={disabled} type={type} className={className} onClick={onClick}>
       {label}
     </button>
   );

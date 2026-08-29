@@ -20,11 +20,7 @@ interface ImageCardProps {
   inputCls?: string;
   removeImage: (index: number) => void;
   updateCaption: (index: number, caption: string) => void;
-  attachFile: (
-    index: number,
-    file: File,
-    type: "kml" | "html" | "jpg"
-  ) => void;
+  attachFile: (index: number, file: File, type: "kml" | "html" | "jpg") => void;
   detachFile: (index: number, type: "kml" | "html" | "jpg") => void;
   allowfile?: ("kml" | "html" | "jpg")[];
 }
@@ -71,9 +67,7 @@ const ImageCard: React.FC<ImageCardProps> = ({
     },
   };
 
-  const handleMouseMove = (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>
-  ) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     const rect = e.currentTarget.getBoundingClientRect();
 
     setZoomPos({
@@ -85,10 +79,10 @@ const ImageCard: React.FC<ImageCardProps> = ({
   return (
     <>
       {/* CARD */}
-      <div className="rounded-xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition">
+      <div className="overflow-hidden rounded-xl border bg-white shadow-sm transition hover:shadow-md">
         {/* IMAGE + TOP-RIGHT REMOVE */}
         <div
-          className="relative group cursor-zoom-in"
+          className="group relative cursor-zoom-in"
           onMouseEnter={() => setShowZoom(true)}
           onMouseLeave={() => setShowZoom(false)}
           onMouseMove={handleMouseMove}
@@ -108,16 +102,16 @@ const ImageCard: React.FC<ImageCardProps> = ({
             <FiX className="h-4 w-4" />
           </button>
 
-          <div className="absolute bottom-2 left-2 text-[10px] bg-black/50 text-white px-2 py-[2px] rounded">
+          <div className="absolute bottom-2 left-2 rounded bg-black/50 px-2 py-[2px] text-[10px] text-white">
             {index + 1}/{total}
           </div>
         </div>
 
         {/* BODY */}
-        <div className="p-2 space-y-2">
+        <div className="space-y-2 p-2">
           {/* CAPTION */}
           <input
-            className={`${inputCls} text-xs w-full border rounded px-2 py-1 outline-none focus:ring-1 focus:ring-gray-300`}
+            className={`${inputCls} w-full rounded border px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-gray-300`}
             value={img.caption || ""}
             placeholder="Add caption..."
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -130,14 +124,12 @@ const ImageCard: React.FC<ImageCardProps> = ({
             {allowfile.map((type) => {
               const config = fileConfig[type];
 
-              const existingFile = img.supportingfiles?.find(
-                (f) => f.fileType === type
-              );
+              const existingFile = img.supportingfiles?.find((f) => f.fileType === type);
 
               return (
                 <div key={type} className="flex flex-col gap-1">
                   <label
-                    className={`flex items-center gap-1 text-[10px] px-2 py-1 border rounded cursor-pointer ${config.color}`}
+                    className={`flex cursor-pointer items-center gap-1 rounded border px-2 py-1 text-[10px] ${config.color}`}
                   >
                     <FiPaperclip className="h-3 w-3" />
                     {config.label}
@@ -146,9 +138,7 @@ const ImageCard: React.FC<ImageCardProps> = ({
                       type="file"
                       accept={config.accept}
                       className="hidden"
-                      onChange={(
-                        e: React.ChangeEvent<HTMLInputElement>
-                      ) => {
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         const file = e.target.files?.[0];
                         if (file) {
                           attachFile(index, file, config.type);
@@ -158,13 +148,11 @@ const ImageCard: React.FC<ImageCardProps> = ({
                   </label>
 
                   {existingFile && (
-                    <div className="flex items-center justify-between text-[9px] px-2 py-1 border rounded bg-gray-50">
-                      <span className="truncate max-w-[80px]">
-                        {existingFile.name}
-                      </span>
+                    <div className="flex items-center justify-between rounded border bg-gray-50 px-2 py-1 text-[9px]">
+                      <span className="max-w-[80px] truncate">{existingFile.name}</span>
 
                       <FiX
-                        className="h-3 w-3 text-red-500 cursor-pointer"
+                        className="h-3 w-3 cursor-pointer text-red-500"
                         onClick={() => detachFile(index, config.type)}
                       />
                     </div>
@@ -178,13 +166,13 @@ const ImageCard: React.FC<ImageCardProps> = ({
 
       {/* ZOOM */}
       {showZoom && (
-        <div className="fixed bottom-20 right-6 z-[9999] w-[380px] h-[380px] border rounded-xl shadow-xl overflow-hidden bg-black">
-          <div className="text-white text-[10px] p-2 bg-black/80">
+        <div className="fixed right-6 bottom-20 z-[9999] h-[380px] w-[380px] overflow-hidden rounded-xl border bg-black shadow-xl">
+          <div className="bg-black/80 p-2 text-[10px] text-white">
             {img.caption || `Image ${index + 1}`}
           </div>
 
           <div
-            className="w-full h-full"
+            className="h-full w-full"
             style={{
               backgroundImage: `url(${img.dataUrl})`,
               backgroundRepeat: "no-repeat",

@@ -62,9 +62,8 @@ export default function ContractFormModal({
     (provider) => provider.provider_id === resolvedProviderId,
   )?.name;
 
-
   const { accessToken } = useAuthStore.getState();
-const token = accessToken?.replace("Bearer ", "").trim() || "";
+  const token = accessToken?.replace("Bearer ", "").trim() || "";
 
   /**
    * Auto-select provider if passed
@@ -103,23 +102,20 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
       onClose();
     },
 
-   onError: async (error: any) => {
-  try {
-    console.log("Encrypted Error:", error.response.data);
+    onError: async (error: any) => {
+      try {
+        console.log("Encrypted Error:", error.response.data);
 
-    const decrypted = await decryptAESGCM(
-      error.response.data.data,
-      token
-    );
+        const decrypted = await decryptAESGCM(error.response.data.data, token);
 
-    console.log("Decrypted Error:", decrypted);
+        console.log("Decrypted Error:", decrypted);
 
-    toast.error(decrypted.message);
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to create contract");
-  }
-},
+        toast.error(decrypted.message);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to create contract");
+      }
+    },
   });
 
   const onValidationError = (errors: FieldErrors<CreateContractDto>) => {
@@ -133,9 +129,8 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
   };
 
   const onSubmit = (data: CreateContractDto) => {
-    const providerValue = data.provider || resolvedProviderId ;
-    const selectedContractType =
-      watch("contractType") || contract?.contractType || "";
+    const providerValue = data.provider || resolvedProviderId;
+    const selectedContractType = watch("contractType") || contract?.contractType || "";
 
     if (contract) {
       const updateData: UpdateContractDto = {
@@ -150,7 +145,7 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
       };
 
       updateMutation.mutate({
-        id: contract.contractId   ,
+        id: contract.contractId,
         data: updateData,
       });
     } else {
@@ -201,14 +196,10 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
             {/* Provider */}
             {(contract || selectedProviderId) && (
               <div className="col-span-2 rounded-md border border-teal-100 bg-teal-50 px-3 py-3">
-                <label className="mb-1 block text-sm font-medium text-teal-800">
-                  Provider
-                </label>
+                <label className="mb-1 block text-sm font-medium text-teal-800">Provider</label>
 
                 <p className="text-sm text-gray-700">
-                  {selectedProviderName ||
-                    resolvedProviderId ||
-                    "Selected provider"}
+                  {selectedProviderName || resolvedProviderId || "Selected provider"}
                 </p>
 
                 <input type="hidden" {...register("provider")} />
@@ -217,41 +208,32 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
 
             {!contract && !selectedProviderId && (
               <div className="col-span-2">
-                <label className="mb-1 block text-sm font-medium">
-                  Provider
-                </label>
+                <label className="mb-1 block text-sm font-medium">Provider</label>
 
                 <select
                   {...register("provider", {
                     required: "Provider is required",
                   })}
-                  className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none"
                 >
                   <option value="">Select Provider</option>
 
                   {providers?.data?.map((provider) => (
-                    <option
-                      key={provider.provider_id}
-                      value={provider.provider_id}
-                    >
+                    <option key={provider.provider_id} value={provider.provider_id}>
                       {provider.name}
                     </option>
                   ))}
                 </select>
 
                 {errors.provider && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.provider.message}
-                  </p>
+                  <p className="mt-1 text-sm text-red-500">{errors.provider.message}</p>
                 )}
               </div>
             )}
 
             {/* Contract ID */}
             <div>
-              <label className="mb-1 block text-sm font-medium">
-                Contract ID
-              </label>
+              <label className="mb-1 block text-sm font-medium">Contract ID</label>
 
               <input
                 {...register("contractId", {
@@ -262,17 +244,13 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
               />
 
               {errors.contractId && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.contractId.message}
-                </p>
+                <p className="mt-1 text-sm text-red-500">{errors.contractId.message}</p>
               )}
             </div>
 
             {/* Name */}
             <div>
-              <label className="mb-1 block text-sm font-medium">
-                Contract Name
-              </label>
+              <label className="mb-1 block text-sm font-medium">Contract Name</label>
 
               <input
                 {...register("name", {
@@ -282,11 +260,7 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
                 className="w-full rounded-md border px-3 py-2"
               />
 
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.name.message}
-                </p>
-              )}
+              {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
             </div>
 
             {/* Email */}
@@ -306,11 +280,7 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
                 className="w-full rounded-md border px-3 py-2"
               />
 
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.email.message}
-                </p>
-              )}
+              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
             </div>
 
             {/* API Keys */}
@@ -326,9 +296,7 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
               />
 
               {errors.apiKeys && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.apiKeys.message}
-                </p>
+                <p className="mt-1 text-sm text-red-500">{errors.apiKeys.message}</p>
               )}
             </div>
 
@@ -336,10 +304,7 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
             <div>
               <label className="mb-1 block text-sm font-medium">Status</label>
 
-              <select
-                {...register("status")}
-                className="w-full rounded-md border px-3 py-2"
-              >
+              <select {...register("status")} className="w-full rounded-md border px-3 py-2">
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
@@ -347,9 +312,7 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
 
             {/* Expiry */}
             <div>
-              <label className="mb-1 block text-sm font-medium">
-                Expires At
-              </label>
+              <label className="mb-1 block text-sm font-medium">Expires At</label>
 
               <input
                 type="datetime-local"
@@ -360,24 +323,17 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
               />
 
               {errors.expiresAt && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.expiresAt.message}
-                </p>
+                <p className="mt-1 text-sm text-red-500">{errors.expiresAt.message}</p>
               )}
             </div>
 
             {/* Contract Type */}
             <div className="col-span-2">
-              <label className="mb-2 block text-sm font-medium">
-                Contract Type
-              </label>
+              <label className="mb-2 block text-sm font-medium">Contract Type</label>
 
               <div className="space-y-2">
                 {["Enterprise", "Search", "Order", "Tasking"].map((type) => (
-                  <label
-                    key={type}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
+                  <label key={type} className="flex cursor-pointer items-center gap-2">
                     <input
                       type="radio"
                       value={type}
@@ -393,9 +349,7 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
               </div>
 
               {errors.contractType && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.contractType.message}
-                </p>
+                <p className="mt-1 text-sm text-red-500">{errors.contractType.message}</p>
               )}
             </div>
           </div>
@@ -415,16 +369,10 @@ const token = accessToken?.replace("Bearer ", "").trim() || "";
 
             <button
               type="submit"
-              disabled={
-                createMutation.isPending ||
-                updateMutation.isPending ||
-                isSubmitting
-              }
+              disabled={createMutation.isPending || updateMutation.isPending || isSubmitting}
               className="rounded-md bg-teal-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {createMutation.isPending ||
-              updateMutation.isPending ||
-              isSubmitting
+              {createMutation.isPending || updateMutation.isPending || isSubmitting
                 ? contract
                   ? "Updating..."
                   : "Creating..."

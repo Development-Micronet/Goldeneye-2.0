@@ -8,9 +8,7 @@ const renderWithQueryClient = (ui: React.ReactNode) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
-  );
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 };
 
 describe("ProviderAccordion", () => {
@@ -69,5 +67,3 @@ describe("ProviderAccordion", () => {
     expect(handleDelete).toHaveBeenCalledWith("prov-1");
   });
 });
-
-

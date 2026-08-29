@@ -57,9 +57,7 @@ interface PreviewImage {
   order: number;
 }
 
-async function kmlToDataURI(
-  url?: string | null
-): Promise<string | ArrayBuffer | null> {
+async function kmlToDataURI(url?: string | null): Promise<string | ArrayBuffer | null> {
   if (!url) return null;
 
   try {
@@ -79,9 +77,7 @@ async function kmlToDataURI(
   }
 }
 
-async function toBase64(
-  url?: string | null
-): Promise<string | ArrayBuffer | null> {
+async function toBase64(url?: string | null): Promise<string | ArrayBuffer | null> {
   if (!url) return null;
 
   try {
@@ -101,9 +97,7 @@ async function toBase64(
   }
 }
 
-export async function exportQuotationToPDF(
-  quotationData: QuotationData
-): Promise<void> {
+export async function exportQuotationToPDF(quotationData: QuotationData): Promise<void> {
   try {
     const q = quotationData;
 
@@ -122,7 +116,7 @@ export async function exportQuotationToPDF(
           supportingfiles: Array.isArray(img.supportingfiles) ? img.supportingfiles : [],
           order: img.order ?? idx,
         };
-      })
+      }),
     );
 
     extraImages.sort((a, b) => a.order - b.order);
@@ -163,13 +157,8 @@ export async function exportQuotationToPDF(
   } catch (err) {
     console.error("PDF export failed:", err);
 
-    toast.error(
-      `PDF generation failed: ${
-        err instanceof Error ? err.message : "Unknown error"
-      }`,
-      {
-        id: "pdf-gen",
-      }
-    );
+    toast.error(`PDF generation failed: ${err instanceof Error ? err.message : "Unknown error"}`, {
+      id: "pdf-gen",
+    });
   }
 }

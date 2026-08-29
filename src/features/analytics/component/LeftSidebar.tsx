@@ -94,18 +94,20 @@ export default function LeftSidebar({
                   aria-expanded={isActive}
                   data-tooltip-id={isActive ? undefined : "left-sidebar-tooltip"}
                   data-tooltip-content={item.tooltip}
-                  className={`group focus-visible:ring-primary/40 flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-150 outline-none focus-visible:ring-2 sm:h-10 sm:w-10 md:h-10 md:w-10 ${isActive
-                    ? "bg-primary/10 text-primary ring-primary/15 ring-1"
-                    : "text-gray-600 hover:bg-gray-100 active:bg-gray-200"
-                    }`}
+                  className={`group focus-visible:ring-primary/40 flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-150 outline-none focus-visible:ring-2 sm:h-10 sm:w-10 md:h-10 md:w-10 ${
+                    isActive
+                      ? "bg-primary/10 text-primary ring-primary/15 ring-1"
+                      : "text-gray-600 hover:bg-gray-100 active:bg-gray-200"
+                  }`}
                 >
                   <img
                     src={item.icon}
                     alt=""
                     aria-hidden
                     draggable={false}
-                    className={`h-[18px] w-[18px] object-contain transition-opacity ${isActive ? "opacity-100" : "opacity-60 group-hover:opacity-90"
-                      }`}
+                    className={`h-[18px] w-[18px] object-contain transition-opacity ${
+                      isActive ? "opacity-100" : "opacity-60 group-hover:opacity-90"
+                    }`}
                   />
                 </button>
 
@@ -113,7 +115,9 @@ export default function LeftSidebar({
 
                 {index === 1 && isActive && <BasemapPopup onClose={() => setActiveIndex(null)} />}
 
-                {index === 2 && isActive && <AnalyticsDrawPopup onClose={() => setActiveIndex(null)} />}
+                {index === 2 && isActive && (
+                  <AnalyticsDrawPopup onClose={() => setActiveIndex(null)} />
+                )}
               </div>
             </li>
           );

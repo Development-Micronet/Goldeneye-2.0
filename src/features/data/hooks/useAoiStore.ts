@@ -3,7 +3,6 @@ import Feature from "ol/Feature";
 import type Geometry from "ol/geom/Geometry";
 import type { SelectedArchiveProduct } from "../components/sidebar/store/useArchiveProductStore";
 
-
 interface AoiStore {
   drawnAois: Feature<Geometry>[];
 
@@ -25,9 +24,7 @@ const useAoiStore = create<AoiStore>((set) => ({
 
   removeDrawnAoi: (id) =>
     set((state) => ({
-      drawnAois: state.drawnAois.filter(
-        (feature) => feature.getId() !== id
-      ),
+      drawnAois: state.drawnAois.filter((feature) => feature.getId() !== id),
     })),
 
   clearDrawnAois: () =>

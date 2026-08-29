@@ -9,29 +9,28 @@ export const fetchUserProfile = async (username: string, token: string) => {
     },
   };
 
-  const response = await axios.get(
-    `${API_BASE_URL}/profile/${username}`,
-    config
-  );
+  const response = await axios.get(`${API_BASE_URL}/profile/${username}`, config);
   return response.data.userDetails;
 };
 
-export const updateUserProfile = async ({ username, profileData, token }: { username: string; profileData: any; token: string }) => {
-  const response = await axios.post(
-    `${API_BASE_URL}/profile/${username}`,
-    profileData,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+export const updateUserProfile = async ({
+  username,
+  profileData,
+  token,
+}: {
+  username: string;
+  profileData: any;
+  token: string;
+}) => {
+  const response = await axios.post(`${API_BASE_URL}/profile/${username}`, profileData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   return response.data;
 };
 
-const API_PROVIDER_SEARCH_URL = `${
-  import.meta.env.VITE_REACT_APP_BASE_URL
-}/search/`;
+const API_PROVIDER_SEARCH_URL = `${import.meta.env.VITE_REACT_APP_BASE_URL}/search/`;
 
 export const searchAirbusProviders = async (searchCriteria: any, token: string) => {
   try {

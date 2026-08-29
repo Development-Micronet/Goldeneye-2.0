@@ -5,7 +5,6 @@ interface UserProviderProps {
   children: any;
 }
 
-
 const UserContext = createContext<any>(null);
 
 export const UserProvider = ({ children }: UserProviderProps) => {
@@ -25,9 +24,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     setUser(userData);
     sessionStorage.setItem("user", JSON.stringify(userData));
   };
-
-
-
 
   const logout = () => {
     setRole(null);
@@ -52,7 +48,17 @@ export const UserProvider = ({ children }: UserProviderProps) => {
 
   return (
     <UserContext.Provider
-      value={{ user, login, logout, userName, access, role, parentUsername , accesstoken,setaccesstoken }}
+      value={{
+        user,
+        login,
+        logout,
+        userName,
+        access,
+        role,
+        parentUsername,
+        accesstoken,
+        setaccesstoken,
+      }}
     >
       {children}
     </UserContext.Provider>

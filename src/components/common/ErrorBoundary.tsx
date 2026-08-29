@@ -24,7 +24,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error(`ErrorBoundary caught an error in ${this.props.componentName || "a component"}:`, error, errorInfo);
+    console.error(
+      `ErrorBoundary caught an error in ${this.props.componentName || "a component"}:`,
+      error,
+      errorInfo,
+    );
   }
 
   public handleReset = () => {
@@ -35,7 +39,10 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       if (typeof this.props.fallback === "function") {
-        return this.props.fallback(this.state.error || new Error("Unknown error"), this.handleReset);
+        return this.props.fallback(
+          this.state.error || new Error("Unknown error"),
+          this.handleReset,
+        );
       }
 
       if (this.props.fallback) {
@@ -51,7 +58,8 @@ export class ErrorBoundary extends Component<Props, State> {
             Something went wrong{this.props.componentName ? ` in ${this.props.componentName}` : ""}
           </h3>
           <p className="mt-1 text-sm text-gray-600">
-            {this.state.error?.message || "An unexpected error occurred while rendering this section."}
+            {this.state.error?.message ||
+              "An unexpected error occurred while rendering this section."}
           </p>
           <button
             type="button"

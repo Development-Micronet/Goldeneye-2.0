@@ -44,20 +44,20 @@ const CloudCoverageSwitcher = () => {
       {isFiltered ? (
         <div
           onClick={() => setTab(isOpen ? "none" : "cloudcover")}
-          className="flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-primary bg-primary px-3 text-xs font-semibold text-white shadow-md transition hover:bg-[#1f4e57] select-none"
+          className="border-primary bg-primary flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-semibold text-white shadow-md transition select-none hover:bg-[#1f4e57]"
         >
           <FiCloud size={14} />
           <span>
             {min > 0 && max < 100
               ? `Cloud: ${min}%-${max}%`
               : min > 0
-              ? `Cloud ≥ ${min}%`
-              : `Cloud ≤ ${max}%`}
+                ? `Cloud ≥ ${min}%`
+                : `Cloud ≤ ${max}%`}
           </span>
           <button
             type="button"
             onClick={handleReset}
-            className="ml-1 flex h-4 w-4 items-center justify-center rounded-full text-white/80 hover:bg-white/20 hover:text-white transition cursor-pointer"
+            className="ml-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full text-white/80 transition hover:bg-white/20 hover:text-white"
             title="Clear Cloud Filter"
           >
             <FiX size={12} />
@@ -67,7 +67,9 @@ const CloudCoverageSwitcher = () => {
         <button
           onClick={() => setTab(isOpen ? "none" : "cloudcover")}
           className={`flex h-8 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 text-xs font-medium shadow-md transition select-none ${
-            isOpen ? "border-primary bg-primary/10 text-primary font-semibold" : "text-gray-700 hover:bg-cyan-50"
+            isOpen
+              ? "border-primary bg-primary/10 text-primary font-semibold"
+              : "text-gray-700 hover:bg-cyan-50"
           }`}
         >
           <FiCloud size={14} />
@@ -77,7 +79,7 @@ const CloudCoverageSwitcher = () => {
 
       {/* Popup Window */}
       {isOpen && (
-        <div className="absolute top-[130%] left-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl animate-fadeIn">
+        <div className="animate-fadeIn absolute top-[130%] left-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
           {/* Header */}
           <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-2.5">
             <h3 className="text-sm font-bold text-gray-800">Cloud Coverage</h3>
@@ -121,7 +123,7 @@ const CloudCoverageSwitcher = () => {
 
             <button
               onClick={handleApply}
-              className="rounded-lg bg-primary px-5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#1f4e57] transition cursor-pointer"
+              className="bg-primary cursor-pointer rounded-lg px-5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#1f4e57]"
             >
               Apply
             </button>

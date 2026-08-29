@@ -1,4 +1,3 @@
-
 import MapTypeToggle from "../assests/MapTypeToggle";
 import { MAP_LAYERS } from "../config/mapLayers";
 import { useMapStore } from "../store/useMapStore";
@@ -11,7 +10,6 @@ export default function BasemapPopup({ onClose }: BasemapPopupProps) {
   const mapMode = useMapStore((s) => s.mapMode);
   const setMapMode = useMapStore((s) => s.setMapMode);
   const handleLayerChange = (id: string) => {
-
     setMapMode(id);
     onClose?.();
   };
@@ -25,14 +23,13 @@ export default function BasemapPopup({ onClose }: BasemapPopupProps) {
       <ul className="space-y-1">
         {MAP_LAYERS.map((layer) => {
           const active = mapMode === layer.id;
-      
+
           return (
             <li key={layer.id}>
               <label
-                className={`flex w-full cursor-pointer items-center justify-between rounded px-2 py-2 ${active
-                  ? "bg-primary-100 text-primary"
-                  : "hover:bg-gray-100"
-                  }`}
+                className={`flex w-full cursor-pointer items-center justify-between rounded px-2 py-2 ${
+                  active ? "bg-primary-100 text-primary" : "hover:bg-gray-100"
+                }`}
               >
                 <span className="flex items-center gap-2">
                   <input
@@ -41,13 +38,11 @@ export default function BasemapPopup({ onClose }: BasemapPopupProps) {
                     value={layer.id}
                     checked={active}
                     onChange={() => handleLayerChange(layer.id)}
-                    className="h-4 w-4 accent-primary"
+                    className="accent-primary h-4 w-4"
                   />
 
                   <span>{layer.name}</span>
                 </span>
-
-
               </label>
             </li>
           );

@@ -64,11 +64,9 @@ export const useQuotationInfoStore = create<QuotationInfoStore>((set) => ({
       [field]: value,
     })),
 
-  setTerms: (terms) =>
-    set({ terms_and_specifications: terms }),
+  setTerms: (terms) => set({ terms_and_specifications: terms }),
 
-  setImages: (images) =>
-    set({ extraImages: images }),
+  setImages: (images) => set({ extraImages: images }),
 
   resetQuotation: () => set(initialValues),
 
@@ -80,9 +78,7 @@ export const useQuotationInfoStore = create<QuotationInfoStore>((set) => ({
       const updatedExtraImages = [...state.extraImages];
       updatedExtraImages[index] = {
         ...img,
-        supportingfiles: (img.supportingfiles || []).filter(
-          (f: any) => f.fileType !== fileType
-        ),
+        supportingfiles: (img.supportingfiles || []).filter((f: any) => f.fileType !== fileType),
       };
 
       return { extraImages: updatedExtraImages };

@@ -102,7 +102,10 @@
   border: 2px solid var(--border-color, transparent);
   padding: var(--padding, 10px 20px);
   cursor: pointer;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s;
 }
 
 .custom-button:hover {
@@ -136,14 +139,17 @@
 
   cursor: pointer;
 
-  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
 
   border-radius: 5px;
 }
 .Button2 .button-text {
   height: 20px;
-  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
-    "Lucida Sans", Arial, sans-serif;
+  font-family:
+    "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", "Lucida Sans", Arial, sans-serif;
 
   font-size: 20px;
   white-space: nowrap;

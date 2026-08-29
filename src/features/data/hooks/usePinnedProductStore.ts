@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import type { SelectedArchiveProduct } from "../components/sidebar/store/useArchiveProductStore";
 
-
 interface PinnedProductStore {
   pinnedProducts: SelectedArchiveProduct[];
 

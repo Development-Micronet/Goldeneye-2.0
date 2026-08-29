@@ -64,12 +64,12 @@ const GeopicxPopupModals: React.FC<GeopicxPopupModalsProps> = ({
   return (
     <div className={`GeopicxModalOverlay ${!isOpen ? "fadeOut" : ""}`}>
       <div className={`GeopicxModal GeopicxModal--${type} ${!isOpen ? "slideOut" : ""}`}>
-        <div className="GeopicxModalBody ">
+        <div className="GeopicxModalBody">
           {icon && <img src={icon} alt={`${type} icon`} className="GeopicxModalIcon" />}
           <h2 className="GeopicxModalHeading">{modalBodyHeading}</h2>
           <div className="GeopicxModalMessageBox">
             <div
-              className="GeopicxModalMessage "
+              className="GeopicxModalMessage"
               dangerouslySetInnerHTML={{ __html: message || "" }}
             />
           </div>

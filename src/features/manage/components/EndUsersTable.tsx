@@ -1,5 +1,15 @@
 import React, { useState, useMemo } from "react";
-import { ChevronDown, ChevronUp, Plus, Building2, Users, Search, ShieldCheck, Mail, User } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Building2,
+  Users,
+  Search,
+  ShieldCheck,
+  Mail,
+  User,
+} from "lucide-react";
 import { useTenantSuperusers, useCompanyUsers } from "../hooks/useEndUsers";
 import type { Company, CompanyUser } from "../api/enduser";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -55,7 +65,7 @@ const CompanyUserAccordion: React.FC<{
           u.email?.toLowerCase().includes(q) ||
           u.first_name?.toLowerCase().includes(q) ||
           u.last_name?.toLowerCase().includes(q) ||
-          `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase().includes(q)
+          `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase().includes(q),
       );
     }
 
@@ -78,36 +88,36 @@ const CompanyUserAccordion: React.FC<{
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200/80 bg-white shadow-sm transition-all duration-300 hover:shadow-md overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
       {/* Accordion Header */}
       <div
         onClick={() => setOpen(!open)}
-        className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-4 bg-gradient-to-r from-[#EFFBFD] via-[#f7fdfd] to-white border-b border-gray-200/60 cursor-pointer hover:bg-[#e8f7fa] transition-colors select-none gap-3"
+        className="flex cursor-pointer flex-col justify-between gap-3 border-b border-gray-200/60 bg-gradient-to-r from-[#EFFBFD] via-[#f7fdfd] to-white px-5 py-4 transition-colors select-none hover:bg-[#e8f7fa] sm:flex-row sm:items-center"
       >
-        <div className="flex items-center gap-3.5 min-w-0">
+        <div className="flex min-w-0 items-center gap-3.5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2c6671] text-white shadow-xs">
             <Building2 className="h-5 w-5" />
           </div>
 
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="font-bold text-base text-gray-900 truncate">
+          <div className="flex min-w-0 flex-col">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="truncate text-base font-bold text-gray-900">
                 {company.company_name}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#2c6671]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#2c6671] border border-[#2c6671]/20">
+              <span className="inline-flex items-center gap-1 rounded-full border border-[#2c6671]/20 bg-[#2c6671]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#2c6671]">
                 schema: {company.schema_name}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5 truncate">
-              <Mail className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+            <div className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-gray-500">
+              <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" />
               <span className="truncate">{company.email}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-gray-100 pt-2 sm:justify-end sm:border-t-0 sm:pt-0">
           {/* User count badge */}
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 border border-gray-200 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-2xs">
             <Users className="h-3.5 w-3.5 text-[#2c6671]" />
             {isLoading ? "..." : `${users.length} ${users.length === 1 ? "User" : "Users"}`}
           </span>
@@ -119,7 +129,7 @@ const CompanyUserAccordion: React.FC<{
                 e.stopPropagation();
                 onAddUser(company.company_name);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2c6671] hover:bg-[#1f4e57] text-white text-xs font-semibold transition shadow-xs cursor-pointer active:scale-95"
+              className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#2c6671] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#1f4e57] active:scale-95"
               title="Add End User"
             >
               <Plus size={15} />
@@ -128,7 +138,7 @@ const CompanyUserAccordion: React.FC<{
           )}
 
           {/* Expand/Collapse Chevron Icon */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500 border border-gray-200 transition-transform duration-200">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-transform duration-200">
             {open ? <ChevronUp size={18} className="text-[#2c6671]" /> : <ChevronDown size={18} />}
           </div>
         </div>
@@ -136,7 +146,7 @@ const CompanyUserAccordion: React.FC<{
 
       {/* Accordion Content Table */}
       {open && (
-        <div className="p-4 bg-white animate-fadeIn">
+        <div className="animate-fadeIn bg-white p-4">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-8">
               <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-[#2c6671]"></div>
@@ -148,21 +158,31 @@ const CompanyUserAccordion: React.FC<{
             </div>
           ) : sortedUsers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <User className="h-8 w-8 text-gray-300 mb-1" />
+              <User className="mb-1 h-8 w-8 text-gray-300" />
               <span className="text-xs font-medium text-gray-400">
                 {searchQuery ? "No matching users found." : "No users found for this organization."}
               </span>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-gray-200/80">
-              <table className="w-full min-w-[700px] text-left text-xs border-collapse">
-                <thead className="bg-[#EFFBFD] border-b border-gray-200">
+              <table className="w-full min-w-[700px] border-collapse text-left text-xs">
+                <thead className="border-b border-gray-200 bg-[#EFFBFD]">
                   <tr>
-                    <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide w-14">Sr No.</th>
-                    <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">Full Name</th>
-                    <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">Username</th>
-                    <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">Email</th>
-                    <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide text-center">Role</th>
+                    <th className="w-14 px-4 py-3 font-bold tracking-wide text-[#2c6671] uppercase">
+                      Sr No.
+                    </th>
+                    <th className="px-4 py-3 font-bold tracking-wide text-[#2c6671] uppercase">
+                      Full Name
+                    </th>
+                    <th className="px-4 py-3 font-bold tracking-wide text-[#2c6671] uppercase">
+                      Username
+                    </th>
+                    <th className="px-4 py-3 font-bold tracking-wide text-[#2c6671] uppercase">
+                      Email
+                    </th>
+                    <th className="px-4 py-3 text-center font-bold tracking-wide text-[#2c6671] uppercase">
+                      Role
+                    </th>
                   </tr>
                 </thead>
 
@@ -178,19 +198,19 @@ const CompanyUserAccordion: React.FC<{
                             : "hover:bg-[#EFFBFD]/40"
                         }`}
                       >
-                        <td className="px-4 py-3.5 text-gray-500 font-medium">{index + 1}</td>
+                        <td className="px-4 py-3.5 font-medium text-gray-500">{index + 1}</td>
                         <td className="px-4 py-3.5 font-semibold text-gray-900">
                           {`${u.first_name || ""} ${u.last_name || ""}`.trim() || "-"}
                         </td>
-                        <td className="px-4 py-3.5 text-gray-700 font-medium">{u.username}</td>
+                        <td className="px-4 py-3.5 font-medium text-gray-700">{u.username}</td>
                         <td className="px-4 py-3.5 text-gray-600">{u.email}</td>
                         <td className="px-4 py-3.5 text-center">
                           {isTenantAdmin ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-200">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
                               <ShieldCheck className="h-3 w-3" /> Admin
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EFFBFD] px-2.5 py-0.5 text-[11px] font-bold text-[#2c6671] border border-[#2c6671]/20">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2c6671]/20 bg-[#EFFBFD] px-2.5 py-0.5 text-[11px] font-bold text-[#2c6671]">
                               <User className="h-3 w-3" /> User
                             </span>
                           )}
@@ -209,10 +229,7 @@ const CompanyUserAccordion: React.FC<{
 };
 
 // 2. Main Parent Component
-export const EndUsersTable: React.FC<EndUsersTableProps> = ({
-  onEdit,
-  onDelete,
-}) => {
+export const EndUsersTable: React.FC<EndUsersTableProps> = ({ onEdit, onDelete }) => {
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string>("");
@@ -261,7 +278,7 @@ export const EndUsersTable: React.FC<EndUsersTableProps> = ({
             u.email?.toLowerCase().includes(q) ||
             u.first_name?.toLowerCase().includes(q) ||
             u.last_name?.toLowerCase().includes(q) ||
-            `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase().includes(q)
+            `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase().includes(q),
         );
         if (matchUser) return true;
       }
@@ -275,7 +292,9 @@ export const EndUsersTable: React.FC<EndUsersTableProps> = ({
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#2c6671]"></div>
-        <span className="mt-3 text-xs font-medium text-gray-500">Loading organizations and users...</span>
+        <span className="mt-3 text-xs font-medium text-gray-500">
+          Loading organizations and users...
+        </span>
       </div>
     );
   }
@@ -291,27 +310,27 @@ export const EndUsersTable: React.FC<EndUsersTableProps> = ({
   return (
     <div className="space-y-4">
       {/* Search Bar & Stats Header */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200/80 shadow-xs">
+      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-xs sm:flex-row">
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-gray-900">Manage End Users</span>
-          <span className="rounded-full bg-[#EFFBFD] px-2.5 py-0.5 text-xs font-bold text-[#2c6671] border border-[#2c6671]/20">
+          <span className="rounded-full border border-[#2c6671]/20 bg-[#EFFBFD] px-2.5 py-0.5 text-xs font-bold text-[#2c6671]">
             {companies.length} {companies.length === 1 ? "Organization" : "Organizations"}
           </span>
         </div>
 
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Search company or user..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 pl-9 pr-4 py-2 text-xs text-gray-800 placeholder-gray-400 outline-none transition focus:border-[#2c6671] focus:bg-white focus:ring-1 focus:ring-[#2c6671]"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2 pr-4 pl-9 text-xs text-gray-800 placeholder-gray-400 transition outline-none focus:border-[#2c6671] focus:bg-white focus:ring-1 focus:ring-[#2c6671]"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 hover:text-gray-600"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold text-gray-400 hover:text-gray-600"
             >
               ✕
             </button>

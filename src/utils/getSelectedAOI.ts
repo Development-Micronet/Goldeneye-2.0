@@ -1,7 +1,6 @@
 import { useSelectedAOIStore } from "../features/data/hooks/useSelectedAOIStore";
 import { useLayersStore } from "../store/useLayersStore";
 
-
 export const getSelectedAOI = () => {
   const { layers } = useLayersStore.getState();
 

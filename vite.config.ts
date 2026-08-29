@@ -27,10 +27,7 @@ export default defineConfig({
   server: {
     host: true,
     port: 5174,
-    allowedHosts: [
-      "goldeneye.ind.in",
-      "www.goldeneye.ind.in",
-    ],
+    allowedHosts: ["goldeneye.ind.in", "www.goldeneye.ind.in"],
   },
 
   test: {

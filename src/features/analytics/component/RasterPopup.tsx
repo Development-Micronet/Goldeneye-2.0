@@ -75,14 +75,13 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (mapType === "3d") {
-      setMaptype("2d")
+      setMaptype("2d");
       toast.info("Switching to 2D mode to upload raster layers.");
     }
 
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-
 
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
     if (!ALLOWED_EXTENSIONS.includes(extension)) {
@@ -200,10 +199,7 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
         return;
       }
 
-      const bounds = utmToLngLatBounds(
-        raster.aoi,
-        raster.projection || "EPSG:32643",
-      );
+      const bounds = utmToLngLatBounds(raster.aoi, raster.projection || "EPSG:32643");
 
       const [[west, south], [east, north]] = bounds as [[number, number], [number, number]];
 

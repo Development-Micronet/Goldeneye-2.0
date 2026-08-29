@@ -33,7 +33,9 @@ const AOIDialog: React.FC<AOIDialogProps> = ({ file, onCancel, onSave }) => {
       if (!isDragging.current) return;
       setPanelPos({ x: e.clientX - dragOffset.current.x, y: e.clientY - dragOffset.current.y });
     };
-    const onMouseUp = () => { isDragging.current = false; };
+    const onMouseUp = () => {
+      isDragging.current = false;
+    };
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
     return () => {
@@ -46,7 +48,10 @@ const AOIDialog: React.FC<AOIDialogProps> = ({ file, onCancel, onSave }) => {
     setError(null);
     const values = [xmin, ymin, xmax, ymax].map(Number);
 
-    if ([xmin, ymin, xmax, ymax].some((v) => v.trim() === "") || values.some((v) => Number.isNaN(v))) {
+    if (
+      [xmin, ymin, xmax, ymax].some((v) => v.trim() === "") ||
+      values.some((v) => Number.isNaN(v))
+    ) {
       setError("Please fill in all four coordinate fields with valid numbers.");
       return;
     }
@@ -66,10 +71,7 @@ const AOIDialog: React.FC<AOIDialogProps> = ({ file, onCancel, onSave }) => {
   return (
     <div className="fixed inset-0 z-[3000]">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/25 backdrop-blur-[1px]"
-        onClick={onCancel}
-      />
+      <div className="absolute inset-0 bg-black/25 backdrop-blur-[1px]" onClick={onCancel} />
 
       {/* Panel */}
       <div
@@ -84,11 +86,11 @@ const AOIDialog: React.FC<AOIDialogProps> = ({ file, onCancel, onSave }) => {
           resize: "both",
           overflow: "hidden",
         }}
-        className="relative flex flex-col rounded-xl b bg-white shadow-xl"
+        className="b relative flex flex-col rounded-xl bg-white shadow-xl"
       >
         {/* Header */}
         <div
-          className="flex cursor-grab items-center justify-between  px-3 py-2 active:cursor-grabbing"
+          className="flex cursor-grab items-center justify-between px-3 py-2 active:cursor-grabbing"
           onMouseDown={handleHeaderMouseDown}
         >
           <div className="flex items-center gap-2">
@@ -98,62 +100,32 @@ const AOIDialog: React.FC<AOIDialogProps> = ({ file, onCancel, onSave }) => {
 
             <div>
               <div className="flex items-center gap-1">
-                <h3 className="text-xs font-bold text-gray-800">
-                  Set Image Bounds
-                </h3>
+                <h3 className="text-xs font-bold text-gray-800">Set Image Bounds</h3>
                 <Move size={11} className="text-gray-400" />
               </div>
 
-              <p
-                className="max-w-[160px] truncate text-[10px] text-gray-400"
-                title={file.name}
-              >
+              <p className="max-w-[160px] truncate text-[10px] text-gray-400" title={file.name}>
                 {file.name}
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onCancel}
-            className="rounded-md p-1 text-gray-400 hover:bg-gray-100"
-          >
+          <button onClick={onCancel} className="rounded-md p-1 text-gray-400 hover:bg-gray-100">
             <X size={15} />
           </button>
         </div>
 
-
         {/* Body */}
         <div className="flex-1 overflow-auto p-3">
           <div className="grid grid-cols-2 gap-2">
-            <CoordinateInput
-              label="Min Lon"
-              placeholder="-180"
-              value={xmin}
-              setValue={setXmin}
-            />
+            <CoordinateInput label="Min Lon" placeholder="-180" value={xmin} setValue={setXmin} />
 
-            <CoordinateInput
-              label="Min Lat"
-              placeholder="-90"
-              value={ymin}
-              setValue={setYmin}
-            />
+            <CoordinateInput label="Min Lat" placeholder="-90" value={ymin} setValue={setYmin} />
 
-            <CoordinateInput
-              label="Max Lon"
-              placeholder="180"
-              value={xmax}
-              setValue={setXmax}
-            />
+            <CoordinateInput label="Max Lon" placeholder="180" value={xmax} setValue={setXmax} />
 
-            <CoordinateInput
-              label="Max Lat"
-              placeholder="90"
-              value={ymax}
-              setValue={setYmax}
-            />
+            <CoordinateInput label="Max Lat" placeholder="90" value={ymax} setValue={setYmax} />
           </div>
-
 
           {/* Hint */}
           <div className="mt-2 flex items-center gap-1.5 rounded-md bg-gray-50 px-2 py-1.5 text-[10px] text-gray-500">
@@ -164,7 +136,6 @@ const AOIDialog: React.FC<AOIDialogProps> = ({ file, onCancel, onSave }) => {
             </span>
           </div>
 
-
           {/* Error */}
           {error && (
             <div className="mt-2 flex items-center gap-1.5 rounded-md bg-red-50 px-2 py-1.5 text-[10px] text-red-700">
@@ -174,12 +145,11 @@ const AOIDialog: React.FC<AOIDialogProps> = ({ file, onCancel, onSave }) => {
           )}
         </div>
 
-
         {/* Footer */}
-        <div className="flex justify-end gap-2  px-3 py-2">
+        <div className="flex justify-end gap-2 px-3 py-2">
           <button
             onClick={onCancel}
-            className="rounded-md bg-teal-50 text-primary  px-3 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-50"
+            className="text-primary rounded-md bg-teal-50 px-3 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-50"
           >
             Cancel
           </button>
@@ -212,7 +182,7 @@ const CoordinateInput = ({ label, placeholder, value, setValue }: CoordinateInpu
       placeholder={placeholder}
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      className="w-full rounded-lg  bg-gray-50/50 px-2.5 py-1.5 text-xs text-gray-800 outline-none transition-all placeholder:text-gray-300 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20"
+      className="w-full rounded-lg bg-gray-50/50 px-2.5 py-1.5 text-xs text-gray-800 transition-all outline-none placeholder:text-gray-300 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20"
     />
   </div>
 );

@@ -136,11 +136,7 @@ interface RasterStore {
   /** Batch insert — used when several detections resolve together */
   addOperations: (rasterId: string, operations: RasterOperation[]) => void;
 
-  renameOperation: (
-    rasterId: string,
-    operationId: string,
-    fileName: string
-  ) => void;
+  renameOperation: (rasterId: string, operationId: string, fileName: string) => void;
 
   removeOperation: (rasterId: string, operationId: string) => void;
 
@@ -154,18 +150,14 @@ interface RasterStore {
 
   setRasterProgress: (value: number) => void;
 
-  setRasterDisplay: (
-    id: string,
-    displayImageUrl: string,
-    displayType: RasterDisplayType
-  ) => void;
+  setRasterDisplay: (id: string, displayImageUrl: string, displayType: RasterDisplayType) => void;
 }
 
 /** Small helper so every raster mutation stays a one-liner below. */
 const patchRaster = (
   rasters: RasterLayer[],
   id: string,
-  patch: (raster: RasterLayer) => RasterLayer
+  patch: (raster: RasterLayer) => RasterLayer,
 ) => rasters.map((raster) => (raster.id === id ? patch(raster) : raster));
 
 export const useRasterStore = create<RasterStore>((set) => ({
@@ -201,9 +193,7 @@ export const useRasterStore = create<RasterStore>((set) => ({
       return {
         rasters,
         fitRasterId:
-          state.fitRasterId === id
-            ? rasters[rasters.length - 1]?.id ?? null
-            : state.fitRasterId,
+          state.fitRasterId === id ? (rasters[rasters.length - 1]?.id ?? null) : state.fitRasterId,
       };
     }),
 
@@ -251,9 +241,7 @@ export const useRasterStore = create<RasterStore>((set) => ({
   showOperation: (rasterId, operationId) =>
     set((state) => ({
       rasters: patchRaster(state.rasters, rasterId, (raster) => {
-        const operation = raster.operations.find(
-          (item) => item.id === operationId
-        );
+        const operation = raster.operations.find((item) => item.id === operationId);
 
         if (!operation) return raster;
 
@@ -281,7 +269,7 @@ export const useRasterStore = create<RasterStore>((set) => ({
       rasters: patchRaster(state.rasters, rasterId, (raster) => ({
         ...raster,
         operations: raster.operations.map((operation) =>
-          operation.id === operationId ? { ...operation, fileName } : operation
+          operation.id === operationId ? { ...operation, fileName } : operation,
         ),
       })),
     })),
@@ -293,9 +281,7 @@ export const useRasterStore = create<RasterStore>((set) => ({
 
         return {
           ...raster,
-          operations: raster.operations.filter(
-            (operation) => operation.id !== operationId
-          ),
+          operations: raster.operations.filter((operation) => operation.id !== operationId),
           // deleting the layer that's painted would leave a dead URL on the map
           displayImageUrl: wasOnMap ? raster.imageUrl : raster.displayImageUrl,
           displayType: wasOnMap ? "original" : raster.displayType,

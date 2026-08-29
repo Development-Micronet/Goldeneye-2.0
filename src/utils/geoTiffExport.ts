@@ -72,7 +72,6 @@ export function captureMapLibreCanvas(map: any): Promise<HTMLCanvasElement> {
   });
 }
 
-
 /**
  * Captures map canvas from OpenLayers (Data page).
  * For MapLibre use captureMapLibreCanvas(map) instead.
@@ -85,9 +84,7 @@ export function captureOLMapCanvas(): HTMLCanvasElement | null {
     document.querySelector(".map-container");
 
   if (olViewport) {
-    const canvases = Array.from(
-      olViewport.querySelectorAll("canvas")
-    ) as HTMLCanvasElement[];
+    const canvases = Array.from(olViewport.querySelectorAll("canvas")) as HTMLCanvasElement[];
 
     if (canvases && canvases.length > 0) {
       const viewportRect = olViewport.getBoundingClientRect();
@@ -105,9 +102,7 @@ export function captureOLMapCanvas(): HTMLCanvasElement | null {
         let drawnCount = 0;
         canvases.forEach((canvas) => {
           if (canvas.width > 0 && canvas.height > 0) {
-            const opacity = canvas.style.opacity
-              ? parseFloat(canvas.style.opacity)
-              : 1;
+            const opacity = canvas.style.opacity ? parseFloat(canvas.style.opacity) : 1;
             ctx.globalAlpha = isNaN(opacity) ? 1 : opacity;
 
             const rect = canvas.getBoundingClientRect();
@@ -135,7 +130,7 @@ export function captureOLMapCanvas(): HTMLCanvasElement | null {
  */
 export function buildGeoTIFFBuffer(
   canvas: HTMLCanvasElement,
-  bbox: [number, number, number, number]
+  bbox: [number, number, number, number],
 ): ArrayBuffer {
   const width = canvas.width;
   const height = canvas.height;
@@ -153,7 +148,7 @@ export function buildGeoTIFFBuffer(
   // Convert RGBA to RGB interleaved (3 samples per pixel)
   const rgb = new Uint8Array(width * height * 3);
   for (let i = 0; i < width * height; i++) {
-    rgb[i * 3] = rgba[i * 4];         // Red
+    rgb[i * 3] = rgba[i * 4]; // Red
     rgb[i * 3 + 1] = rgba[i * 4 + 1]; // Green
     rgb[i * 3 + 2] = rgba[i * 4 + 2]; // Blue
   }
@@ -189,7 +184,8 @@ export function downloadGeoTIFFFile(buffer: ArrayBuffer, filename: string): void
   const downloadUrl = URL.createObjectURL(blob);
   const downloadLink = document.createElement("a");
   downloadLink.href = downloadUrl;
-  downloadLink.download = filename.endsWith(".tif") || filename.endsWith(".tiff") ? filename : `${filename}.tif`;
+  downloadLink.download =
+    filename.endsWith(".tif") || filename.endsWith(".tiff") ? filename : `${filename}.tif`;
   document.body.appendChild(downloadLink);
   downloadLink.click();
   document.body.removeChild(downloadLink);
@@ -205,7 +201,7 @@ export function downloadGeoTIFFFile(buffer: ArrayBuffer, filename: string): void
 export async function addGeoTIFFToAnalyticsStore(
   buffer: ArrayBuffer,
   bbox: [number, number, number, number],
-  name: string
+  name: string,
 ): Promise<void> {
   const filename = name.endsWith(".tif") ? name : `${name}.tif`;
   const file = new File([buffer], filename, { type: "image/tiff" });
@@ -250,6 +246,7 @@ export async function addGeoTIFFToAnalyticsStore(
 export async function exportSelectedAOIToGeoTIFF(): Promise<boolean> {
   const { layers } = useLayersStore.getState();
   const { selectedAOIId } = useSelectedAOIStore.getState();
+
   const map = useMapStore.getState().mapInstance;
 
   let targetLayer = layers.find((l) => l.id === selectedAOIId);
@@ -319,7 +316,7 @@ export async function exportSelectedAOIToGeoTIFF(): Promise<boolean> {
             0,
             0,
             croppedCanvas.width,
-            croppedCanvas.height
+            croppedCanvas.height,
           );
           aoiCanvas = croppedCanvas;
         } else {
@@ -365,7 +362,7 @@ export async function exportSelectedAOIToGeoTIFF(): Promise<boolean> {
  */
 export async function exportGeoTIFFFromMapLibreFeature(
   feature: any,
-  labelName = "Analytics_AOI"
+  labelName = "Analytics_AOI",
 ): Promise<boolean> {
   const toastId = toast.loading("Capturing map and creating GeoTIFF...");
   try {
@@ -437,7 +434,7 @@ export async function exportGeoTIFFFromMapLibreFeature(
             0,
             0,
             croppedCanvas.width,
-            croppedCanvas.height
+            croppedCanvas.height,
           );
           aoiCanvas = croppedCanvas;
         }

@@ -111,10 +111,7 @@ export const ArchiveSearchMenu: React.FC = () => {
   const normalizeProductType = (productType: string): string => {
     if (!productType) return "";
 
-    const value = productType
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .trim();
+    const value = productType.toLowerCase().replace(/\s+/g, " ").trim();
 
     // Most specific first
     if (value.includes("quality layers + ortho")) {
@@ -146,9 +143,7 @@ export const ArchiveSearchMenu: React.FC = () => {
     }
 
     // 32m, 22m, 1.5m etc.
-    const resolutionMatch = value.match(
-      /(?:^|[-_\s])(\d+(?:\.\d+)?)\s*-?\s*m(?![a-z])/
-    );
+    const resolutionMatch = value.match(/(?:^|[-_\s])(\d+(?:\.\d+)?)\s*-?\s*m(?![a-z])/);
 
     if (resolutionMatch) {
       return `${resolutionMatch[1]}m`;
@@ -158,13 +153,7 @@ export const ArchiveSearchMenu: React.FC = () => {
   };
 
   const productType = useMemo(() => {
-    return [
-      ...new Set(
-        selectedProductTypes
-          .map(normalizeProductType)
-          .filter(Boolean)
-      ),
-    ].join(",");
+    return [...new Set(selectedProductTypes.map(normalizeProductType).filter(Boolean))].join(",");
   }, [selectedProductTypes]);
   const sensors = useMemo(() => {
     const currentProviderObj = providers.find((p) => p.name === selectedProvider);
@@ -233,7 +222,6 @@ export const ArchiveSearchMenu: React.FC = () => {
     ],
   );
 
-
   const { isLoading, isError, isPending, refetch } = useQuery({
     queryKey: ["archive-products", searchKey, currentpage],
 
@@ -265,9 +253,9 @@ export const ArchiveSearchMenu: React.FC = () => {
         currentpage === 1
           ? decrypted
           : {
-            ...decrypted,
-            features: [...(prev?.features ?? []), ...decrypted.features],
-          },
+              ...decrypted,
+              features: [...(prev?.features ?? []), ...decrypted.features],
+            },
       );
 
       return decrypted;
@@ -316,7 +304,6 @@ export const ArchiveSearchMenu: React.FC = () => {
 
       raw: item.properties.raw,
     })) ?? [];
-
 
   const handleSelectAll = () => {
     const allSelected =
@@ -567,7 +554,6 @@ export const ArchiveSearchMenu: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-end gap-6 bg-white px-4 py-3 shadow-sm">
-
           <div className="flex items-center gap-1">
             {/* Pin All / Clear All Pins */}
             <button
@@ -596,14 +582,14 @@ export const ArchiveSearchMenu: React.FC = () => {
               onClick={handleSelectAll}
               title={
                 mappedProducts.length > 0 &&
-                  mappedProducts.every((product) => isSelected(product.id))
+                mappedProducts.every((product) => isSelected(product.id))
                   ? "Deselect All"
                   : "Select All"
               }
               className="rounded-md p-2 transition hover:bg-gray-100"
             >
               {mappedProducts.length > 0 &&
-                mappedProducts.every((product) => isSelected(product.id)) ? (
+              mappedProducts.every((product) => isSelected(product.id)) ? (
                 <CheckSquare size={17} className="text-primary" />
               ) : (
                 <Square size={17} className="text-gray-600" />
@@ -701,13 +687,9 @@ export const ArchiveSearchMenu: React.FC = () => {
           {isLoading && (
             <div className="w-[32rem]">
               {" "}
-              <div className="flex flex-col items-center justify-start h-[calc(100vh-173px)] py-4">
+              <div className="flex h-[calc(100vh-173px)] flex-col items-center justify-start py-4">
                 <div>
-                  <img
-                    src={Spinners}
-                    alt="Loading..."
-                    className="w-30 h-30 mt-[16rem]"
-                  />
+                  <img src={Spinners} alt="Loading..." className="mt-[16rem] h-30 w-30" />
                 </div>
               </div>
             </div>

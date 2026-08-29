@@ -1,9 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CreateQuotation as CreateQuotationAPI,
-  Getnextquotations,
-} from "../api/Quotation";
+import { CreateQuotation as CreateQuotationAPI, Getnextquotations } from "../api/Quotation";
 import { toast } from "react-toastify";
 import {
   buildPreviewHTML,
@@ -52,11 +49,7 @@ import GroupedProductEntry, {
 import { GetTechspec, getProductPrefix } from "../api/Techspec.ts";
 import ImageCard from "../assets/Microcomponent/ImageCard.js";
 import { GSTSummaryPanel } from "../assets/Microcomponent/GSTSummaryPanel.tsx";
-import {
-  getaddress,
-  getauthorizedPerson,
-  getcompanyemail,
-} from "../assets/preview/Preview.ts";
+import { getaddress, getauthorizedPerson, getcompanyemail } from "../assets/preview/Preview.ts";
 import { useNavigate } from "react-router-dom";
 
 interface ToggleProps {
@@ -75,25 +68,24 @@ const YESTERDAY = (() => {
   return d.toISOString().slice(0, 10);
 })();
 
-const fmtINR = (n) =>
-  (parseFloat(n) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 });
+const fmtINR = (n) => (parseFloat(n) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 });
 // ── Toggle switch component ──────────────────────────────────────────────────
 function Toggle({ checked, onChange, label }: ToggleProps) {
   return (
-    <label className="flex items-center gap-2 cursor-pointer select-none">
+    <label className="flex cursor-pointer items-center gap-2 select-none">
       <div
-        className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${checked ? "bg-[#2c6671]" : "bg-gray-300"
-          }`}
+        className={`relative h-5 w-9 rounded-full transition-colors duration-200 ${
+          checked ? "bg-[#2c6671]" : "bg-gray-300"
+        }`}
         onClick={() => onChange(!checked)}
       >
         <div
-          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-200 ${checked ? "translate-x-4" : "translate-x-0"
-            }`}
+          className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-200 ${
+            checked ? "translate-x-4" : "translate-x-0"
+          }`}
         />
       </div>
-      {label && (
-        <span className="text-xs font-bold text-[#2c6671]">{label}</span>
-      )}
+      {label && <span className="text-xs font-bold text-[#2c6671]">{label}</span>}
     </label>
   );
 }
@@ -168,40 +160,37 @@ export default function CreateQuotation() {
 
   // ── FROM COMPANY fields ──
   const [from_company, set_from_company] = useState<string>("");
-  const [from_company_email, set_from_company_email] = useState<any>(quotationinfo.from_company_email || "",
+  const [from_company_email, set_from_company_email] = useState<any>(
+    quotationinfo.from_company_email || "",
   );
-  const [from_company_authorized_person, set_from_company_authorized_person] =
-    useState<any>(quotationinfo.from_company_authorized_person || "");
+  const [from_company_authorized_person, set_from_company_authorized_person] = useState<any>(
+    quotationinfo.from_company_authorized_person || "",
+  );
   const [
     from_company_authorized_person_designation,
     set_from_company_authorized_person_designation,
   ] = useState<any>(quotationinfo.from_company_authorized_person_designation || "");
-  const [from_company_address, set_from_company_address] = useState<any>(quotationinfo.from_company_address || "",
+  const [from_company_address, set_from_company_address] = useState<any>(
+    quotationinfo.from_company_address || "",
   );
 
   // ── TO COMPANY fields ──
   const [to_company, set_to_company] = useState<any>(quotationinfo.to_company || "");
-  const [
-    receiver_company_authorized_person,
-    set_receiver_company_authorized_person,
-  ] = useState<any>(quotationinfo.receiver_company_authorized_person || "");
+  const [receiver_company_authorized_person, set_receiver_company_authorized_person] =
+    useState<any>(quotationinfo.receiver_company_authorized_person || "");
   const [
     receiver_company_authorized_person_designation,
     set_receiver_company_authorized_person_designation,
-  ] = useState<any>(quotationinfo.receiver_company_authorized_person_designation || "",
-  );
+  ] = useState<any>(quotationinfo.receiver_company_authorized_person_designation || "");
   const [receiver_company_email, setreceiver_company_email] = useState<string>("");
   // ── Address fields ──
-  const [address_line_1, set_address_line_1] = useState<any>(quotationinfo.address_line_1 || "",
-  );
-  const [address_line_2, set_address_line_2] = useState<any>(quotationinfo.address_line_2 || "",
-  );
+  const [address_line_1, set_address_line_1] = useState<any>(quotationinfo.address_line_1 || "");
+  const [address_line_2, set_address_line_2] = useState<any>(quotationinfo.address_line_2 || "");
   const [sameAsLine1, setSameAsLine1] = useState<boolean>(false);
   const [country, setcountry] = useState<any>(quotationinfo.country || "India");
   const [stateVal, setstateVal] = useState<any>(quotationinfo.state || "");
   const [city, setcity] = useState<any>(quotationinfo.city || "");
-  const [postal_code, setpostal_code] = useState<any>(quotationinfo.postal_code || "",
-  );
+  const [postal_code, setpostal_code] = useState<any>(quotationinfo.postal_code || "");
 
   const [validity, set_validity] = useState<any>(quotationinfo.validity || "30");
   const [date, set_date] = useState<any>(TODAY || "");
@@ -293,11 +282,8 @@ export default function CreateQuotation() {
     set_terms_and_specifications(updated);
   };
   // ── Cascading geo ──
-  const availableStates = country
-    ? Object.keys(GEO_DATA[country] || {}).sort()
-    : [];
-  const availableCities =
-    country && stateVal ? (GEO_DATA[country]?.[stateVal] || []).sort() : [];
+  const availableStates = country ? Object.keys(GEO_DATA[country] || {}).sort() : [];
+  const availableCities = country && stateVal ? (GEO_DATA[country]?.[stateVal] || []).sort() : [];
 
   useEffect(() => {
     if (!from_company) return;
@@ -367,8 +353,7 @@ export default function CreateQuotation() {
   useEffect(() => {
     const handler = (e) => {
       const openDetails = document.querySelector("details[open]");
-      if (openDetails && !openDetails.contains(e.target))
-        openDetails.removeAttribute("open");
+      if (openDetails && !openDetails.contains(e.target)) openDetails.removeAttribute("open");
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -380,9 +365,7 @@ export default function CreateQuotation() {
       images.map((img) => ({
         dataUrl: img?.dataUrl || null,
         caption: img?.caption || "Map Screenshot",
-        supportingfiles: Array.isArray(img?.supportingfiles)
-          ? img.supportingfiles
-          : [],
+        supportingfiles: Array.isArray(img?.supportingfiles) ? img.supportingfiles : [],
       })),
     );
   }, [images]);
@@ -395,9 +378,7 @@ export default function CreateQuotation() {
       ];
 
       try {
-        const results = await Promise.all(
-          uniqueItems.map((item) => GetTechspec(item)),
-        );
+        const results = await Promise.all(uniqueItems.map((item) => GetTechspec(item)));
         const allImages = results.flat();
         setTechImages(allImages);
       } catch (err) {
@@ -484,12 +465,10 @@ export default function CreateQuotation() {
   });
 
   useEffect(() => {
-    if (previewOpen && iframeRef.current)
-      iframeRef.current.srcdoc = previewHTML;
+    if (previewOpen && iframeRef.current) iframeRef.current.srcdoc = previewHTML;
   }, [previewOpen, previewHTML, discountEnabled, discountPct]);
 
-  const handleinfo = (field, val) =>
-    updateField({ field, value: val });
+  const handleinfo = (field, val) => updateField({ field, value: val });
 
   // ── Add blank product row ──
   const addBlankRow = () =>
@@ -500,13 +479,9 @@ export default function CreateQuotation() {
       qty: 25,
       price: 0,
       amount: 0,
-      cloud_cover: cloudCoverRange
-        ? `${cloudCoverRange[0]}-${cloudCoverRange[1]}`
-        : "",
+      cloud_cover: cloudCoverRange ? `${cloudCoverRange[0]}-${cloudCoverRange[1]}` : "",
       date: TODAY,
-      angle: incidenceAngleRange
-        ? `${incidenceAngleRange[0]}-${incidenceAngleRange[1]}`
-        : "",
+      angle: incidenceAngleRange ? `${incidenceAngleRange[0]}-${incidenceAngleRange[1]}` : "",
       cgst_pct,
       sgst_pct,
       igst_pct,
@@ -599,9 +574,7 @@ export default function CreateQuotation() {
 
         return {
           ...img,
-          supportingfiles: (img.supportingfiles || []).filter(
-            (f) => f.fileType !== type,
-          ),
+          supportingfiles: (img.supportingfiles || []).filter((f) => f.fileType !== type),
         };
       }),
     );
@@ -674,8 +647,7 @@ export default function CreateQuotation() {
         Object.entries(d).forEach(([f, m]) =>
           toast.error(`${f}: ${Array.isArray(m) ? m.join(", ") : m}`),
         );
-      else
-        toast.error(err?.response?.data?.error || "Error generating quotation");
+      else toast.error(err?.response?.data?.error || "Error generating quotation");
     },
   });
 
@@ -704,10 +676,7 @@ export default function CreateQuotation() {
       ["authorized_name", from_company_authorized_person], // FIXED
       ["from_company_address", from_company_address],
       ["to_company", to_company],
-      [
-        "receiver_company_authorized_person",
-        receiver_company_authorized_person,
-      ],
+      ["receiver_company_authorized_person", receiver_company_authorized_person],
       [
         "receiver_company_authorized_person_designation",
         receiver_company_authorized_person_designation,
@@ -749,14 +718,11 @@ export default function CreateQuotation() {
           angle: item.angle ?? "",
           date: item.date ?? "",
           task_type: item.task_type || "Archival",
-        }))
-      )
+        })),
+      ),
     );
 
-    fd.append(
-      "terms_and_specifications",
-      JSON.stringify(terms_and_specifications),
-    );
+    fd.append("terms_and_specifications", JSON.stringify(terms_and_specifications));
     fd.append(
       "description",
       JSON.stringify(
@@ -791,9 +757,7 @@ export default function CreateQuotation() {
           const blob = await res.blob();
           file = new File(
             [blob],
-            img.caption
-              ? `${img.caption.replace(/\s+/g, "_")}.jpg`
-              : `image_${i}.jpg`,
+            img.caption ? `${img.caption.replace(/\s+/g, "_")}.jpg` : `image_${i}.jpg`,
             { type: blob.type || "image/jpeg" },
           );
         }
@@ -812,10 +776,7 @@ export default function CreateQuotation() {
         fd.append(`supporting_${i}_${sf.fileType}`, sf.file);
       });
     });
-    fd.append(
-      "image_captions",
-      JSON.stringify(resolvedImages.map((r) => r.caption)),
-    );
+    fd.append("image_captions", JSON.stringify(resolvedImages.map((r) => r.caption)));
 
     const attachmentType = [
       attachKml ? "kml" : "",
@@ -884,10 +845,10 @@ export default function CreateQuotation() {
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       <StepBar step={step} steps={STEPS} onStepClick={setStep} />
 
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
+      <div className="flex-1 space-y-2 overflow-y-auto px-3 py-2">
         {/* ══════════════════════════════════════════════ STEP 0 */}
         {step === 0 && (
           <>
@@ -927,14 +888,14 @@ export default function CreateQuotation() {
 
             <div className={CLS.card}>
               {/* Header */}
-              <div className="flex items-center gap-1 justify-between ">
+              <div className="flex items-center justify-between gap-1">
                 <span className={CLS.sectionTitle}>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary-600" />
+                  <span className="bg-primary-600 inline-block h-1.5 w-1.5 rounded-full" />
                   From Company
                 </span>
                 <Link
                   to="/addtech"
-                  className="text-[9px] font-semibold text-primary-600 hover:text-primary-700 underline"
+                  className="text-primary-600 hover:text-primary-700 text-[9px] font-semibold underline"
                 >
                   + Add Tech
                 </Link>
@@ -943,7 +904,7 @@ export default function CreateQuotation() {
               {/* Company select */}
               <Field label="Company" required error={formErrors.from_company}>
                 <select
-                  className={` rounded border border-light-300 bg-white px-2 py-1 text-[11px] text-dark-700 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-200 disabled:bg-light-100 disabled:text-light-400 w-64`}
+                  className={`border-light-300 text-dark-700 focus:border-primary-400 focus:ring-primary-200 disabled:bg-light-100 disabled:text-light-400 w-64 rounded border bg-white px-2 py-1 text-[11px] focus:ring-1 focus:outline-none`}
                   value={from_company}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const val = e.target.value;
@@ -954,15 +915,10 @@ export default function CreateQuotation() {
                     );
                     if (header) {
                       set_from_company_email(header.email || "");
-                      set_from_company_authorized_person(
-                        header.authorizedPerson || "",
-                      );
+                      set_from_company_authorized_person(header.authorizedPerson || "");
                       set_from_company_address(header.address || "");
                       handleinfo("from_company_email", header.email || "");
-                      handleinfo(
-                        "from_company_authorized_person",
-                        header.authorizedPerson || "",
-                      );
+                      handleinfo("from_company_authorized_person", header.authorizedPerson || "");
                       handleinfo("from_company_address", header.address || "");
                     }
                   }}
@@ -980,23 +936,17 @@ export default function CreateQuotation() {
             {/* ── TO COMPANY CARD ── */}
             <div className={CLS.card}>
               {/* Header */}
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <span className={CLS.sectionTitle}>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   To Company
                 </span>
-                <span className="text-[9px] text-light-400">
-                  Client / Receiver details
-                </span>
+                <span className="text-light-400 text-[9px]">Client / Receiver details</span>
               </div>
 
               {/* Row 1 — Company + Person + Designation */}
               <div className="grid grid-cols-4 gap-x-2 gap-y-1.5">
-                <Field
-                  label="Company Name"
-                  required
-                  error={formErrors.to_company}
-                >
+                <Field label="Company Name" required error={formErrors.to_company}>
                   <input
                     className={CLS.input}
                     value={to_company}
@@ -1004,8 +954,7 @@ export default function CreateQuotation() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       set_to_company(e.target.value);
                       handleinfo("to_company", e.target.value);
-                      submitAttempt &&
-                        setFormErrors((p) => ({ ...p, to_company: "" }));
+                      submitAttempt && setFormErrors((p) => ({ ...p, to_company: "" }));
                     }}
                   />
                 </Field>
@@ -1017,10 +966,7 @@ export default function CreateQuotation() {
                     placeholder="Contact person"
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       set_receiver_company_authorized_person(e.target.value);
-                      handleinfo(
-                        "receiver_company_authorized_person",
-                        e.target.value,
-                      );
+                      handleinfo("receiver_company_authorized_person", e.target.value);
                     }}
                   />
                 </Field>
@@ -1031,13 +977,8 @@ export default function CreateQuotation() {
                     value={receiver_company_authorized_person_designation}
                     placeholder="e.g. Purchase Manager"
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      set_receiver_company_authorized_person_designation(
-                        e.target.value,
-                      );
-                      handleinfo(
-                        "receiver_company_authorized_person_designation",
-                        e.target.value,
-                      );
+                      set_receiver_company_authorized_person_designation(e.target.value);
+                      handleinfo("receiver_company_authorized_person_designation", e.target.value);
                     }}
                   />
                 </Field>
@@ -1056,7 +997,7 @@ export default function CreateQuotation() {
               </div>
 
               {/* Divider */}
-              <div className="border-t border-light-200 my-2" />
+              <div className="border-light-200 my-2 border-t" />
 
               {/* Row 2 — Address */}
               <div className="grid grid-cols-6 gap-x-2 gap-y-1.5">
@@ -1087,23 +1028,25 @@ export default function CreateQuotation() {
                       handleinfo("address_line_2", e.target.value);
                     }}
                   />
-                  <label className="flex items-center gap-1 mt-0.5 cursor-pointer">
+                  <label className="mt-0.5 flex cursor-pointer items-center gap-1">
                     <input
                       type="checkbox"
                       checked={sameAsLine1}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSameAsLine1(e.target.checked)}
-                      className="h-3 w-3 accent-primary-600"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleSameAsLine1(e.target.checked)
+                      }
+                      className="accent-primary-600 h-3 w-3"
                     />
-                    <span className="text-[9px] text-light-500">
-                      Same as Line 1
-                    </span>
+                    <span className="text-light-500 text-[9px]">Same as Line 1</span>
                   </label>
                 </Field>
                 <Field label="Country" required>
                   <select
                     className={CLS.select}
                     value={country}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCountryChange(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      handleCountryChange(e.target.value)
+                    }
                   >
                     <option value="">Select</option>
                     {COUNTRIES.map((c) => (
@@ -1119,11 +1062,11 @@ export default function CreateQuotation() {
                     className={CLS.select}
                     value={stateVal}
                     disabled={!country}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStateChange(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      handleStateChange(e.target.value)
+                    }
                   >
-                    <option value="">
-                      {country ? "Select" : "— country first"}
-                    </option>
+                    <option value="">{country ? "Select" : "— country first"}</option>
                     {availableStates.map((s) => (
                       <option key={s} value={s}>
                         {s}
@@ -1137,11 +1080,11 @@ export default function CreateQuotation() {
                     className={CLS.select}
                     value={city}
                     disabled={!stateVal}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCityChange(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      handleCityChange(e.target.value)
+                    }
                   >
-                    <option value="">
-                      {stateVal ? "Select" : "— state first"}
-                    </option>
+                    <option value="">{stateVal ? "Select" : "— state first"}</option>
                     {availableCities.map((c) => (
                       <option key={c} value={c}>
                         {c}
@@ -1178,20 +1121,22 @@ export default function CreateQuotation() {
 
             {/* ── QUOTATION META CARD ── */}
             <div className={CLS.card}>
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <span className={CLS.sectionTitle}>
-                  <span className="inline-block w-2 h-2 rounded-full bg-violet-500" />
+                  <span className="inline-block h-2 w-2 rounded-full bg-violet-500" />
                   Quotation Details
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-x-2 gap-y-1.5 mb-2">
+              <div className="mb-2 grid grid-cols-2 gap-x-2 gap-y-1.5 sm:grid-cols-3 md:grid-cols-6">
                 <Field label="Ref No">
                   <input
                     className={CLS.input}
                     value={reference_no}
                     placeholder="REF-2024-0001"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => set_reference_no(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      set_reference_no(e.target.value)
+                    }
                   />
                 </Field>
 
@@ -1201,7 +1146,9 @@ export default function CreateQuotation() {
                     className={CLS.input}
                     value={reference_date}
                     max={YESTERDAY}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => set_reference_date(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      set_reference_date(e.target.value)
+                    }
                   />
                 </Field>
 
@@ -1241,21 +1188,19 @@ export default function CreateQuotation() {
               </div>
 
               {/* ── DISCOUNT TOGGLE ── */}
-              <div className="flex items-center my-3">
-                <div className="flex-1 border-t border-light-200" />
+              <div className="my-3 flex items-center">
+                <div className="border-light-200 flex-1 border-t" />
               </div>
 
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex flex-wrap items-center gap-3">
                 <Toggle
                   checked={discountEnabled}
                   onChange={setDiscountEnabled}
-                  label={
-                    discountEnabled ? "Disable Discount" : "Enable Discount"
-                  }
+                  label={discountEnabled ? "Disable Discount" : "Enable Discount"}
                 />
 
                 {discountEnabled && (
-                  <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex flex-wrap items-center gap-3">
                     {/* Input */}
                     <div className="flex items-center gap-2">
                       <input
@@ -1266,21 +1211,15 @@ export default function CreateQuotation() {
                         max={100}
                         placeholder="0"
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setDiscountPct(
-                            Math.min(100, Math.max(0, +e.target.value)),
-                          )
+                          setDiscountPct(Math.min(100, Math.max(0, +e.target.value)))
                         }
                       />
-                      <span className="text-xs font-semibold text-dark-600">
-                        %
-                      </span>
+                      <span className="text-dark-600 text-xs font-semibold">%</span>
                     </div>
 
                     {/* Badge */}
                     <span
-                      className={`${CLS.badge} px-3 py-1 text-xs font-medium
-        bg-amber-50 text-amber-700 border border-amber-200
-        rounded-full whitespace-nowrap`}
+                      className={`${CLS.badge} rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium whitespace-nowrap text-amber-700`}
                     >
                       Applied on base amount
                     </span>
@@ -1288,19 +1227,17 @@ export default function CreateQuotation() {
                 )}
 
                 {!discountEnabled && (
-                  <span className="text-xs text-light-400">
-                    Toggle on to add client discount
-                  </span>
+                  <span className="text-light-400 text-xs">Toggle on to add client discount</span>
                 )}
               </div>
-              <div className="flex flex-col gap-3 mt-3">
+              <div className="mt-3 flex flex-col gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-dark-500 uppercase tracking-wide">
+                  <span className="text-dark-500 text-[10px] font-bold tracking-wide uppercase">
                     Attachments
                   </span>
-                  <div className="flex-1 border-t border-light-200" />
+                  <div className="border-light-200 flex-1 border-t" />
                 </div>
-                <div className="flex flex-wrap gap-4 items-center mb-2">
+                <div className="mb-2 flex flex-wrap items-center gap-4">
                   {[
                     {
                       key: "kml",
@@ -1321,10 +1258,7 @@ export default function CreateQuotation() {
                       set: setAttachJpg,
                     },
                   ].map(({ key, label, state, set }) => (
-                    <label
-                      key={key}
-                      className="flex items-center gap-1.5 cursor-pointer"
-                    >
+                    <label key={key} className="flex cursor-pointer items-center gap-1.5">
                       <input
                         type="checkbox"
                         checked={state}
@@ -1332,11 +1266,9 @@ export default function CreateQuotation() {
                           set(e.target.checked);
                           toggleFileType(key, e.target.checked);
                         }}
-                        className="h-3 w-3 accent-primary-600"
+                        className="accent-primary-600 h-3 w-3"
                       />
-                      <span className="text-[10px] font-semibold text-dark-600">
-                        {label}
-                      </span>
+                      <span className="text-dark-600 text-[10px] font-semibold">{label}</span>
                     </label>
                   ))}
                 </div>
@@ -1345,33 +1277,31 @@ export default function CreateQuotation() {
 
             {/* ── PRODUCTS CARD ── */}
             <div className={CLS.card}>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="mb-1.5 flex items-center justify-between">
                 <span className={CLS.sectionTitle}>
-                  <span className="inline-block w-2 h-2 rounded-full bg-orange-500" />
+                  <span className="inline-block h-2 w-2 rounded-full bg-orange-500" />
                   Products ({quotationItem.length})
                   {quotationItem.length > 0 && (
-                    <span className="ml-2 text-[9px] font-normal text-light-500">
+                    <span className="text-light-500 ml-2 text-[9px] font-normal">
                       Grand Total:{" "}
                       <strong className="text-primary-700 font-black">
                         ₹ {fmtINR(grandTotal)}
                       </strong>
                       {discountEnabled && discountPct > 0 && (
-                        <span className="ml-1 text-amber-600">
-                          (incl. {discountPct}% discount)
-                        </span>
+                        <span className="ml-1 text-amber-600">(incl. {discountPct}% discount)</span>
                       )}
                     </span>
                   )}
                 </span>
                 <details className="relative inline-block text-xs">
-                  <summary className="flex cursor-pointer select-none items-center gap-1.5 rounded-lg bg-[#2c6671] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#204e57] transition-all">
+                  <summary className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-4 py-2 text-xs font-bold text-white shadow-md transition-all select-none hover:bg-[#204e57]">
                     <FiPlus className="h-4 w-4 stroke-[2.5]" />
                     Add Product
                   </summary>
-                  <div className="absolute right-0 mt-1.5 w-44 rounded-xl border border-gray-200 bg-white shadow-xl z-20 overflow-hidden p-1">
+                  <div className="absolute right-0 z-20 mt-1.5 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-xl">
                     <Link
                       to="/data"
-                      className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-[#2c6671]/10 hover:text-[#2c6671] rounded-lg transition-colors"
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-gray-700 transition-colors hover:bg-[#2c6671]/10 hover:text-[#2c6671]"
                     >
                       Select from Data
                     </Link>
@@ -1387,21 +1317,18 @@ export default function CreateQuotation() {
               </div>
 
               {formErrors.items && (
-                <p className="mb-1.5 rounded bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] text-red-600 font-semibold">
+                <p className="mb-1.5 rounded border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600">
                   {formErrors.items}
                 </p>
               )}
 
               {quotationItem.length === 0 ? (
-                <div className="rounded border-2 border-dashed border-light-200 py-6 text-center text-[11px] text-light-400">
+                <div className="border-light-200 text-light-400 rounded border-2 border-dashed py-6 text-center text-[11px]">
                   No products yet — click <strong>Add Product</strong>
                 </div>
               ) : (
                 /* ── Scrollable product list ── */
-                <div
-                  className="space-y-2 overflow-y-auto pr-1"
-                  style={{ maxHeight: "420px" }}
-                >
+                <div className="space-y-2 overflow-y-auto pr-1" style={{ maxHeight: "420px" }}>
                   {(() => {
                     const groupMap = new Map();
                     quotationItem.forEach((item, idx) => {
@@ -1409,29 +1336,25 @@ export default function CreateQuotation() {
                       if (!groupMap.has(key)) groupMap.set(key, []);
                       groupMap.get(key).push(idx);
                     });
-                    return Array.from(groupMap.entries()).map(
-                      ([key, indices], gNum) => {
-                        const rep = quotationItem[indices[0]];
-                        // Archival minimum area check
-                        const isArchival = rep?.task_type === "Archival";
-                        const rawArea = parseFloat(rep?.area || rep?.qty || 0);
-                        const displayArea = isArchival
-                          ? Math.max(rawArea, 25)
-                          : rawArea;
-                        const showMinWarn =
-                          isArchival && rawArea > 0 && rawArea < 25;
+                    return Array.from(groupMap.entries()).map(([key, indices], gNum) => {
+                      const rep = quotationItem[indices[0]];
+                      // Archival minimum area check
+                      const isArchival = rep?.task_type === "Archival";
+                      const rawArea = parseFloat(rep?.area || rep?.qty || 0);
+                      const displayArea = isArchival ? Math.max(rawArea, 25) : rawArea;
+                      const showMinWarn = isArchival && rawArea > 0 && rawArea < 25;
 
-                        return (
-                          <div key={key} className="relative">
-                            {showMinWarn && (
-                              <div className="absolute -top-0.5 right-0 z-10">
-                                <span className="text-[8px] font-bold bg-amber-100 text-amber-700 border border-amber-300 rounded px-1.5 py-0.5">
-                                  ⚠ Min 25 sqkm for Archival (showing 25)
-                                </span>
-                              </div>
-                            )}
-                            {/* Cloud cover & angle display badges */}
-                            {/* {(rep?.cloud_cover || rep?.angle) && (
+                      return (
+                        <div key={key} className="relative">
+                          {showMinWarn && (
+                            <div className="absolute -top-0.5 right-0 z-10">
+                              <span className="rounded border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[8px] font-bold text-amber-700">
+                                ⚠ Min 25 sqkm for Archival (showing 25)
+                              </span>
+                            </div>
+                          )}
+                          {/* Cloud cover & angle display badges */}
+                          {/* {(rep?.cloud_cover || rep?.angle) && (
                               <div className="flex gap-1.5 mb-1 flex-wrap">
                                 {rep?.cloud_cover && (
                                   <span
@@ -1449,24 +1372,23 @@ export default function CreateQuotation() {
                                 )}
                               </div>
                             )} */}
-                            <GroupedProductEntry
-                              key={key}
-                              groupIndices={indices}
-                              groupNumber={gNum + 1}
-                              fmt={fmtINR}
-                              cgst_pct={cgst_pct}
-                              sgst_pct={sgst_pct}
-                              igst_pct={igst_pct}
-                              discountEnabled={discountEnabled}
-                              discountPct={discountPct}
-                              minArchivalArea={25}
-                              data={quotationItem}
+                          <GroupedProductEntry
+                            key={key}
+                            groupIndices={indices}
+                            groupNumber={gNum + 1}
+                            fmt={fmtINR}
+                            cgst_pct={cgst_pct}
+                            sgst_pct={sgst_pct}
+                            igst_pct={igst_pct}
+                            discountEnabled={discountEnabled}
+                            discountPct={discountPct}
+                            minArchivalArea={25}
+                            data={quotationItem}
                             // techSpecs={techSpecs}
-                            />
-                          </div>
-                        );
-                      },
-                    );
+                          />
+                        </div>
+                      );
+                    });
                   })()}
                 </div>
               )}
@@ -1477,18 +1399,18 @@ export default function CreateQuotation() {
         {/* ══════════════════════════════════════════════ STEP 1 — Images */}
         {step === 1 && (
           <div className={CLS.card}>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className={CLS.sectionTitle}>
-                Supporting Images ({extraImages.length})
-              </span>
-              <label className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#204e57] transition-all">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className={CLS.sectionTitle}>Supporting Images ({extraImages.length})</span>
+              <label className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#204e57]">
                 <FiUploadCloud className="h-4 w-4" /> Upload
                 <input
                   type="file"
                   multiple
                   accept="image/*"
                   className="hidden"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleImageFiles(e.target.files)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleImageFiles(e.target.files)
+                  }
                 />
               </label>
             </div>
@@ -1500,22 +1422,22 @@ export default function CreateQuotation() {
                   e.preventDefault();
                   handleImageFiles(e.dataTransfer.files);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#2c6671]/40 bg-[#2c6671]/5 py-10 text-center transition-all duration-200 hover:border-[#2c6671] hover:bg-[#2c6671]/15 group"
+                className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#2c6671]/40 bg-[#2c6671]/5 py-10 text-center transition-all duration-200 hover:border-[#2c6671] hover:bg-[#2c6671]/15"
               >
                 <FiUploadCloud className="h-8 w-8 text-[#2c6671] transition-transform duration-200 group-hover:scale-110" />
-                <p className="text-xs font-bold text-[#2c6671]">
-                  Click or drag images here
-                </p>
+                <p className="text-xs font-bold text-[#2c6671]">Click or drag images here</p>
                 <input
                   type="file"
                   multiple
                   accept="image/*"
                   className="hidden"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleImageFiles(e.target.files)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleImageFiles(e.target.files)
+                  }
                 />
               </label>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {extraImages.map((img, i) => (
                   <ImageCard
                     key={i}
@@ -1535,7 +1457,7 @@ export default function CreateQuotation() {
             )}
 
             {/* Header */}
-            <div className="flex items-center justify-between mb-2 mt-3">
+            <div className="mt-3 mb-2 flex items-center justify-between">
               <span className={CLS.sectionTitle}>Terms & Conditions</span>
 
               <Toggle
@@ -1547,17 +1469,12 @@ export default function CreateQuotation() {
 
             {/* Checkbox Selection Panel */}
             {editMode && (
-              <div className="mb-3 p-2 rounded-md border bg-gray-50">
-                <div className="text-xs text-gray-500 mb-1">
-                  Select terms to edit
-                </div>
+              <div className="mb-3 rounded-md border bg-gray-50 p-2">
+                <div className="mb-1 text-xs text-gray-500">Select terms to edit</div>
 
                 <div className="flex flex-wrap gap-3">
                   {terms_and_specifications.map((term, i) => (
-                    <label
-                      key={i}
-                      className="flex items-center gap-1 text-xs cursor-pointer"
-                    >
+                    <label key={i} className="flex cursor-pointer items-center gap-1 text-xs">
                       <input
                         type="checkbox"
                         checked={term.editable}
@@ -1574,13 +1491,10 @@ export default function CreateQuotation() {
               {terms_and_specifications.map((term, i) => (
                 <div
                   key={i}
-                  className={`flex gap-3 py-2 ${term.editable && editMode ? "bg-blue-50/40" : ""
-                    }`}
+                  className={`flex gap-3 py-2 ${term.editable && editMode ? "bg-blue-50/40" : ""}`}
                 >
                   {/* Label */}
-                  <div className="w-1/4 text-sm text-gray-700">
-                    {term.label}
-                  </div>
+                  <div className="w-1/4 text-sm text-gray-700">{term.label}</div>
 
                   {/* Text */}
                   <textarea
@@ -1590,11 +1504,11 @@ export default function CreateQuotation() {
                       handleTermChange(i, "text", e.target.value)
                     }
                     rows={2}
-                    className={`w-3/4 text-sm rounded-md px-2 py-1 resize-none focus:outline-none border
-          ${!editMode || !term.editable
-                        ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                    className={`w-3/4 resize-none rounded-md border px-2 py-1 text-sm focus:outline-none ${
+                      !editMode || !term.editable
+                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
                         : "focus:ring-1 focus:ring-blue-400"
-                      }`}
+                    }`}
                   />
                 </div>
               ))}
@@ -1606,19 +1520,15 @@ export default function CreateQuotation() {
         {step === 2 && (
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-xs">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#2c6671]">
+              <span className="text-xs font-bold tracking-wider text-[#2c6671] uppercase">
                 Review before submitting
               </span>
               <div className="flex flex-wrap items-center gap-2">
-                <Toggle
-                  checked={enableborder}
-                  label="Add border"
-                  onChange={Onchangeborder}
-                />
+                <Toggle checked={enableborder} label="Add border" onChange={Onchangeborder} />
                 <button
                   type="button"
                   onClick={() => setPreviewOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs hover:bg-gray-50 transition-all cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs transition-all hover:bg-gray-50"
                 >
                   <FiEye className="h-3.5 w-3.5 stroke-[2.5]" /> Preview
                 </button>
@@ -1626,7 +1536,7 @@ export default function CreateQuotation() {
                   type="button"
                   onClick={handleManualPDF}
                   disabled={pdfLoading}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs hover:bg-gray-50 disabled:opacity-50 transition-all cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs transition-all hover:bg-gray-50 disabled:opacity-50"
                 >
                   {pdfLoading ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#2c6671] border-t-transparent" />
@@ -1639,7 +1549,7 @@ export default function CreateQuotation() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={mutation.isPending}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#2c6671] hover:bg-[#204e57] px-4 py-1.5 text-xs font-bold text-white shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-4 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#204e57] disabled:opacity-50"
                 >
                   {mutation.isPending ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -1652,7 +1562,7 @@ export default function CreateQuotation() {
                   type="button"
                   onClick={fetchSpecification}
                   disabled={gettechspec.isPending}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs hover:bg-gray-50 disabled:opacity-50 transition-all cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#2c6671] shadow-xs transition-all hover:bg-gray-50 disabled:opacity-50"
                 >
                   {gettechspec.isPending ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#2c6671] border-t-transparent" />
@@ -1664,21 +1574,21 @@ export default function CreateQuotation() {
                 <button
                   type="button"
                   onClick={() => setIframeKey((prev) => prev + 1)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#2c6671] hover:bg-[#204e57] px-4 py-1.5 text-xs font-bold text-white shadow-md transition-all cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-4 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#204e57]"
                 >
                   <FiRotateCw className="h-3.5 w-3.5 stroke-[2.5]" /> Refresh
                 </button>
               </div>
             </div>
             <div
-              className="rounded-lg border border-light-300 overflow-hidden"
+              className="border-light-300 overflow-hidden rounded-lg border"
               style={{ height: "calc(100dvh - 140px)" }}
             >
               <iframe
                 key={iframeKey}
                 srcDoc={previewHTML || "<p style='padding:20px'>No preview</p>"}
                 title="Quotation Preview"
-                className="w-full h-[90vh] border-0 overflow-auto"
+                className="h-[90vh] w-full overflow-auto border-0"
               />
             </div>
           </div>
@@ -1686,12 +1596,12 @@ export default function CreateQuotation() {
       </div>
 
       {/* ── Sticky bottom nav ── */}
-      <div className="flex-shrink-0 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-2.5 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] z-20">
+      <div className="z-20 flex flex-shrink-0 items-center justify-between border-t border-gray-200 bg-white px-4 py-2.5 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
         <button
           type="button"
           onClick={goBack}
           disabled={step === 0}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-[#2c6671] hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs"
+          className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-[#2c6671] shadow-xs transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <FiChevronLeft className="h-4 w-4 stroke-[2.5]" /> Back
         </button>
@@ -1702,12 +1612,13 @@ export default function CreateQuotation() {
               key={i}
               type="button"
               onClick={() => setStep(i)}
-              className={`rounded-full transition-all duration-200 ${i === step
-                  ? "w-5 h-2 bg-[#2c6671]"
+              className={`rounded-full transition-all duration-200 ${
+                i === step
+                  ? "h-2 w-5 bg-[#2c6671]"
                   : i < step
-                    ? "w-2 h-2 bg-[#2c6671]/40"
-                    : "w-2 h-2 bg-gray-300"
-                }`}
+                    ? "h-2 w-2 bg-[#2c6671]/40"
+                    : "h-2 w-2 bg-gray-300"
+              }`}
             />
           ))}
         </div>
@@ -1716,7 +1627,7 @@ export default function CreateQuotation() {
           <button
             type="button"
             onClick={goNext}
-            className="flex items-center gap-1.5 rounded-lg bg-[#2c6671] hover:bg-[#204e57] px-5 py-2 text-xs font-bold text-white shadow-md transition-all cursor-pointer"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-5 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#204e57]"
           >
             Next <FiChevronRight className="h-4 w-4 stroke-[2.5]" />
           </button>
@@ -1725,7 +1636,7 @@ export default function CreateQuotation() {
             type="button"
             onClick={handleSubmit}
             disabled={mutation.isPending}
-            className="flex items-center gap-1.5 rounded-lg bg-[#2c6671] hover:bg-[#204e57] px-5 py-2 text-xs font-bold text-white shadow-md transition-all cursor-pointer disabled:opacity-50"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#2c6671] px-5 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#204e57] disabled:opacity-50"
           >
             {mutation.isPending ? "Submitting..." : "Submit Quotation"}
           </button>
@@ -1735,16 +1646,14 @@ export default function CreateQuotation() {
       {/* ── Full-screen preview modal ── */}
       {previewOpen && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/80">
-          <div className="flex-shrink-0 flex items-center justify-between border-b border-[#16373e] bg-[#1c474f] px-4 py-2.5 shadow-md">
-            <span className="text-xs font-bold text-white tracking-wide">
-              Preview — {quote_no}
-            </span>
+          <div className="flex flex-shrink-0 items-center justify-between border-b border-[#16373e] bg-[#1c474f] px-4 py-2.5 shadow-md">
+            <span className="text-xs font-bold tracking-wide text-white">Preview — {quote_no}</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleManualPDF}
                 disabled={pdfLoading}
-                className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-white/20 disabled:opacity-50 transition-all cursor-pointer"
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-white/20 disabled:opacity-50"
               >
                 {pdfLoading ? (
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -1756,14 +1665,14 @@ export default function CreateQuotation() {
               <button
                 type="button"
                 onClick={() => setPreviewOpen(false)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-white/20 transition-all cursor-pointer"
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-white/20"
               >
                 <FiX className="h-4 w-4 stroke-[2.5]" /> Close
               </button>
               <button
                 type="button"
                 onClick={() => setIframeKey((prev) => prev + 1)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-white/20 transition-all cursor-pointer"
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-white/20"
               >
                 <FiRotateCw className="h-3.5 w-3.5 stroke-[2.5]" /> Refresh
               </button>
@@ -1774,7 +1683,7 @@ export default function CreateQuotation() {
               ref={iframeRef}
               srcDoc={previewHTML}
               title="Full Preview"
-              className="mx-auto block w-full max-w-[850px] rounded-xl shadow-2xl border-none bg-white"
+              className="mx-auto block w-full max-w-[850px] rounded-xl border-none bg-white shadow-2xl"
               style={{ minHeight: "calc(100dvh - 80px)" }}
             />
           </div>

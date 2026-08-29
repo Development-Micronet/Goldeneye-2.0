@@ -75,7 +75,7 @@ export function CompanyTable({
 
   if (isLoading) {
     return (
-      <div className="flex h-[520px] flex-col items-center justify-center rounded-2xl bg-white p-6 shadow-sm border border-gray-200">
+      <div className="flex h-[520px] flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#2c6671]"></div>
         <span className="mt-3 text-xs font-medium text-gray-500">Loading Companies...</span>
       </div>
@@ -84,31 +84,43 @@ export function CompanyTable({
 
   return (
     <div className="flex h-[520px] flex-col rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900">
             <Building2 className="h-5 w-5 text-[#2c6671]" />
             Company List
           </h2>
-          <p className="text-xs text-[#2c6671] font-medium mt-0.5">
+          <p className="mt-0.5 text-xs font-medium text-[#2c6671]">
             Select a company to view its users and subscription details.
           </p>
         </div>
-        <span className="rounded-full bg-[#EFFBFD] px-3 py-1 text-xs font-bold text-[#2c6671] border border-[#2c6671]/20">
+        <span className="rounded-full border border-[#2c6671]/20 bg-[#EFFBFD] px-3 py-1 text-xs font-bold text-[#2c6671]">
           {companies.length} Total
         </span>
       </div>
 
       <div className="mt-3 flex-1 overflow-auto rounded-xl border border-gray-200/80">
         <table className="w-full min-w-[650px] border-collapse text-left text-xs">
-          <thead className="sticky top-0 bg-[#EFFBFD] border-b border-gray-200 z-10">
+          <thead className="sticky top-0 z-10 border-b border-gray-200 bg-[#EFFBFD]">
             <tr>
-              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">Company Name</th>
-              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">Username</th>
-              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">Email</th>
-              <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide">Schema</th>
-              {isSuperAdmin && <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide text-center">Plan Status</th>}
-              {isSuperAdmin && <th className="px-4 py-3 font-bold text-[#2c6671] uppercase tracking-wide text-center">Action</th>}
+              <th className="px-4 py-3 font-bold tracking-wide text-[#2c6671] uppercase">
+                Company Name
+              </th>
+              <th className="px-4 py-3 font-bold tracking-wide text-[#2c6671] uppercase">
+                Username
+              </th>
+              <th className="px-4 py-3 font-bold tracking-wide text-[#2c6671] uppercase">Email</th>
+              <th className="px-4 py-3 font-bold tracking-wide text-[#2c6671] uppercase">Schema</th>
+              {isSuperAdmin && (
+                <th className="px-4 py-3 text-center font-bold tracking-wide text-[#2c6671] uppercase">
+                  Plan Status
+                </th>
+              )}
+              {isSuperAdmin && (
+                <th className="px-4 py-3 text-center font-bold tracking-wide text-[#2c6671] uppercase">
+                  Action
+                </th>
+              )}
             </tr>
           </thead>
 
@@ -128,19 +140,23 @@ export function CompanyTable({
                     isSelected ? "bg-[#EFFBFD] font-medium text-[#1f4e57]" : "hover:bg-[#EFFBFD]/40"
                   }`}
                 >
-                  <td className="px-4 py-3.5 font-semibold text-gray-900">{company.company_name}</td>
+                  <td className="px-4 py-3.5 font-semibold text-gray-900">
+                    {company.company_name}
+                  </td>
                   <td className="px-4 py-3.5 text-gray-700">{company.username}</td>
                   <td className="px-4 py-3.5 text-gray-600">{company.email}</td>
-                  <td className="px-4 py-3.5 text-gray-500 font-mono text-[11px]">{company.schema_name}</td>
+                  <td className="px-4 py-3.5 font-mono text-[11px] text-gray-500">
+                    {company.schema_name}
+                  </td>
                   {isSuperAdmin && (
                     <td className="px-4 py-3.5 text-center">
                       {planInfo ? (
                         planInfo.isValid ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                             <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Valid
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700">
                             <XCircle className="h-3 w-3 text-rose-600" /> Expired
                           </span>
                         )
@@ -158,7 +174,7 @@ export function CompanyTable({
                           e.stopPropagation();
                           handleDelete(company.company_id ?? company.customer_id ?? company.id);
                         }}
-                        className="text-gray-400 hover:text-rose-600 transition-colors p-1 rounded-md hover:bg-rose-50 cursor-pointer"
+                        className="cursor-pointer rounded-md p-1 text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
                         title="Delete Company"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -179,13 +195,15 @@ export function CompanyTable({
         </table>
       </div>
 
-      <div className="mt-4 flex items-center gap-3 pt-3 border-t border-gray-100">
+      <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-3">
         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2c6671] text-xs font-bold text-white shadow-xs">
           1
         </div>
         <div>
           <p className="text-xs font-bold text-gray-800">Available Companies</p>
-          <p className="text-[11px] text-gray-500">Select a company to view its users and plan details.</p>
+          <p className="text-[11px] text-gray-500">
+            Select a company to view its users and plan details.
+          </p>
         </div>
       </div>
     </div>

@@ -657,8 +657,8 @@ export function buildPreviewHTML({
             rawType === "html"
               ? "html"
               : rawType === "jpg" || rawType === "png" || rawType === "image"
-              ? "jpg"
-              : "kml";
+                ? "jpg"
+                : "kml";
           const name =
             sf.name || sf.fileName || (sf.file ? sf.file.name : `attachment.${typeLabel}`);
           let url = getFileUrl(sf) || sf.url || sf.downloadUrl || sf.fileUrl || null;
@@ -669,7 +669,11 @@ export function buildPreviewHTML({
               url = null;
             }
           }
-          if (!files.some((f) => f.fileType === typeLabel && (f.name === name || (url && f.url === url)))) {
+          if (
+            !files.some(
+              (f) => f.fileType === typeLabel && (f.name === name || (url && f.url === url)),
+            )
+          ) {
             files.push({ name, fileType: typeLabel, url });
           }
         }
@@ -725,8 +729,20 @@ export function buildPreviewHTML({
       { bg: string; border: string; color: string; badgeBg: string; label: string }
     > = {
       kml: { bg: "#f0fdf4", border: "#86efac", color: "#15803d", badgeBg: "#dcfce7", label: "KML" },
-      html: { bg: "#eff6ff", border: "#93c5fd", color: "#1d4ed8", badgeBg: "#dbeafe", label: "HTML" },
-      jpg: { bg: "#faf5ff", border: "#d8b4fe", color: "#6b21a8", badgeBg: "#f3e8ff", label: "IMAGE" },
+      html: {
+        bg: "#eff6ff",
+        border: "#93c5fd",
+        color: "#1d4ed8",
+        badgeBg: "#dbeafe",
+        label: "HTML",
+      },
+      jpg: {
+        bg: "#faf5ff",
+        border: "#d8b4fe",
+        color: "#6b21a8",
+        badgeBg: "#f3e8ff",
+        label: "IMAGE",
+      },
     };
 
     const fileItems = files

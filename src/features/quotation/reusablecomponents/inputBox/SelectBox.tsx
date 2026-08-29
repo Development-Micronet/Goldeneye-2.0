@@ -59,10 +59,7 @@ const SelectBox: React.FC<SelectBoxProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        selectBoxRef.current &&
-        !selectBoxRef.current.contains(event.target as Node)
-      ) {
+      if (selectBoxRef.current && !selectBoxRef.current.contains(event.target as Node)) {
         setShowOptions(false);
       }
     };
@@ -74,42 +71,40 @@ const SelectBox: React.FC<SelectBoxProps> = ({
   }, []);
 
   return (
-    <div className="relative w-full mx-auto" ref={selectBoxRef}>
-      <label className="text-inter mb-1 font-normal text-[#515151]">
-        {label}
-      </label>
+    <div className="relative mx-auto w-full" ref={selectBoxRef}>
+      <label className="text-inter mb-1 font-normal text-[#515151]">{label}</label>
       <div className="w-full">
         <div
           onClick={toggleOptions}
           className={`flex items-center justify-between overflow-hidden ${className} ${
             dissble ? "pointer-events-none opacity-50" : ""
-          } border p-4 h-14 w-full rounded-lg`}
+          } h-14 w-full rounded-lg border p-4`}
         >
           <span>{value || ""}</span>
           <FontAwesomeIcon icon={faAngleDown} className="ml- text-gray-900" />
         </div>
 
         {showOptions && (type === "select" || type === "select-input") && (
-          <div className="absolute border border-gray-300 bg-white mt-1 rounded w-[256px] max-h-60 shadow-lg z-[100]">
-            <div className="max-h-48 overflow-y-auto text-inter overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
+          <div className="absolute z-[100] mt-1 max-h-60 w-[256px] rounded border border-gray-300 bg-white shadow-lg">
+            <div className="text-inter max-h-48 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 overflow-x-hidden overflow-y-auto">
               {filteredOptions.map((option, index) => (
                 <div
                   key={index}
                   onClick={() => handleSelectChange(option)}
-                  className="px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100"
+                  className="cursor-pointer px-2 py-1.5 text-sm hover:bg-gray-100"
                 >
                   {option}
                 </div>
               ))}
             </div>
             {type === "select-input" && (
-              <div className="sticky bottom-0 bg-white p-1 border-t">
+              <div className="sticky bottom-0 border-t bg-white p-1">
                 <input
                   type="text"
                   value={inputValue}
                   onChange={(e) => onInputChange?.(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="border border-gray-300 px-2 py-1 rounded-sm w-full"
+                  className="w-full rounded-sm border border-gray-300 px-2 py-1"
                   placeholder="Add New Product"
                 />
               </div>

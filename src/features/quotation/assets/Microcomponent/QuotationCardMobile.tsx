@@ -27,40 +27,34 @@ const QuotationCardMobile: React.FC<QuotationCardMobileProps> = ({
   return (
     <div
       key={q.quote_no}
-      className={`bg-white rounded-lg border border-light-200 p-3 shadow-sm ${isSelected ? "ring-2 ring-[#2c6671]/40 bg-primary-50/20" : ""}`}
+      className={`border-light-200 rounded-lg border bg-white p-3 shadow-sm ${isSelected ? "bg-primary-50/20 ring-2 ring-[#2c6671]/40" : ""}`}
     >
-      <div className="flex items-start justify-between mb-2 gap-2">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
           <input
             type="checkbox"
             checked={isSelected || false}
             onChange={() => onToggleSelect && onToggleSelect(q.quote_no)}
-            className="rounded border-gray-300 text-[#2c6671] focus:ring-[#2c6671] cursor-pointer w-4 h-4 flex-shrink-0 mt-0.5"
+            className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded border-gray-300 text-[#2c6671] focus:ring-[#2c6671]"
           />
           <div className="min-w-0">
-            <p className="font-semibold text-primary-900 text-sm truncate">
-              {q.to_company}
-            </p>
-            <p className="font-mono text-xs text-primary-500 font-semibold mt-0.5">
-              {q.quote_no}
-            </p>
+            <p className="text-primary-900 truncate text-sm font-semibold">{q.to_company}</p>
+            <p className="text-primary-500 mt-0.5 font-mono text-xs font-semibold">{q.quote_no}</p>
           </div>
         </div>
         <span
-          className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
-            q.verified
-              ? "bg-green-100 text-green-700"
-              : "bg-yellow-100 text-yellow-700"
+          className={`inline-flex flex-shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+            q.verified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
           }`}
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full ${q.verified ? "bg-green-600" : "bg-yellow-500 animate-pulse"}`}
+            className={`h-1.5 w-1.5 rounded-full ${q.verified ? "bg-green-600" : "animate-pulse bg-yellow-500"}`}
           />
           {q.verified ? "Verified" : "Pending"}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3 pb-2 border-b border-light-200 text-xs">
+      <div className="border-light-200 mb-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-b pb-2 text-xs">
         {[
           ["Contact", q.authorized_name],
           ["Date", q.date],
@@ -68,20 +62,16 @@ const QuotationCardMobile: React.FC<QuotationCardMobileProps> = ({
           ["Amount", `₹${(descAmount || 0).toLocaleString()}`],
         ].map(([label, val]) => (
           <div key={label}>
-            <span className="text-[10px] font-semibold text-primary-500 uppercase">
-              {label}
-            </span>
-            <p className="text-primary-900 font-medium truncate">{val}</p>
+            <span className="text-primary-500 text-[10px] font-semibold uppercase">{label}</span>
+            <p className="text-primary-900 truncate font-medium">{val}</p>
           </div>
         ))}
       </div>
 
-      <div className="flex items-center justify-between mb-2.5">
+      <div className="mb-2.5 flex items-center justify-between">
         <div>
-          <span className="text-[10px] font-semibold text-primary-500 uppercase">
-            Total
-          </span>
-          <p className="text-lg font-bold text-primary-900">
+          <span className="text-primary-500 text-[10px] font-semibold uppercase">Total</span>
+          <p className="text-primary-900 text-lg font-bold">
             ₹{Number(q.total_amount || 0).toLocaleString()}
           </p>
         </div>
@@ -90,7 +80,7 @@ const QuotationCardMobile: React.FC<QuotationCardMobileProps> = ({
       <div className="flex gap-1.5 text-xs">
         <Link
           to={`/quotation?view=update&id=${q.quote_no}`}
-          className="flex-1 inline-flex items-center justify-center px-3 py-1.5 font-semibold rounded bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+          className="bg-primary-600 hover:bg-primary-700 inline-flex flex-1 items-center justify-center rounded px-3 py-1.5 font-semibold text-white transition-colors"
         >
           Edit
         </Link>
@@ -98,10 +88,10 @@ const QuotationCardMobile: React.FC<QuotationCardMobileProps> = ({
         <button
           onClick={() => Exportpdf.mutate(q.quote_no)}
           disabled={!q.verified}
-          className={`flex-1 inline-flex items-center justify-center px-3 py-1.5 font-semibold rounded transition-colors ${
+          className={`inline-flex flex-1 items-center justify-center rounded px-3 py-1.5 font-semibold transition-colors ${
             q.verified
               ? "bg-light-100 text-primary-700 hover:bg-light-200"
-              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "cursor-not-allowed bg-gray-100 text-gray-400"
           }`}
         >
           Export
@@ -110,18 +100,13 @@ const QuotationCardMobile: React.FC<QuotationCardMobileProps> = ({
         <button
           onClick={() => handleDelete(q.quote_no)}
           disabled={deleteMutation.isPending || !isAuthorize}
-          className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded transition-colors ${
+          className={`inline-flex items-center justify-center rounded px-2.5 py-1.5 transition-colors ${
             isAuthorize
               ? "bg-red-100 text-red-600 hover:bg-red-200"
-              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "cursor-not-allowed bg-gray-100 text-gray-400"
           }`}
         >
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

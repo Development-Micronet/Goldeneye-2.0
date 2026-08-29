@@ -15,7 +15,7 @@ interface ZoomStore {
 }
 
 const DEFAULT_MIN_ZOOM = 4;
-const DEFAULT_MAX_ZOOM = 18;
+const DEFAULT_MAX_ZOOM = 25;
 const DEFAULT_ZOOM = 8;
 
 const useZoomStore = create<ZoomStore>((set, get) => ({

@@ -7,25 +7,20 @@ interface CustomModalProps {
   title?: string;
 }
 
-const CustomModal: React.FC<CustomModalProps> = ({
-  isOpen,
-  onClose,
-  children,
-  title,
-}) => {
+const CustomModal: React.FC<CustomModalProps> = ({ isOpen, onClose, children, title }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="relative w-full min-w-md max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 p-4">
-        <div className="flex justify-between items-center border-b pb-1">
-          <h3 className="text-xl font-semibold text-gray-900 ">{title}</h3>
+    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+      <div className="relative w-full max-w-2xl min-w-md rounded-lg bg-white p-4 py-2 shadow-lg dark:bg-gray-800">
+        <div className="flex items-center justify-between border-b pb-1">
+          <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:bg-gray-200 rounded-full p-2 dark:hover:bg-gray-600"
+            className="rounded-full p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600"
           >
             <svg
-              className="w-4 h-4"
+              className="h-4 w-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

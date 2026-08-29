@@ -24,7 +24,7 @@ import goldeneyeLogo from "./logo/goldeneyeLogo.svg";
 import reactLogo from "./react.svg";
 import loginpagevideo from "./video/loginpagevideo.mp4";
 import viteLogo from "./vite.svg";
-import Baselayer from "./LeftBar/Baselayer.svg"
+import Baselayer from "./LeftBar/Baselayer.svg";
 export {
   heroImg,
   reactLogo,

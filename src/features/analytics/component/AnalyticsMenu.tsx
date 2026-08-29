@@ -213,10 +213,11 @@ export const AnalyticsMenu: React.FC = () => {
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span
-            className={`font-mona rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${showingOriginal
-              ? "bg-primary-100 text-primary ring-primary/25 ring-1"
-              : "bg-primary text-white"
-              }`}
+            className={`font-mona rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
+              showingOriginal
+                ? "bg-primary-100 text-primary ring-primary/25 ring-1"
+                : "bg-primary text-white"
+            }`}
           >
             {showingOriginal
               ? "Showing original"
@@ -358,8 +359,9 @@ export const AnalyticsMenu: React.FC = () => {
 
               <ChevronDown
                 size={14}
-                className={`text-text-secondary transition-transform duration-200 ${historyOpen ? "rotate-180" : ""
-                  }`}
+                className={`text-text-secondary transition-transform duration-200 ${
+                  historyOpen ? "rotate-180" : ""
+                }`}
               />
             </span>
           </button>
@@ -374,8 +376,9 @@ export const AnalyticsMenu: React.FC = () => {
                   >
                     <span
                       /* an unrecognised status would otherwise read .bar of undefined */
-                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_STYLE[prediction.status]?.bar ?? "bg-border"
-                        }`}
+                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                        STATUS_STYLE[prediction.status]?.bar ?? "bg-border"
+                      }`}
                     />
 
                     <span className="min-w-0 flex-1">

@@ -47,9 +47,9 @@ export const useApproveCustomerMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
 
-            queryClient.invalidateQueries({ queryKey: ["companies"] });
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
 
-      queryClient.invalidateQueries({ queryKey: ["manage-tenant-superusers"] })
+      queryClient.invalidateQueries({ queryKey: ["manage-tenant-superusers"] });
     },
   });
 };
@@ -71,4 +71,3 @@ export const useDeleteCustomerMutation = () => {
     },
   });
 };
-

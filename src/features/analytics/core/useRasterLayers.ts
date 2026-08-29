@@ -37,12 +37,8 @@ export const useRasterLayers = (map: Map | null) => {
 
       const extent = convertAOI(raster.aoi, raster.projection);
 
-      const coordinates: [
-        [number, number],
-        [number, number],
-        [number, number],
-        [number, number],
-      ] = [
+      const coordinates: [[number, number], [number, number], [number, number], [number, number]] =
+        [
           [extent.west, extent.north],
           [extent.east, extent.north],
           [extent.east, extent.south],
@@ -54,11 +50,7 @@ export const useRasterLayers = (map: Map | null) => {
         const source = map.getSource(sourceId) as ImageSource;
         source.updateImage({ url: raster.displayImageUrl, coordinates });
         map.setPaintProperty(layerId, "raster-opacity", raster.opacity ?? 1);
-        map.setLayoutProperty(
-          layerId,
-          "visibility",
-          raster.visible ? "visible" : "none",
-        );
+        map.setLayoutProperty(layerId, "visibility", raster.visible ? "visible" : "none");
         return;
       }
 
@@ -98,7 +90,7 @@ export const useRasterLayers = (map: Map | null) => {
       });
       return;
     }
-    console.log("raster", raster, fitRasterId)
+    console.log("raster", raster, fitRasterId);
     // if (!raster?.aoi) return;
 
     const bounds = utmToLngLatBounds(raster.aoi, raster.projection || "EPSG:32643");

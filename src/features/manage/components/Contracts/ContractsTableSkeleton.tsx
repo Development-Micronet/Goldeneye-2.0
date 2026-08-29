@@ -8,30 +8,18 @@ export default function ContractsTableSkeleton() {
       <table className="w-full">
         <thead className="bg-gray-50">
           <tr className="border-b">
-            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-              Sr. No
-            </th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-              Contract Id
-            </th>
+            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Sr. No</th>
+            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Contract Id</th>
             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
               Contract Name
             </th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-              Email
-            </th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-              Status
-            </th>
+            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
               Contract Type
             </th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-              Expires At
-            </th>
-            <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
-              Action
-            </th>
+            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Expires At</th>
+            <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Action</th>
           </tr>
         </thead>
 

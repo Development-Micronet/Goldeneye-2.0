@@ -5,7 +5,10 @@ interface GeometryParams {
   coordinates: any;
 }
 
-export function getGeometryDimensions({ type, coordinates }: GeometryParams): { width: string; height: string } {
+export function getGeometryDimensions({ type, coordinates }: GeometryParams): {
+  width: string;
+  height: string;
+} {
   let bbox: any;
   if (type === "Polygon") {
     bbox = turf.bbox(turf.polygon([coordinates[0] || coordinates]));

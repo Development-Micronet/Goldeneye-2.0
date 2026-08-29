@@ -39,13 +39,17 @@ const mergeCriteriaData = (existingData: CriteData, newData: any): CriteData => 
   if (newData.cloudCover) updatedData.CloudCover = newData.cloudCover;
 
   if (newData.Date && newData.Date.length > 0) {
-    const sortedDates = newData.Date.map((date: any) => dayjs(date).tz("Asia/Kolkata").toISOString()).sort();
+    const sortedDates = newData.Date.map((date: any) =>
+      dayjs(date).tz("Asia/Kolkata").toISOString(),
+    ).sort();
     updatedData.startDate = sortedDates[0];
     updatedData.endDate = sortedDates[sortedDates.length - 1];
     updatedData.Date = sortedDates;
   } else {
-    if (newData.startDate) updatedData.startDate = dayjs(newData.startDate).tz("Asia/Kolkata").toISOString();
-    if (newData.endDate) updatedData.endDate = dayjs(newData.endDate).tz("Asia/Kolkata").toISOString();
+    if (newData.startDate)
+      updatedData.startDate = dayjs(newData.startDate).tz("Asia/Kolkata").toISOString();
+    if (newData.endDate)
+      updatedData.endDate = dayjs(newData.endDate).tz("Asia/Kolkata").toISOString();
   }
 
   return updatedData;

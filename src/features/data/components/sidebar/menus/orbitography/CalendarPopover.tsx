@@ -20,7 +20,20 @@ export const CalendarPopover: React.FC<CalendarPopoverProps> = ({
   const [viewYear, setViewYear] = useState(initialYear);
   const [viewMonth, setViewMonth] = useState(initialMonth);
 
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -104,7 +117,7 @@ export const CalendarPopover: React.FC<CalendarPopoverProps> = ({
       targetYear += 1;
     }
     const [sYear, sMonth, sDay] = startDate.split("-").map(Number);
-    return sDay === day && sMonth === (targetMonth + 1) && sYear === targetYear;
+    return sDay === day && sMonth === targetMonth + 1 && sYear === targetYear;
   };
 
   const isEndDate = (day: number, isCurrentMonth: boolean, monthOffset: number) => {
@@ -119,7 +132,7 @@ export const CalendarPopover: React.FC<CalendarPopoverProps> = ({
       targetYear += 1;
     }
     const [eYear, eMonth, eDay] = endDate.split("-").map(Number);
-    return eDay === day && eMonth === (targetMonth + 1) && eYear === targetYear;
+    return eDay === day && eMonth === targetMonth + 1 && eYear === targetYear;
   };
 
   const handleDaySelect = (day: number, isCurrentMonth: boolean, monthOffset: number) => {
@@ -144,7 +157,8 @@ export const CalendarPopover: React.FC<CalendarPopoverProps> = ({
 
   const getDayClass = (dayObj: { day: number; isCurrentMonth: boolean; monthOffset: number }) => {
     const { day, isCurrentMonth, monthOffset } = dayObj;
-    const baseClass = "w-8 h-8 flex items-center justify-center mx-auto text-xs focus:outline-none transition-all";
+    const baseClass =
+      "w-8 h-8 flex items-center justify-center mx-auto text-xs focus:outline-none transition-all";
 
     if (!isCurrentMonth) {
       return `${baseClass} text-gray-300 font-normal hover:bg-gray-50 rounded-full`;
@@ -177,7 +191,7 @@ export const CalendarPopover: React.FC<CalendarPopoverProps> = ({
 
   return (
     <div
-      className={`absolute top-full z-50 mt-1 w-[280px] border-gray-200 bg-white p-3.5 shadow-xl animate-fade-in ${
+      className={`animate-fade-in absolute top-full z-50 mt-1 w-[280px] border-gray-200 bg-white p-3.5 shadow-xl ${
         activePicker === "start" ? "left-0" : "right-0"
       }`}
     >
@@ -200,7 +214,7 @@ export const CalendarPopover: React.FC<CalendarPopoverProps> = ({
           </button>
         </div>
 
-        <span className="text-xs font-bold text-gray-800 font-sans">
+        <span className="font-sans text-xs font-bold text-gray-800">
           {months[viewMonth]} {viewYear}
         </span>
 
@@ -225,14 +239,14 @@ export const CalendarPopover: React.FC<CalendarPopoverProps> = ({
       {/* Weekday Row */}
       <div className="grid grid-cols-7 gap-1 text-center">
         {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((dayName) => (
-          <span key={dayName} className="text-[11px] font-bold text-gray-500 py-1 font-sans">
+          <span key={dayName} className="py-1 font-sans text-[11px] font-bold text-gray-500">
             {dayName}
           </span>
         ))}
       </div>
 
       {/* Days Grid */}
-      <div className="grid grid-cols-7 gap-1 mt-1 text-center">
+      <div className="mt-1 grid grid-cols-7 gap-1 text-center">
         {calendarDays.map((dayObj, idx) => (
           <button
             key={`${dayObj.monthOffset}-${dayObj.day}-${idx}`}
@@ -248,7 +262,7 @@ export const CalendarPopover: React.FC<CalendarPopoverProps> = ({
       <div className="mt-3.5 border-t border-gray-100 pt-2 text-center font-sans">
         <button
           onClick={handleSelectToday}
-          className="text-xs font-semibold text-blue-600 transition hover:text-blue-800 hover:underline cursor-pointer"
+          className="cursor-pointer text-xs font-semibold text-blue-600 transition hover:text-blue-800 hover:underline"
         >
           Today
         </button>

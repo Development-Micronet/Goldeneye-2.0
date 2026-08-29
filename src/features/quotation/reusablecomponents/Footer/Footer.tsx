@@ -6,16 +6,12 @@ const Footer: React.FC = () => {
   return (
     <div className="container-fluid footerMainBox">
       <div className="bg-gray-100">
-        <div className="w-full sm:px-6 text-gray-800 grid gap-4 mx-auto Footerbackground lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1">
-          <div className="w-full lg:d-flex lg:justify-content-end lg:align-items-center mt-2 ImageContaineroflogo">
-            <div className="font-bold text-xl text-indigo-600 lg:text-align-center">
-              GoldenEye
-            </div>
+        <div className="Footerbackground mx-auto grid w-full gap-4 text-gray-800 sm:grid-cols-1 sm:px-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="lg:d-flex lg:justify-content-end lg:align-items-center ImageContaineroflogo mt-2 w-full">
+            <div className="lg:text-align-center text-xl font-bold text-indigo-600">GoldenEye</div>
           </div>
-          <div className="w-full ServiceContainerMAin">
-            <div className="text-sm uppercase text-indigo-600 font-bold mt-2">
-              Services
-            </div>
+          <div className="ServiceContainerMAin w-full">
+            <div className="mt-2 text-sm font-bold text-indigo-600 uppercase">Services</div>
             <p className="my-3 block">
               <DoubleRightOutlined /> Satellite Imagery Search
             </p>
@@ -35,21 +31,17 @@ const Footer: React.FC = () => {
               <DoubleRightOutlined /> Technical Support and Consulting
             </p>
           </div>
-          <div className="w-full ServiceContainer">
-            <div className="text-sm uppercase text-indigo-600 font-bold mt-2">
-              GoldenEye
-            </div>
+          <div className="ServiceContainer w-full">
+            <div className="mt-2 text-sm font-bold text-indigo-600 uppercase">GoldenEye</div>
             <p className="my-3">
-              Welcome to Golden Eye, your premier source for high-resolution satellite imagery. Our platform allows you to search, view, and order top-quality AIRBUS images for various needs.
+              Welcome to Golden Eye, your premier source for high-resolution satellite imagery. Our
+              platform allows you to search, view, and order top-quality AIRBUS images for various
+              needs.
             </p>
           </div>
-          <div className="mt-2 ServiceContainer w-1/2 md:w-full">
-            <div className="text-sm uppercase text-indigo-600 font-bold">
-              Contact us
-            </div>
-            <p className="my-3 block">
-              Plot No. 80 K T Nagar, Katol Road, Nagpur - 440013
-            </p>
+          <div className="ServiceContainer mt-2 w-1/2 md:w-full">
+            <div className="text-sm font-bold text-indigo-600 uppercase">Contact us</div>
+            <p className="my-3 block">Plot No. 80 K T Nagar, Katol Road, Nagpur - 440013</p>
             <p>info@goldeneye.com</p>
             <p>123-456-7890</p>
           </div>

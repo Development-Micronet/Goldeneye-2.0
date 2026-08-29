@@ -106,7 +106,7 @@ export default function MapView() {
   } = useMapOptions();
   const polylineBufferDistance = useMapStore((state) => state.polylineBufferDistance);
   const polygonBufferDistance = useMapStore((state) => state.polygonBufferDistance);
-
+  const setMap = useSelectedAOIStore((state) => state.setMap);
   const setSelectedAOI = useSelectedAOIStore((state) => state.setSelectedAOI);
   const { flyToProduct, setFlyToProduct } = useMapStore();
   const layers = useLayersStore((state) => state.layers);
@@ -167,7 +167,7 @@ export default function MapView() {
     // Center coordinates for India in EPSG:4326 (longitude, latitude)
     const origin = [78.9629, 20.5937];
     const minZoom = 2;
-    const initialMaxZoom = 30;
+    const initialMaxZoom = 40;
     // Base Layer: OpenStreetMap
     const osmLayer = new TileLayer({
       properties: { label: "Base Layer" },
@@ -255,7 +255,7 @@ export default function MapView() {
                 anchorXUnits: "fraction",
                 anchorYUnits: "fraction",
               }),
-            })
+            }),
           );
         } else {
           styles.push(
@@ -331,8 +331,8 @@ export default function MapView() {
         maxZoom: initialMaxZoom,
       }),
     });
-
     mapInstance.current = map;
+    setMap(map);
     setMapState(map);
 
     return () => {
@@ -520,7 +520,7 @@ export default function MapView() {
         const kinks = turf.kinks(rawGeoJSON as any);
         if (kinks && kinks.features && kinks.features.length > 0) {
           toast.error(
-            "Invalid AOI: Self-intersecting lines detected. Please draw a valid boundary without crossing lines."
+            "Invalid AOI: Self-intersecting lines detected. Please draw a valid boundary without crossing lines.",
           );
           vectorSourceRef.current?.removeFeature(feature);
           setTimeout(() => {
@@ -606,7 +606,10 @@ export default function MapView() {
       let area: number | undefined = undefined;
       if (
         geometry &&
-        (activeTool === "Polygon" || activeTool === "Box" || activeTool === "Point" || activeTool === "Polyline")
+        (activeTool === "Polygon" ||
+          activeTool === "Box" ||
+          activeTool === "Point" ||
+          activeTool === "Polyline")
       ) {
         area = getArea(geometry, { projection: "EPSG:4326" }) / 1000000;
         if (area <= 0 || isNaN(area)) {
@@ -632,11 +635,7 @@ export default function MapView() {
       if (geometry) {
         const currentZoom = map.getView().getZoom() || 5;
         const targetMaxZoom =
-          currentZoom <= 6
-            ? 7
-            : currentZoom > 10
-              ? Math.max(Math.ceil(currentZoom), 18)
-              : 10;
+          currentZoom <= 6 ? 7 : currentZoom > 10 ? Math.max(Math.ceil(currentZoom), 18) : 10;
         map.getView().fit(geometry, {
           padding: [120, 120, 120, 120],
           duration: 800,
@@ -666,7 +665,13 @@ export default function MapView() {
       }
       removeTooltip();
     };
-  }, [activeTool, setActiveTool, pointBufferDistance, polylineBufferDistance, polygonBufferDistance]);
+  }, [
+    activeTool,
+    setActiveTool,
+    pointBufferDistance,
+    polylineBufferDistance,
+    polygonBufferDistance,
+  ]);
 
   useEffect(() => {
     if (!drawRectangleCoords) return;
@@ -999,7 +1004,7 @@ export default function MapView() {
             padding: [4, 8, 4, 8],
             offsetY: -22,
           }),
-        })
+        }),
       );
       pinSourceRef.current.addFeature(pinFeature);
     }
@@ -1126,7 +1131,7 @@ export default function MapView() {
   useEffect(() => {
     const aoiTypes = ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"];
     const aoiLayers = layers.filter(
-      (layer) => aoiTypes.includes(layer.type) && !layer.label.startsWith("Orbit:")
+      (layer) => aoiTypes.includes(layer.type) && !layer.label.startsWith("Orbit:"),
     );
 
     // Only auto-select if a new drawn layer has been added (count increased)
@@ -1153,11 +1158,7 @@ export default function MapView() {
           const map = mapInstance.current;
           const currentZoom = map.getView().getZoom() || 5;
           const targetMaxZoom =
-            currentZoom <= 6
-              ? 7
-              : currentZoom > 10
-                ? Math.max(Math.ceil(currentZoom), 18)
-                : 10;
+            currentZoom <= 6 ? 7 : currentZoom > 10 ? Math.max(Math.ceil(currentZoom), 18) : 10;
           map.getView().fit(geometry, {
             padding: [120, 120, 120, 120],
             duration: 800,
@@ -1169,7 +1170,6 @@ export default function MapView() {
       }
     }
   }, [selectedAOIId, layers]);
-
 
   useRasterLayers(mapState);
   return <div className="h-full w-full" ref={mapRef} id="map-container" />;

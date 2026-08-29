@@ -1,6 +1,6 @@
 .form-control,
 .input-group-text {
-    padding: 0.2rem .75rem;
+  padding: 0.2rem 0.75rem;
 }
 
 /* 
@@ -9,57 +9,57 @@
     box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25); 
 } */
 .InputLabel {
-    font-size: 15px;
-    color: black;
+  font-size: 15px;
+  color: black;
 }
 
 .text_warning {
-    color: rgb(241, 145, 19);
-    font-size: 12px;
-    padding-left: 5px;
-    font-style: italic;
+  color: rgb(241, 145, 19);
+  font-size: 12px;
+  padding-left: 5px;
+  font-style: italic;
 }
 
 .errorMessage {
-    color: rgb(244, 67, 54);
-    font-size: 11px;
-    padding-left: 2px;
-    font-style: italic;
+  color: rgb(244, 67, 54);
+  font-size: 11px;
+  padding-left: 2px;
+  font-style: italic;
 }
 
 .form-control::placeholder {
-    font-size: 12px;
+  font-size: 12px;
 }
 
 .my-select,
 .input-group-text {
-    font-size: 12px;
+  font-size: 12px;
 }
 
 .my-select option {
-    font-size: 12px;
+  font-size: 12px;
 }
 
 .form-control.invalid {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 }
 
 .form-control:focus.invalid {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 }
 
 .form-select.invalid {
-    border-color: #dc3545;
-    /* Bootstrap red */
-    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-    /* Bootstrap red shadow */
+  border-color: #dc3545;
+  /* Bootstrap red */
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  /* Bootstrap red shadow */
 }
 
 .form-select:focus.invalid {
-    border-color: #dc3545;
-    /* Ensure red border on focus */
-    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-    /* Bootstrap red shadow */
+  border-color: #dc3545;
+  /* Ensure red border on focus */
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  /* Bootstrap red shadow */
 }

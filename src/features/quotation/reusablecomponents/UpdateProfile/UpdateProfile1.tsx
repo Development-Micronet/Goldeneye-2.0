@@ -22,10 +22,7 @@ interface UpdateProfilesProps {
   isparentUsernameOfuser?: any;
 }
 
-const UpdateProfiles: React.FC<UpdateProfilesProps> = ({
-  profileUpdatekey,
-  isBlurred,
-}) => {
+const UpdateProfiles: React.FC<UpdateProfilesProps> = ({ profileUpdatekey, isBlurred }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -70,7 +67,7 @@ const UpdateProfiles: React.FC<UpdateProfilesProps> = ({
   const { mutate: updateProfile, isLoading } = usePostData(
     `customers/profile/${userProfile?.username}/`,
     ["update-user-profile", userName],
-    profileUpdatekey ? "profiledata" : ["user-profile", userName]
+    profileUpdatekey ? "profiledata" : ["user-profile", userName],
   );
 
   const handleCancelClick = () => {
@@ -126,25 +123,22 @@ const UpdateProfiles: React.FC<UpdateProfilesProps> = ({
   };
 
   return (
-    <div className="h-full overflow-y-scroll bg-[#f0f0f0] mb-10">
-      <div className="flex items-center text-[#444444] md:text-[1.6rem] font-inter font-semibold leading-[43.57px] text-left">
+    <div className="mb-10 h-full overflow-y-scroll bg-[#f0f0f0]">
+      <div className="font-inter flex items-center text-left leading-[43.57px] font-semibold text-[#444444] md:text-[1.6rem]">
         <button onClick={handleCancelClick} className="mr-2">
-          <img src={leftarrow} alt="Back" className="w-7 h-7" />
+          <img src={leftarrow} alt="Back" className="h-7 w-7" />
         </button>
         Authorized User Details and Products
       </div>
 
       <Spin spinning={isLoading} tip="Loading...">
-        <div className="bg-white p-6 rounded-lg shadow mt-3 mb-4">
+        <div className="mt-3 mb-4 rounded-lg bg-white p-6 shadow">
           <Tabs activeKey={activeTab} onChange={setActiveTab}>
-            <Tabs.TabPane
-              tab={<span style={{ color: "#2C6671" }}>User Details</span>}
-              key="0"
-            >
+            <Tabs.TabPane tab={<span style={{ color: "#2C6671" }}>User Details</span>} key="0">
               <div className={`GECreateUsersForm w-full ${isBlurred ? "blurred" : ""}`}>
-                <div className="p-2 overflow-y-auto scrollbar-thin">
+                <div className="scrollbar-thin overflow-y-auto p-2">
                   <CustomFieldsets legend="Personal Details">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-[50px]">
+                    <div className="mt-[50px] grid grid-cols-1 gap-4 md:grid-cols-4">
                       <div className="flex flex-col justify-center gap-1">
                         <label className="text-[.9rem]">First Name</label>
                         <input
@@ -153,7 +147,7 @@ const UpdateProfiles: React.FC<UpdateProfilesProps> = ({
                           onChange={handleChange}
                           name="firstName"
                           placeholder="First Name"
-                          className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                          className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                         />
                       </div>
                       <div className="flex flex-col justify-center gap-1">
@@ -164,24 +158,24 @@ const UpdateProfiles: React.FC<UpdateProfilesProps> = ({
                           onChange={handleChange}
                           name="lastName"
                           placeholder="Last Name"
-                          className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                          className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                         />
                       </div>
                     </div>
                   </CustomFieldsets>
 
-                  <div className="flex justify-end gap-3 mt-6">
+                  <div className="mt-6 flex justify-end gap-3">
                     <CustomBtn
                       type="button"
                       label="Cancel"
                       onClick={handleCancelClick}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                      className="rounded-lg bg-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-400"
                     />
                     <CustomBtn
                       type="button"
                       label="Submit"
                       onClick={handleSubmit}
-                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                      className="bg-primary-600 hover:bg-primary-700 rounded-lg px-4 py-2 text-white"
                     />
                   </div>
                 </div>

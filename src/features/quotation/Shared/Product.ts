@@ -1,4 +1,3 @@
-
 export interface Option {
   Label: string;
   Value: string;
@@ -72,8 +71,7 @@ export const productData: ProductData[] = [
         },
         {
           id: "bundle",
-          label:
-            "Bundle: Panchromatic 1.5m + Multispectral 6m 4-band - co-registrated",
+          label: "Bundle: Panchromatic 1.5m + Multispectral 6m 4-band - co-registrated",
           constraint: {
             reject: false,
             defaultValueCondition: "processing_level:(primary)",
@@ -111,8 +109,7 @@ export const productData: ProductData[] = [
         },
         {
           id: "bundle",
-          label:
-            "Bundle: Panchromatic 1.5m + Multispectral 6m 4-band - co-registrated",
+          label: "Bundle: Panchromatic 1.5m + Multispectral 6m 4-band - co-registrated",
           constraint: {
             reject: false,
             defaultValueCondition: "processing_level:(primary)",
@@ -216,17 +213,13 @@ export const productData: ProductData[] = [
 /**
  * Returns the spectral processing configuration for a product.
  */
-export function getSpectralProcessing(
-  productName?: string | null
-): SpectralProcessing | null {
+export function getSpectralProcessing(productName?: string | null): SpectralProcessing | null {
   if (!productName) return null;
 
   const name = productName.toLowerCase().replace(/\s+/g, "");
 
   const exactMatch = productData.find((product) => {
-    const productNameNormalized = product.name
-      .toLowerCase()
-      .replace(/\s+/g, "");
+    const productNameNormalized = product.name.toLowerCase().replace(/\s+/g, "");
 
     // Handle Pleiades 0.3
     if (product.name === "Pleiades 0.3") {

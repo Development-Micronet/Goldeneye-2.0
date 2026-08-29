@@ -1,38 +1,37 @@
 .GeCentralizedModal .modal-content {
-    border-radius: 0;
+  border-radius: 0;
 }
 
 .GeCentralizedModal .GeCentralizedModalHeader {
-    padding: 0.5rem;
-    border-radius: 0;
-    background-color: #2a74a5;
+  padding: 0.5rem;
+  border-radius: 0;
+  background-color: #2a74a5;
 }
 
 .GeCentralizedModalHeader .GeTitle {
-    margin-bottom: 0;
-    margin-top: 2px;
-    font-size: 20px;
-    padding-left: 5px;
-    color: white;
+  margin-bottom: 0;
+  margin-top: 2px;
+  font-size: 20px;
+  padding-left: 5px;
+  color: white;
 }
 
 .GeCentralizedModal .modal-header .btn-close {
-    margin-right: 0;
-    font-size: 11px;
+  margin-right: 0;
+  font-size: 11px;
 }
 
 .GeCentralizedModal .modal-dialog {
-   max-width: fit-content;
+  max-width: fit-content;
 }
 
-
 .GeCentralizedModal .modal-content {
-    /* background: rgba(255, 255, 255, 0.8);  */
-    backdrop-filter: blur(10px); 
-    border-radius: 8px; /* Smooth corners */
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+  /* background: rgba(255, 255, 255, 0.8);  */
+  backdrop-filter: blur(10px);
+  border-radius: 8px; /* Smooth corners */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
 }
 
 .GeCentralizedModal .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.5); 
+  background-color: rgba(0, 0, 0, 0.5);
 }

@@ -15,11 +15,11 @@ const handleApiError = async (err: any, token: string): Promise<never> => {
     } catch (decryptErr) {
       console.error("Failed to decrypt error response:", decryptErr);
     }
-  } 
+  }
   // 2. Fallback to unencrypted api messages
   else if (err.response?.data?.message) {
     errorMessage = err.response.data.message;
-  } 
+  }
   // 3. Fallback to normal network error messages
   else if (err.message) {
     errorMessage = err.message;

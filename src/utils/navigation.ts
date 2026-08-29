@@ -26,10 +26,10 @@ export const navigationItems: NavItem[] = [
     roles: ["superadmin"], // Only superadmin can see Quotation
   },
   {
-    label:"Analytics",
-    path:"/analytics",
+    label: "Analytics",
+    path: "/analytics",
     roles: ["superadmin", "admin", "user"], // All logged-in roles can see Analytics
-  }
+  },
 ];
 
 /**

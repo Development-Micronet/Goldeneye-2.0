@@ -1,9 +1,6 @@
 import { FiTrash2, FiPlus, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { useState } from "react";
-import {
-  formatDateRange,
-  formatRangeDisplay,
-} from "../../assets/preview/Preview";
+import { formatDateRange, formatRangeDisplay } from "../../assets/preview/Preview";
 import { getSpectralProcessing } from "../../Shared/Product";
 import { UNITS } from "../../Shared/Quotation";
 import { GeometricProcessing } from "../../Shared/Product";
@@ -23,7 +20,6 @@ interface GroupedProductEntryUpdateProps {
   onRemoveRow: () => void;
   onAddToGroup: () => void;
 }
-
 
 const cls =
   "w-full rounded border border-light-300 bg-white px-2 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary-400";
@@ -48,20 +44,11 @@ export function buildGroupKeyUpdate(item) {
   ].join("|");
 }
 
-function recalcItem(
-  item,
-  cgst_pct,
-  sgst_pct,
-  igst_pct,
-  discountPct = 0,
-  discountEnabled = false,
-) {
+function recalcItem(item, cgst_pct, sgst_pct, igst_pct, discountPct = 0, discountEnabled = false) {
   const area = parseFloat(item.area ?? item.qty) || 0;
   const price = parseFloat(item.price) || 0;
   const amount = area * price;
-  const discAmt = discountEnabled
-    ? (amount * parseFloat(discountPct || 0)) / 100
-    : 0;
+  const discAmt = discountEnabled ? (amount * parseFloat(discountPct || 0)) / 100 : 0;
   const baseAfterDisc = amount - discAmt;
   const cgst_amt = (baseAfterDisc * (parseFloat(cgst_pct) || 0)) / 100;
   const sgst_amt = (baseAfterDisc * (parseFloat(sgst_pct) || 0)) / 100;
@@ -110,18 +97,14 @@ const GroupedProductEntryUpdate = ({
 
   const cloudDisplay = (() => {
     if (!cloudVal) return "—";
-    const parsed = Array.isArray(cloudVal)
-      ? cloudVal
-      : String(cloudVal).split("-").map(Number);
+    const parsed = Array.isArray(cloudVal) ? cloudVal : String(cloudVal).split("-").map(Number);
     const max = parseFloat(parsed[parsed.length - 1]);
     return isNaN(max) ? String(cloudVal) : `≤ ${max}%`;
   })();
 
   const angleDisplay = (() => {
     if (!angleVal) return "—";
-    const parsed = Array.isArray(angleVal)
-      ? angleVal
-      : String(angleVal).split("-").map(Number);
+    const parsed = Array.isArray(angleVal) ? angleVal : String(angleVal).split("-").map(Number);
     const max = parseFloat(parsed[parsed.length - 1]);
     return isNaN(max) ? String(angleVal) : `≤ ${max}°`;
   })();
@@ -133,9 +116,7 @@ const GroupedProductEntryUpdate = ({
     (sum, idx) => sum + (parseFloat(description[idx]?.amount) || 0),
     0,
   );
-  const discTotal = discountEnabled
-    ? (baseTotal * parseFloat(discountPct || 0)) / 100
-    : 0;
+  const discTotal = discountEnabled ? (baseTotal * parseFloat(discountPct || 0)) / 100 : 0;
   const afterDisc = baseTotal - discTotal;
   const groupCgstAmt = (afterDisc * cgst_pct) / 100;
   const groupSgstAmt = (afterDisc * sgst_pct) / 100;
@@ -258,23 +239,23 @@ const GroupedProductEntryUpdate = ({
   };
 
   return (
-    <div className="rounded-lg border border-light-300 overflow-hidden text-[11px] shadow-sm">
+    <div className="border-light-300 overflow-hidden rounded-lg border text-[11px] shadow-sm">
       {/* ── Group header ──────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between bg-primary-700 px-3 py-1.5">
+      <div className="bg-primary-700 flex items-center justify-between px-3 py-1.5">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-white text-[11px]">
+          <span className="text-[11px] font-bold text-white">
             Group {groupNumber}
             <span className="ml-1.5 text-[9px] font-normal opacity-70">
               {groupIndices.length} item{groupIndices.length !== 1 ? "s" : ""}
             </span>
           </span>
           {cloudVal && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 border border-blue-300/40 px-2 py-0.5 text-[9px] font-semibold text-blue-100">
+            <span className="inline-flex items-center gap-1 rounded-full border border-blue-300/40 bg-blue-500/20 px-2 py-0.5 text-[9px] font-semibold text-blue-100">
               ☁ Cloud {cloudDisplay}
             </span>
           )}
           {angleVal && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/20 border border-purple-300/40 px-2 py-0.5 text-[9px] font-semibold text-purple-100">
+            <span className="inline-flex items-center gap-1 rounded-full border border-purple-300/40 bg-purple-500/20 px-2 py-0.5 text-[9px] font-semibold text-purple-100">
               ⊿ Angle {angleDisplay}
             </span>
           )}
@@ -282,36 +263,31 @@ const GroupedProductEntryUpdate = ({
         <button
           type="button"
           onClick={addItemToGroup}
-          className="flex items-center gap-1 rounded bg-primary-600 hover:bg-primary-500 px-2 py-0.5 text-[10px] font-bold text-white transition-colors"
+          className="bg-primary-600 hover:bg-primary-500 flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold text-white transition-colors"
         >
           <FiPlus className="h-3 w-3" /> Add Item
         </button>
       </div>
 
-      <div className="bg-white px-2.5 py-2 space-y-2">
+      <div className="space-y-2 bg-white px-2.5 py-2">
         {/* ── Shared metadata ───────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 rounded bg-primary-50 border border-primary-100 px-2.5 py-2">
+        <div className="bg-primary-50 border-primary-100 grid grid-cols-2 gap-2 rounded border px-2.5 py-2 sm:grid-cols-4">
           <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] font-bold uppercase tracking-widest text-primary-400 leading-none">
+            <label className="text-primary-400 text-[9px] leading-none font-bold tracking-widest uppercase">
               Task Type
             </label>
             <div className="flex gap-3 pt-0.5">
               {Archivalortasking.map((t) => (
-                <label
-                  key={t.value}
-                  className="flex items-center gap-1 cursor-pointer text-[10px]"
-                >
+                <label key={t.value} className="flex cursor-pointer items-center gap-1 text-[10px]">
                   <input
                     type="radio"
                     name={`task_type_group_update_${groupNumber}`}
                     value={t.value}
-                    checked={
-                      (rep.task_type || "archival").toLowerCase() === t.value
-                    }
+                    checked={(rep.task_type || "archival").toLowerCase() === t.value}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       handleSharedField("task_type", e.target.value)
                     }
-                    className="h-3 w-3 accent-primary-600"
+                    className="accent-primary-600 h-3 w-3"
                   />
                   {t.label}
                 </label>
@@ -320,30 +296,28 @@ const GroupedProductEntryUpdate = ({
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] font-bold uppercase tracking-widest text-primary-400 leading-none">
+            <label className="text-primary-400 text-[9px] leading-none font-bold tracking-widest uppercase">
               Cloud Cover
             </label>
-            <span className="text-[11px] text-gray-700 font-medium py-0.5 flex items-center gap-1">
+            <span className="flex items-center gap-1 py-0.5 text-[11px] font-medium text-gray-700">
               <span className="text-blue-500">☁</span>
               {cloudDisplay}
             </span>
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] font-bold uppercase tracking-widest text-primary-400 leading-none">
+            <label className="text-primary-400 text-[9px] leading-none font-bold tracking-widest uppercase">
               Incidence Angle
             </label>
-            <span className="text-[11px] text-gray-700 font-medium py-0.5 flex items-center gap-1">
+            <span className="flex items-center gap-1 py-0.5 text-[11px] font-medium text-gray-700">
               <span className="text-purple-500">⊿</span>
               {angleDisplay}
             </span>
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] font-bold uppercase tracking-widest text-primary-400 leading-none">
-              {rep.task_type?.toLowerCase() === "tasking"
-                ? "Tasking Date"
-                : "Acq. Date"}
+            <label className="text-primary-400 text-[9px] leading-none font-bold tracking-widest uppercase">
+              {rep.task_type?.toLowerCase() === "tasking" ? "Tasking Date" : "Acq. Date"}
             </label>
             {rep.task_type?.toLowerCase() === "tasking" ? (
               <input
@@ -351,10 +325,12 @@ const GroupedProductEntryUpdate = ({
                 className={cls}
                 value={rep.date || ""}
                 min={new Date().toISOString().split("T")[0]}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSharedField("date", e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleSharedField("date", e.target.value)
+                }
               />
             ) : (
-              <span className="text-[11px] text-gray-700 font-medium py-0.5">
+              <span className="py-0.5 text-[11px] font-medium text-gray-700">
                 {dateDisplay || "—"}
               </span>
             )}
@@ -362,25 +338,25 @@ const GroupedProductEntryUpdate = ({
         </div>
 
         {/* ── Items table ───────────────────────────────────────────────── */}
-        <div className="rounded border border-light-200 overflow-hidden">
+        <div className="border-light-200 overflow-hidden rounded border">
           {/* Header */}
-          <div className="hidden sm:grid sm:grid-cols-12 gap-1 bg-light-100 border-b border-light-200 px-2.5 py-1.5">
-            <span className="col-span-4 text-[9px] font-bold uppercase tracking-widest text-primary-400">
+          <div className="bg-light-100 border-light-200 hidden gap-1 border-b px-2.5 py-1.5 sm:grid sm:grid-cols-12">
+            <span className="text-primary-400 col-span-4 text-[9px] font-bold tracking-widest uppercase">
               # Item Description
             </span>
-            <span className="col-span-1 text-[9px] font-bold uppercase tracking-widest text-primary-400">
+            <span className="text-primary-400 col-span-1 text-[9px] font-bold tracking-widest uppercase">
               Unit
             </span>
-            <span className="col-span-2 text-[9px] font-bold uppercase tracking-widest text-primary-400">
+            <span className="text-primary-400 col-span-2 text-[9px] font-bold tracking-widest uppercase">
               Area {isArchival ? `(min ${minArchivalArea})` : "(Sqkm)"}
             </span>
-            <span className="col-span-2 text-[9px] font-bold uppercase tracking-widest text-primary-400">
+            <span className="text-primary-400 col-span-2 text-[9px] font-bold tracking-widest uppercase">
               Price/Sqkm (₹)
             </span>
-            <span className="col-span-2 text-[9px] font-bold uppercase tracking-widest text-primary-400">
+            <span className="text-primary-400 col-span-2 text-[9px] font-bold tracking-widest uppercase">
               Amount (₹)
             </span>
-            <span className="col-span-1 text-[9px] font-bold uppercase tracking-widest text-primary-400 text-right">
+            <span className="text-primary-400 col-span-1 text-right text-[9px] font-bold tracking-widest uppercase">
               Del
             </span>
           </div>
@@ -390,11 +366,9 @@ const GroupedProductEntryUpdate = ({
             if (!item) return null;
 
             const spectralOpts = getSpectralProcessing(item.item);
-            const hasGeo =
-              GeometricProcessing && GeometricProcessing.length > 0;
+            const hasGeo = GeometricProcessing && GeometricProcessing.length > 0;
             const rawArea = parseFloat(item.area ?? item.qty ?? 0);
-            const areaWarn =
-              isArchival && rawArea > 0 && rawArea < minArchivalArea;
+            const areaWarn = isArchival && rawArea > 0 && rawArea < minArchivalArea;
             const areaDisplay = areaWarn ? minArchivalArea : rawArea;
             const isSpecOpen = !!openSpecs[idx];
 
@@ -406,12 +380,12 @@ const GroupedProductEntryUpdate = ({
             return (
               <div
                 key={idx}
-                className={`border-b border-light-100 last:border-b-0 ${rowNum % 2 === 0 ? "bg-white" : "bg-light-50/60"}`}
+                className={`border-light-100 border-b last:border-b-0 ${rowNum % 2 === 0 ? "bg-white" : "bg-light-50/60"}`}
               >
                 {/* Main row */}
-                <div className="grid grid-cols-2 sm:grid-cols-12 gap-1.5 sm:gap-1 px-2.5 py-2 items-center">
-                  <div className="col-span-2 sm:col-span-4 flex items-center gap-1.5">
-                    <span className="flex-shrink-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary-600 text-[8px] font-bold text-white">
+                <div className="grid grid-cols-2 items-center gap-1.5 px-2.5 py-2 sm:grid-cols-12 sm:gap-1">
+                  <div className="col-span-2 flex items-center gap-1.5 sm:col-span-4">
+                    <span className="bg-primary-600 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-white">
                       {rowNum + 1}
                     </span>
                     <input
@@ -440,7 +414,7 @@ const GroupedProductEntryUpdate = ({
                     </select>
                   </div>
 
-                  <div className="col-span-1 sm:col-span-2 space-y-1">
+                  <div className="col-span-1 space-y-1 sm:col-span-2">
                     <input
                       type="number"
                       min={isArchival ? minArchivalArea : 0}
@@ -452,7 +426,7 @@ const GroupedProductEntryUpdate = ({
                       }
                     />
                     {areaWarn && (
-                      <div className="text-[8px] text-amber-600 font-semibold">
+                      <div className="text-[8px] font-semibold text-amber-600">
                         ↳ Will use {minArchivalArea} sqkm
                       </div>
                     )}
@@ -472,7 +446,7 @@ const GroupedProductEntryUpdate = ({
                   </div>
 
                   <div className="col-span-1 sm:col-span-2">
-                    <span className="block rounded bg-light-100 border border-light-200 px-2 py-1 text-[11px] text-right font-semibold text-primary-800 tabular-nums">
+                    <span className="bg-light-100 border-light-200 text-primary-800 block rounded border px-2 py-1 text-right text-[11px] font-semibold tabular-nums">
                       ₹{" "}
                       {fmtFn(
                         areaWarn
@@ -482,11 +456,11 @@ const GroupedProductEntryUpdate = ({
                     </span>
                   </div>
 
-                  <div className="col-span-1 sm:col-span-1 flex justify-end">
+                  <div className="col-span-1 flex justify-end sm:col-span-1">
                     <button
                       type="button"
                       onClick={(e: React.MouseEvent<HTMLButtonElement>) => onRemoveRow(idx)}
-                      className="flex items-center justify-center rounded bg-light-100 hover:bg-red-50 hover:text-red-500 border border-light-200 hover:border-red-200 p-1.5 transition-colors"
+                      className="bg-light-100 border-light-200 flex items-center justify-center rounded border p-1.5 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500"
                     >
                       <FiTrash2 className="h-3 w-3" />
                     </button>
@@ -500,19 +474,15 @@ const GroupedProductEntryUpdate = ({
                 <div className="flex flex-wrap items-center gap-1.5 px-2.5 pb-2">
                   {/* Geo — only shown when GeometricProcessing options exist */}
                   {hasGeo && (
-                    <div className="flex items-center gap-1.5 rounded bg-blue-50 border border-blue-100 px-2 py-1">
-                      <label className="text-[9px] font-bold uppercase tracking-widest text-blue-400 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 rounded border border-blue-100 bg-blue-50 px-2 py-1">
+                      <label className="text-[9px] font-bold tracking-widest whitespace-nowrap text-blue-400 uppercase">
                         Geo.
                       </label>
                       <select
-                        className="rounded border border-light-300 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-400 w-32"
+                        className="border-light-300 w-32 rounded border bg-white px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-blue-400 focus:outline-none"
                         value={item.geometricprocessing || ""}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          handleItemField(
-                            idx,
-                            "geometricprocessing",
-                            e.target.value,
-                          )
+                          handleItemField(idx, "geometricprocessing", e.target.value)
                         }
                       >
                         <option value="" disabled>
@@ -529,12 +499,12 @@ const GroupedProductEntryUpdate = ({
 
                   {/* Spectral — only shown when this product has spectral options */}
                   {spectralOpts && (
-                    <div className="flex items-center gap-1.5 rounded bg-violet-50 border border-violet-100 px-2 py-1">
-                      <label className="text-[9px] font-bold uppercase tracking-widest text-violet-400 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 rounded border border-violet-100 bg-violet-50 px-2 py-1">
+                      <label className="text-[9px] font-bold tracking-widest whitespace-nowrap text-violet-400 uppercase">
                         Spectral
                       </label>
                       <select
-                        className="rounded border border-light-300 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-violet-400 w-32"
+                        className="border-light-300 w-32 rounded border bg-white px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-violet-400 focus:outline-none"
                         value={item.spectralbands || ""}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           handleItemField(idx, "spectralbands", e.target.value)
@@ -553,9 +523,7 @@ const GroupedProductEntryUpdate = ({
                   )}
 
                   {/* Divider — only shown when Geo or Spectral is present */}
-                  {(hasGeo || spectralOpts) && (
-                    <div className="h-5 w-px bg-light-200 mx-0.5" />
-                  )}
+                  {(hasGeo || spectralOpts) && <div className="bg-light-200 mx-0.5 h-5 w-px" />}
 
                   {/* GST fields — always shown */}
                   {[
@@ -565,32 +533,34 @@ const GroupedProductEntryUpdate = ({
                   ].map(({ key, label, val }) => (
                     <div
                       key={key}
-                      className="flex items-center gap-1 rounded bg-primary-50 border border-primary-100 px-2 py-1"
+                      className="bg-primary-50 border-primary-100 flex items-center gap-1 rounded border px-2 py-1"
                     >
-                      <label className="text-[9px] font-bold uppercase tracking-widest text-primary-400 whitespace-nowrap">
+                      <label className="text-primary-400 text-[9px] font-bold tracking-widest whitespace-nowrap uppercase">
                         {label}%
                       </label>
                       <input
                         type="number"
                         min="0"
                         max="100"
-                        className="w-10 rounded border border-light-300 bg-white px-1 py-0.5 text-[11px] text-center focus:outline-none focus:ring-1 focus:ring-primary-400"
+                        className="border-light-300 focus:ring-primary-400 w-10 rounded border bg-white px-1 py-0.5 text-center text-[11px] focus:ring-1 focus:outline-none"
                         value={val}
                         placeholder="0"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleGSTChange(key, e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleGSTChange(key, e.target.value)
+                        }
                       />
                     </div>
                   ))}
 
-                  <div className="h-5 w-px bg-light-200 mx-0.5" />
+                  <div className="bg-light-200 mx-0.5 h-5 w-px" />
 
                   {/* ✅ Tech Spec toggle — ALWAYS rendered, no longer inside (hasGeo || spectralOpts) guard */}
                   <button
                     type="button"
                     onClick={(e: React.MouseEvent<HTMLButtonElement>) => toggleSpec(idx)}
-                    className={`flex items-center gap-1 rounded border px-2 py-1 text-[9px] font-bold uppercase tracking-widest transition-colors ${
+                    className={`flex items-center gap-1 rounded border px-2 py-1 text-[9px] font-bold tracking-widest uppercase transition-colors ${
                       isSpecOpen
-                        ? "bg-emerald-50 border-emerald-200 text-emerald-600"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-600"
                         : "bg-light-50 border-light-200 text-light-400 hover:border-emerald-200 hover:text-emerald-500"
                     }`}
                   >
@@ -601,7 +571,7 @@ const GroupedProductEntryUpdate = ({
                     )}
                     Tech Spec
                     {techSpecs.length > 0 && (
-                      <span className="ml-1 rounded-full bg-emerald-500 text-white text-[8px] font-bold px-1.5 py-0.5 leading-none">
+                      <span className="ml-1 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[8px] leading-none font-bold text-white">
                         {techSpecs.length}
                       </span>
                     )}
@@ -610,12 +580,12 @@ const GroupedProductEntryUpdate = ({
 
                 {/* ── Tech Spec panel ────────────────────────────────────── */}
                 {isSpecOpen && (
-                  <div className="mx-2 mb-2 rounded border border-emerald-100 bg-emerald-50/40 p-2 space-y-1.5">
+                  <div className="mx-2 mb-2 space-y-1.5 rounded border border-emerald-100 bg-emerald-50/40 p-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-600">
+                      <span className="text-[9px] font-bold tracking-widest text-emerald-600 uppercase">
                         Technical Specifications
                         {techSpecs.length > 0 && (
-                          <span className="ml-1.5 text-emerald-400 font-normal normal-case">
+                          <span className="ml-1.5 font-normal text-emerald-400 normal-case">
                             ({techSpecs.length} row
                             {techSpecs.length !== 1 ? "s" : ""})
                           </span>
@@ -624,27 +594,26 @@ const GroupedProductEntryUpdate = ({
                       <button
                         type="button"
                         onClick={addTechRow}
-                        className="flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-500 px-2 py-0.5 text-[9px] font-bold text-white"
+                        className="flex items-center gap-1 rounded bg-emerald-600 px-2 py-0.5 text-[9px] font-bold text-white hover:bg-emerald-500"
                       >
                         <FiPlus className="h-2.5 w-2.5" /> Add Row
                       </button>
                     </div>
 
                     {techSpecs.length === 0 ? (
-                      <div className="text-[10px] text-light-400 border border-dashed border-emerald-200 p-2 rounded bg-white text-center">
+                      <div className="text-light-400 rounded border border-dashed border-emerald-200 bg-white p-2 text-center text-[10px]">
                         No specs yet — click <strong>Add Row</strong>
                       </div>
                     ) : (
                       <div className="space-y-1">
                         {techSpecs.map((row, i) => (
-                          <div
-                            key={i}
-                            className="grid grid-cols-[1fr_24px] gap-1.5 items-center"
-                          >
+                          <div key={i} className="grid grid-cols-[1fr_24px] items-center gap-1.5">
                             <input
                               className={cls}
                               value={row}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateTechRow(i, e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                updateTechRow(i, e.target.value)
+                              }
                               placeholder="e.g. Resolution: 0.5m"
                             />
                             <button
@@ -666,13 +635,10 @@ const GroupedProductEntryUpdate = ({
         </div>
 
         {/* ── GST totals ────────────────────────────────────────────────── */}
-        <div className="rounded border border-primary-100 bg-primary-50 px-2.5 py-2">
+        <div className="border-primary-100 bg-primary-50 rounded border px-2.5 py-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="text-[10px] text-gray-500">
-              Base:{" "}
-              <strong className="text-primary-800 tabular-nums">
-                ₹ {fmtFn(baseTotal)}
-              </strong>
+              Base: <strong className="text-primary-800 tabular-nums">₹ {fmtFn(baseTotal)}</strong>
             </span>
             {discountEnabled && parseFloat(discountPct) > 0 && (
               <span className="text-[10px] text-amber-600">
@@ -683,28 +649,22 @@ const GroupedProductEntryUpdate = ({
             {cgst_pct > 0 && (
               <span className="text-[10px] text-gray-500">
                 CGST ({cgst_pct}%):{" "}
-                <strong className="text-primary-800 tabular-nums">
-                  ₹ {fmtFn(groupCgstAmt)}
-                </strong>
+                <strong className="text-primary-800 tabular-nums">₹ {fmtFn(groupCgstAmt)}</strong>
               </span>
             )}
             {sgst_pct > 0 && (
               <span className="text-[10px] text-gray-500">
                 SGST ({sgst_pct}%):{" "}
-                <strong className="text-primary-800 tabular-nums">
-                  ₹ {fmtFn(groupSgstAmt)}
-                </strong>
+                <strong className="text-primary-800 tabular-nums">₹ {fmtFn(groupSgstAmt)}</strong>
               </span>
             )}
             {igst_pct > 0 && (
               <span className="text-[10px] text-gray-500">
                 IGST ({igst_pct}%):{" "}
-                <strong className="text-primary-800 tabular-nums">
-                  ₹ {fmtFn(groupIgstAmt)}
-                </strong>
+                <strong className="text-primary-800 tabular-nums">₹ {fmtFn(groupIgstAmt)}</strong>
               </span>
             )}
-            <span className="ml-auto font-black text-[12px] text-primary-700 tabular-nums">
+            <span className="text-primary-700 ml-auto text-[12px] font-black tabular-nums">
               Group Total: ₹ {fmtFn(groupTotal)}
             </span>
           </div>

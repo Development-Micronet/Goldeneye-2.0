@@ -1,8 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  getTenantSuperusers,
-  type TenantSuperusersResponse,
-} from "../api/dashboard";
+import { getTenantSuperusers, type TenantSuperusersResponse } from "../api/dashboard";
 
 import { useAuthStore } from "../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../utils/dataDecrypt";
@@ -10,7 +7,6 @@ import { decryptAESGCM } from "../../../utils/dataDecrypt";
 export const useCompanies = () => {
   const accessToken = useAuthStore((state) => state.accessToken);
   const token = accessToken?.replace("Bearer ", "").trim() || "";
-
 
   return useQuery({
     queryKey: ["companies"],
@@ -22,11 +18,7 @@ export const useCompanies = () => {
         throw new Error("Missing Token");
       }
 
-      const decrypted =
-        (await decryptAESGCM(
-          res.data,
-          token
-        )) as TenantSuperusersResponse;
+      const decrypted = (await decryptAESGCM(res.data, token)) as TenantSuperusersResponse;
 
       return decrypted.results.results;
     },

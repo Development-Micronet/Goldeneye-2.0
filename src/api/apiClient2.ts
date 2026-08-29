@@ -25,11 +25,7 @@ apiClient2.interceptors.request.use(
 apiClient2.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error(
-      "[Local API Error]",
-      error.response?.status,
-      error.response?.data,
-    );
+    console.error("[Local API Error]", error.response?.status, error.response?.data);
     return Promise.reject(error);
   },
 );

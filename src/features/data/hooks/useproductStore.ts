@@ -50,9 +50,7 @@ export const useProductStore = create<ProductStore>()(
 
         const allSensorIds = providers.flatMap((p) => p.sensors.map((s) => s.id));
         const allProductTypes = [
-          ...new Set(
-            providers.flatMap((p) => p.sensors.flatMap((s) => s.productTypes ?? []))
-          ),
+          ...new Set(providers.flatMap((p) => p.sensors.flatMap((s) => s.productTypes ?? []))),
         ];
 
         set({
@@ -105,6 +103,6 @@ export const useProductStore = create<ProductStore>()(
     {
       name: "product-selection-storage",
       storage: createJSONStorage(() => sessionStorage),
-    }
-  )
+    },
+  ),
 );

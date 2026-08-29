@@ -29,7 +29,9 @@
 a.Active_links {
   /* background-color: red; */
   padding: 4px 7px;
-  transition: background-color 0.3s ease, padding 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    padding 0.3s ease;
 }
 
 a.Active_links:hover {

@@ -1,96 +1,96 @@
 .GeopicxModalOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 99999;
-    opacity: 0;
-    animation: fadeIn 0.3s forwards;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  opacity: 0;
+  animation: fadeIn 0.3s forwards;
 }
 
 @keyframes fadeIn {
-    to {
-        opacity: 1;
-    }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-    from {
-        opacity: 1;
-    }
+  from {
+    opacity: 1;
+  }
 
-    to {
-        opacity: 0;
-    }
+  to {
+    opacity: 0;
+  }
 }
 
 .GeopicxModal {
-    background: white;
-    width: 400px;
-    max-width: 100%;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    transform: translateY(-50px);
-    opacity: 0;
-    animation: slideIn 0.3s forwards;
+  background: white;
+  width: 400px;
+  max-width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(-50px);
+  opacity: 0;
+  animation: slideIn 0.3s forwards;
 }
 
 @keyframes slideIn {
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes slideOut {
-    from {
-        transform: translateY(0);
-        opacity: 1;
-    }
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
 
-    to {
-        transform: translateY(-50px);
-        opacity: 0;
-    }
+  to {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
 }
 
 .GeopicxModalHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2px;
-    background: #2196F3;
-    color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px;
+  background: #2196f3;
+  color: white;
 }
 
 .GeopicxModalLogo {
-    width: 30px;
-    height: 30px;
-    margin-left: 5px;
+  width: 30px;
+  height: 30px;
+  margin-left: 5px;
 }
 
 .GeopicxModalIcon {
-    width: 45px;
-    height: 45px;
-    display: inline;  
-    position: relative;
-    top: -10px;
+  width: 45px;
+  height: 45px;
+  display: inline;
+  position: relative;
+  top: -10px;
 }
 
 .GeopicxModalTitle {
-    flex-grow: 1;
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 2px;
-    margin-left: 5px;
+  flex-grow: 1;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 2px;
+  margin-left: 5px;
 }
 
 /* .GeopicxCloseButton {
@@ -107,64 +107,64 @@
 } */
 
 .GeopicxModalBody {
-    padding-top: 40px;
-    text-align: center;
-    padding-bottom: 10px;
-
+  padding-top: 40px;
+  text-align: center;
+  padding-bottom: 10px;
 }
 
 .GeopicxModalMessageBox {
-    max-height: 80px;
-    overflow-y: auto;
-    scrollbar-width: thin;
+  max-height: 80px;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
-
 .GeopicxModalHeading {
-    font-size: 1.2rem;
-    font-weight: bold;
-    /* margin-bottom: 20px; */
+  font-size: 1.2rem;
+  font-weight: bold;
+  /* margin-bottom: 20px; */
 }
 
 .GeopicxModalMessage {
-    font-size: 1rem;
-    color: black;
-    /* margin-bottom: 20px; */
-    /* white-space: pre-wrap; */
-    /* To handle multi-line messages */
+  font-size: 1rem;
+  color: black;
+  /* margin-bottom: 20px; */
+  /* white-space: pre-wrap; */
+  /* To handle multi-line messages */
 }
 
 .GeopicxModalFooter {
-    display: flex;
-    justify-content: center;
-    padding: 12px;
+  display: flex;
+  justify-content: center;
+  padding: 12px;
 }
 
 .GeopicxModalConfirmButton,
 .GeopicxModalCancelButton {
-    background: #006BB1;
-    color: white;
-    padding: 5px 40px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin: 5px;
-    margin-top: 1.5px;
-    /* margin-bottom: 2px; */
+  background: #006bb1;
+  color: white;
+  padding: 5px 40px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 5px;
+  margin-top: 1.5px;
+  /* margin-bottom: 2px; */
 }
 
 .GeopicxModalCancelButton {
-    color: black;
-    background-color: white;
-    border: 1px solid gray;
-    padding: 5px 40px;
-    cursor: pointer;
-    transition: color 0.3s, border-color 0.3s;
+  color: black;
+  background-color: white;
+  border: 1px solid gray;
+  padding: 5px 40px;
+  cursor: pointer;
+  transition:
+    color 0.3s,
+    border-color 0.3s;
 }
 /* .GeopicxModalCancelButton:hover {
     background-color: #E53935; */
-    /* background-color: rgba(255, 0, 0, 0.131); */
-    /* color: #F44336; */
+/* background-color: rgba(255, 0, 0, 0.131); */
+/* color: #F44336; */
 /* } */
 
 /* .GeopicxModalConfirmButton:hover {
@@ -174,22 +174,22 @@
 
 /* Additional styles for different types */
 .GeopicxModal--success .GeopicxModalHeader {
-    background: #4CAF50;
+  background: #4caf50;
 }
 
 .GeopicxModal--error .GeopicxModalHeader {
-    background: #F44336;
+  background: #f44336;
 }
 
 .GeopicxModal--warning .GeopicxModalHeader {
-    background: #FFC107;
+  background: #ffc107;
 }
 
 .GeopicxModal--info .GeopicxModalHeader {
-    background: #2196F3;
+  background: #2196f3;
 }
 
 .GeopicxModal--multiline .GeopicxModalBody {
-    max-height: 300px;
-    overflow-y: auto;
+  max-height: 300px;
+  overflow-y: auto;
 }

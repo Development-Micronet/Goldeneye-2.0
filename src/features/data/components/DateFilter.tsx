@@ -53,14 +53,14 @@ const DateFilter = () => {
       {isFiltered ? (
         <div
           onClick={() => setTab(isOpen ? "none" : "date")}
-          className="flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-primary bg-primary px-3 text-xs font-semibold text-white shadow-md transition hover:bg-[#1f4e57] select-none"
+          className="border-primary bg-primary flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-semibold text-white shadow-md transition select-none hover:bg-[#1f4e57]"
         >
           <FiCalendar size={14} />
           <span>{getDateDisplayText()}</span>
           <button
             type="button"
             onClick={handleReset}
-            className="ml-1 flex h-4 w-4 items-center justify-center rounded-full text-white/80 hover:bg-white/20 hover:text-white transition cursor-pointer"
+            className="ml-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full text-white/80 transition hover:bg-white/20 hover:text-white"
             title="Clear Date Filter"
           >
             <FiX size={12} />
@@ -70,7 +70,9 @@ const DateFilter = () => {
         <button
           onClick={() => setTab(isOpen ? "none" : "date")}
           className={`flex h-8 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 text-xs font-medium shadow-md transition select-none ${
-            isOpen ? "border-primary bg-primary/10 text-primary font-semibold" : "text-gray-700 hover:bg-cyan-50"
+            isOpen
+              ? "border-primary bg-primary/10 text-primary font-semibold"
+              : "text-gray-700 hover:bg-cyan-50"
           }`}
         >
           <FiCalendar size={14} />
@@ -80,9 +82,9 @@ const DateFilter = () => {
 
       {/* Popup Window */}
       {isOpen && (
-        <div className="absolute top-[130%] right-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl animate-fadeIn">
+        <div className="animate-fadeIn absolute top-[130%] right-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2.5 mb-3">
+          <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-2.5">
             <h3 className="text-sm font-bold text-gray-800">Select Date</h3>
 
             <button
@@ -103,8 +105,8 @@ const DateFilter = () => {
                     key={item}
                     className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-semibold transition ${
                       mode === item
-                        ? "border-primary bg-[#EFFBFD] text-primary"
-                        : "border-gray-200 text-gray-600 hover:border-primary"
+                        ? "border-primary text-primary bg-[#EFFBFD]"
+                        : "hover:border-primary border-gray-200 text-gray-600"
                     }`}
                   >
                     <input
@@ -130,7 +132,7 @@ const DateFilter = () => {
                   type="date"
                   value={start}
                   onChange={(e) => setStart(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs transition outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="focus:border-primary focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs transition outline-none focus:ring-1"
                 />
               </div>
 
@@ -142,7 +144,7 @@ const DateFilter = () => {
                     type="date"
                     value={end}
                     onChange={(e) => setEnd(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs transition outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    className="focus:border-primary focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs transition outline-none focus:ring-1"
                   />
                 </div>
               )}
@@ -161,7 +163,7 @@ const DateFilter = () => {
               <button
                 type="button"
                 onClick={handleApply}
-                className="flex-1 rounded-lg bg-primary py-1.5 text-xs font-bold text-white transition hover:bg-[#1f4e57] shadow-xs"
+                className="bg-primary flex-1 rounded-lg py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#1f4e57]"
               >
                 Apply
               </button>

@@ -8,11 +8,7 @@ interface CentralizedModalProps {
   children: React.ReactNode;
 }
 
-const CentralizedModal: React.FC<CentralizedModalProps> = ({
-  show,
-  handleClose,
-  children,
-}) => {
+const CentralizedModal: React.FC<CentralizedModalProps> = ({ show, handleClose, children }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -28,20 +24,20 @@ const CentralizedModal: React.FC<CentralizedModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center w-[100vw] items-center z-50 transition-opacity duration-300 ${
+      className={`bg-opacity-50 fixed inset-0 z-50 flex w-[100vw] items-center justify-center bg-black transition-opacity duration-300 ${
         show ? "opacity-100" : "opacity-0"
       }`}
     >
       <div
-        className={`bg-white rounded-lg mx-3 shadow-lg mt-4 min-w-max pb-4 md:w-auto lg:w-auto xl:w-[70vw] transform transition-transform duration-300 ${
+        className={`mx-3 mt-4 min-w-max transform rounded-lg bg-white pb-4 shadow-lg transition-transform duration-300 md:w-auto lg:w-auto xl:w-[70vw] ${
           show ? "scale-100" : "scale-95"
         }`}
       >
         <div className="p-4">
-          <div className="flex justify-end items-start ">
+          <div className="flex items-start justify-end">
             <button
               onClick={handleClose}
-              className="text-black hover:text-red-500 transition duration-200 "
+              className="text-black transition duration-200 hover:text-red-500"
             >
               <img src={Close} alt="Close" className="h-5 w-5" />
             </button>

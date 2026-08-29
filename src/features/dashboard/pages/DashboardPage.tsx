@@ -31,9 +31,11 @@ export const DashboardPage = () => {
     }
   }, [companies, selectedCompany]);
 
-  const { data: users = [], isLoading: usersLoading, refetch: refetchUsers } = useCompanyUsers(
-    selectedCompany?.schema_name ?? "",
-  );
+  const {
+    data: users = [],
+    isLoading: usersLoading,
+    refetch: refetchUsers,
+  } = useCompanyUsers(selectedCompany?.schema_name ?? "");
 
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
@@ -53,7 +55,8 @@ export const DashboardPage = () => {
         try {
           const token = useAuthStore.getState().accessToken?.replace("Bearer ", "").trim() || "";
           const decrypted = await decryptAESGCM(err.response.data.data, token);
-          errorMessage = decrypted.message || decrypted.results?.message || JSON.stringify(decrypted);
+          errorMessage =
+            decrypted.message || decrypted.results?.message || JSON.stringify(decrypted);
         } catch (decryptErr) {
           console.error("Failed to decrypt error response:", decryptErr);
         }
@@ -66,13 +69,9 @@ export const DashboardPage = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-[#f8fafc] p-4 sm:p-6 space-y-6 font-sans">
+    <div className="h-full space-y-6 overflow-y-auto bg-[#f8fafc] p-4 font-sans sm:p-6">
       {/* 1. Top KPI Summary Stat Cards */}
-      <DashboardCards
-        companies={companies}
-        users={users}
-        selectedCompany={selectedCompany}
-      />
+      <DashboardCards companies={companies} users={users} selectedCompany={selectedCompany} />
 
       {/* 2. Subscription Plan Validity Analytics Graph */}
       <PlanStatusChart />

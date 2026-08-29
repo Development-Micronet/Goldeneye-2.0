@@ -47,7 +47,7 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
   const [renameValue, setRenameValue] = useState("");
   const exportDropdownRef = useRef<HTMLDivElement>(null);
   const layerMenuRef = useRef<HTMLDivElement>(null);
-  const {setSelectedAOI} =useSelectedAOIStore()
+  const { setSelectedAOI } = useSelectedAOIStore();
   // Close menus when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -334,8 +334,9 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
                     {/* Zoom / Center Layer */}
                     <button
                       onClick={() => {
-                         setSelectedAOI(layer.id)
-                        setFitLayerId(layer.id)}}
+                        setSelectedAOI(layer.id);
+                        setFitLayerId(layer.id);
+                      }}
                       className="cursor-pointer rounded p-1.5 text-gray-600 transition-colors hover:bg-black/5 hover:text-black"
                       title="Zoom to layer"
                     >

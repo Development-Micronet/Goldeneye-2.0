@@ -53,13 +53,8 @@ export interface QuotationFilters {
 }
 
 // 1. GET {{baseUrl}}/api/quotation/?page=1&page_size=10
-export const Getallquotations = async (
-  page: number = 1,
-  pageSize: number = 10
-): Promise<any> => {
-  const response = await apiClient.get(
-    `quotation/?page=${page}&page_size=${pageSize}`
-  );
+export const Getallquotations = async (page: number = 1, pageSize: number = 10): Promise<any> => {
+  const response = await apiClient.get(`quotation/?page=${page}&page_size=${pageSize}`);
   return await decryptResponseData(response.data);
 };
 
@@ -82,7 +77,7 @@ export const CreateQuotationJSON = async (payload: any): Promise<any> => {
 // 4. GET {{baseUrl}}/api/quotation/search/?...
 export const SearchQuotation = async (
   filters: QuotationFilters = {},
-  page: number = 1
+  page: number = 1,
 ): Promise<any> => {
   const params = new URLSearchParams();
   params.append("page", page.toString());
@@ -113,9 +108,7 @@ export const SearchQuotation = async (
     }
   });
 
-  const response = await apiClient.get(
-    `quotation/search/?${params.toString()}`
-  );
+  const response = await apiClient.get(`quotation/search/?${params.toString()}`);
   return await decryptResponseData(response.data);
 };
 
@@ -138,37 +131,28 @@ export const GetQuotation = async (id: number | string): Promise<any> => {
 };
 
 // 8. PUT {{baseUrl}}/api/quotation/update/{id}/
-export const UpdateQuotation = async (
-  id: number | string,
-  payload: any
-): Promise<any> => {
+export const UpdateQuotation = async (id: number | string, payload: any): Promise<any> => {
   const response = await apiClient.put(`quotation/update/${id}/`, payload);
   return await decryptResponseData(response.data);
 };
 
 // 9. GET {{baseUrl}}/api/quotation/images/{id}/download-kml/
 export const DownloadKml = async (
-  id: number | string
+  id: number | string,
 ): Promise<import("axios").AxiosResponse<Blob>> => {
-  const response = await apiClient.get(
-    `quotation/images/${id}/download-kml/`,
-    {
-      responseType: "blob",
-    }
-  );
+  const response = await apiClient.get(`quotation/images/${id}/download-kml/`, {
+    responseType: "blob",
+  });
   return response;
 };
 
 // 10. GET {{baseUrl}}/api/quotation/images/{id}/download-html/
 export const DownloadHtml = async (
-  id: number | string
+  id: number | string,
 ): Promise<import("axios").AxiosResponse<Blob>> => {
-  const response = await apiClient.get(
-    `quotation/images/${id}/download-html/`,
-    {
-      responseType: "blob",
-    }
-  );
+  const response = await apiClient.get(`quotation/images/${id}/download-html/`, {
+    responseType: "blob",
+  });
   return response;
 };
 
@@ -179,11 +163,7 @@ export const Fetchdata = async (): Promise<any> => {
 };
 
 // 12. PATCH quotation/set-verification/{quote_no}/
-export const verifyquotation = async (
-  quote_no: number | string
-): Promise<any> => {
-  const response = await apiClient.patch(
-    `quotation/set-verification/${quote_no}/`
-  );
+export const verifyquotation = async (quote_no: number | string): Promise<any> => {
+  const response = await apiClient.patch(`quotation/set-verification/${quote_no}/`);
   return await decryptResponseData(response.data);
 };

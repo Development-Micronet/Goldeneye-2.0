@@ -2,7 +2,12 @@ import React from "react";
 import { useAuthStore } from "../../../store/useAuthStore";
 
 export type TabType =
-  "company-requests" | "end-users" | "allocated-products" | "provider & Contracts" | "subscription" | "plan";
+  | "company-requests"
+  | "end-users"
+  | "allocated-products"
+  | "provider & Contracts"
+  | "subscription"
+  | "plan";
 
 interface TabConfig {
   value: TabType;
@@ -55,10 +60,11 @@ export const ManageNavbar: React.FC<ManageNavbarProps> = ({ activeTab, onTabChan
         <button
           key={tab.value}
           onClick={() => onTabChange(tab.value)}
-          className={`cursor-pointer border-none bg-transparent text-xs tracking-wide transition-colors sm:text-[0.8rem] ${activeTab === tab.value
-            ? "font-bold text-gray-900"
-            : "text-[#4B737A] hover:text-gray-950"
-            }`}
+          className={`cursor-pointer border-none bg-transparent text-xs tracking-wide transition-colors sm:text-[0.8rem] ${
+            activeTab === tab.value
+              ? "font-bold text-gray-900"
+              : "text-[#4B737A] hover:text-gray-950"
+          }`}
         >
           {tab.label}
         </button>

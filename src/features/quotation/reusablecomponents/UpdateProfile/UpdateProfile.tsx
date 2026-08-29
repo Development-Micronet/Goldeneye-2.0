@@ -49,9 +49,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
     if (countryvalue === isoCode) {
       return countryvalue;
     } else {
-      const country = Country.getAllCountries().find(
-        (c) => c.isoCode === isoCode
-      );
+      const country = Country.getAllCountries().find((c) => c.isoCode === isoCode);
       return country ? country.name : "";
     }
   };
@@ -99,7 +97,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
   const { mutate: updateProfile, isLoading } = usePostData(
     `customers/profile/${userProfile?.username}/`,
     ["update-user-profile", userName],
-    profileUpdatekey ? "profiledata" : ["user-profile", userName]
+    profileUpdatekey ? "profiledata" : ["user-profile", userName],
   );
 
   const initialValues = {
@@ -143,7 +141,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
     setIsSubmitted(true);
 
     const isSame = Object.keys(initialValues).every(
-      (key) => (initialValues as any)[key] === formData[key]
+      (key) => (initialValues as any)[key] === formData[key],
     );
 
     if (isSame) {
@@ -182,13 +180,8 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
       address: formData.address,
       locality: formData.locality,
       office_contact_number:
-        role === "superadmin" || role === "admin"
-          ? formData.officeContactNumber
-          : 0,
-      office_lan_number:
-        role === "superadmin" || role === "admin"
-          ? formData.officelanNumber
-          : 0,
+        role === "superadmin" || role === "admin" ? formData.officeContactNumber : 0,
+      office_lan_number: role === "superadmin" || role === "admin" ? formData.officelanNumber : 0,
       registration_number: formData.registrationNumber,
       pin: formData.pin,
     };
@@ -225,8 +218,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                 errorMessage += `${usernameErrors.join(", ")}`;
               }
               if (emailErrors.length > 0) {
-                errorMessage +=
-                  (errorMessage ? "\n" : "") + `${emailErrors.join(", ")}`;
+                errorMessage += (errorMessage ? "\n" : "") + `${emailErrors.join(", ")}`;
               }
               if (errorMessage) {
                 ModalManager.warning({
@@ -290,11 +282,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
       }
     }
 
-    if (
-      name !== "mobileNo" &&
-      name !== "officeContactNumber" &&
-      name !== "pin"
-    ) {
+    if (name !== "mobileNo" && name !== "officeContactNumber" && name !== "pin") {
       if (requiredFields.includes(name)) {
         if (value.trim().length > 0) {
           setInputError((prev: any) => ({ ...prev, [name]: null }));
@@ -302,36 +290,34 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
       }
     }
 
-    const updatedValue = lowercaseFields.includes(name)
-      ? value.toLowerCase()
-      : value;
+    const updatedValue = lowercaseFields.includes(name) ? value.toLowerCase() : value;
 
     setFormData((prevData: any) => ({ ...prevData, [name]: updatedValue }));
   };
 
   return (
-    <div className="h-full overflow-y-scroll bg-gray-100 p-6 mb-10">
-      <div className="flex items-center text-[#444444] font-inter text-[30px] font-semibold leading-[43.57px] text-left underline-from-font decoration-skip-ink-none">
+    <div className="mb-10 h-full overflow-y-scroll bg-gray-100 p-6">
+      <div className="font-inter underline-from-font decoration-skip-ink-none flex items-center text-left text-[30px] leading-[43.57px] font-semibold text-[#444444]">
         <button onClick={handleCancelClick} className="mr-2 pb-2">
-          <img src={leftarrow} alt="Back" className="w-7 h-7" />
+          <img src={leftarrow} alt="Back" className="h-7 w-7" />
         </button>
         Modify Your Account
       </div>
 
       <Spin spinning={isLoading} tip="Loading...">
-        <div className="bg-white p-6 rounded-lg shadow mt-6 mb-4">
+        <div className="mt-6 mb-4 rounded-lg bg-white p-6 shadow">
           <div className={`GECreateUsersForm w-full ${isBlurred ? "blurred" : ""}`}>
-            <div className="p-2 overflow-y-auto scrollbar-thin">
+            <div className="scrollbar-thin overflow-y-auto p-2">
               <CustomFieldsets legend="Personal Details">
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-3">
                   <div className="flex flex-col justify-center gap-1">
                     <label className="text-[.9rem]">
                       First Name
                       {requiredFields.includes("firstName") && (
-                        <span className="text-red-500 mx-1">*</span>
+                        <span className="mx-1 text-red-500">*</span>
                       )}
                       {inputError.firstName && (
-                        <span className="text-[.8rem] text-red-500 italic ml-[1rem]">
+                        <span className="ml-[1rem] text-[.8rem] text-red-500 italic">
                           {inputError.firstName}
                         </span>
                       )}
@@ -342,7 +328,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                       onChange={handleChange}
                       name="firstName"
                       placeholder="First Name"
-                      className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                      className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                     />
                   </div>
 
@@ -357,7 +343,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                       name="middleName"
                       id="middleName"
                       placeholder="Middle Name"
-                      className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                      className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                     />
                   </div>
 
@@ -365,7 +351,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                     <label htmlFor="lastName" className="text-[.9rem]">
                       Last Name
                       {requiredFields.includes("lastName") && (
-                        <span className="text-red-500 mx-1">*</span>
+                        <span className="mx-1 text-red-500">*</span>
                       )}
                     </label>
                     <input
@@ -375,7 +361,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                       name="lastName"
                       id="lastName"
                       placeholder="Last Name"
-                      className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                      className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                     />
                   </div>
 
@@ -388,7 +374,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                       id="gender"
                       value={formData.gender}
                       onChange={handleChange}
-                      className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                      className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                     >
                       <option value="">Choose Gender</option>
                       <option value="male">Male</option>
@@ -398,7 +384,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4 mt-4">
+                <div className="mt-4 grid gap-4 md:grid-cols-3">
                   <div className="flex flex-col justify-center gap-1">
                     <label htmlFor="mobileNo" className="text-[.9rem]">
                       Mobile No
@@ -410,7 +396,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                       name="mobileNo"
                       id="mobileNo"
                       placeholder="Enter Mobile No"
-                      className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                      className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                     />
                   </div>
 
@@ -425,7 +411,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                       value={formData.phoneLan}
                       onChange={handleChange}
                       placeholder="Enter LAN No"
-                      className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                      className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                     />
                   </div>
 
@@ -440,14 +426,14 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                       name="emailIdPersonal"
                       id="emailIdPersonal"
                       placeholder="Enter email id"
-                      className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                      className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                     />
                   </div>
                 </div>
               </CustomFieldsets>
 
               <CustomFieldsets legend="Official Details">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                   <div className="flex flex-col justify-center gap-1">
                     <label htmlFor="organization" className="text-[.9rem]">
                       Organization
@@ -460,7 +446,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                       name="organization"
                       id="organization"
                       placeholder="Enter Organization Name"
-                      className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem] disabled:cursor-not-allowed"
+                      className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none disabled:cursor-not-allowed"
                     />
                   </div>
 
@@ -475,7 +461,7 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                       name="designation"
                       id="designation"
                       placeholder="Enter Designation"
-                      className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                      className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                     />
                   </div>
 
@@ -490,24 +476,24 @@ const UpdateProfile: React.FC<UpdateProfileProps> = ({
                       name="department"
                       id="department"
                       placeholder="Enter Department"
-                      className="border-[.12rem] rounded-md focus:border-[#036aa1] focus:outline-none px-2 py-[.41rem]"
+                      className="rounded-md border-[.12rem] px-2 py-[.41rem] focus:border-[#036aa1] focus:outline-none"
                     />
                   </div>
                 </div>
               </CustomFieldsets>
 
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="mt-6 flex justify-end gap-3">
                 <CustomBtn
                   type="button"
                   label="Cancel"
                   onClick={handleCancelClick}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                  className="rounded-lg bg-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-400"
                 />
                 <CustomBtn
                   type="button"
                   label="Submit"
                   onClick={handleSubmit}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                  className="bg-primary-600 hover:bg-primary-700 rounded-lg px-4 py-2 text-white"
                 />
               </div>
             </div>

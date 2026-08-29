@@ -14,10 +14,7 @@ export const useCustomers = (enabled = true) => {
 
       const encryptedResponse = await getCustomers();
 
-      const decrypted = (await decryptAESGCM(
-        encryptedResponse.data,
-        token
-      )) as CustomersResponse;
+      const decrypted = (await decryptAESGCM(encryptedResponse.data, token)) as CustomersResponse;
 
       return decrypted.data.customers; // Returns: Customer[]
     },

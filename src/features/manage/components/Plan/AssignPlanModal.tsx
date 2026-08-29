@@ -36,7 +36,7 @@ export const AssignPlanModal = ({ open, mode, plan, onClose }: Props) => {
     if (!plan) return [];
 
     // Build a map of schema_name -> TenantPlanRow for lookup
-    const tenantPlanMap = new Map<string, typeof tenantPlans[0]>();
+    const tenantPlanMap = new Map<string, (typeof tenantPlans)[0]>();
     tenantPlans.forEach((tp) => tenantPlanMap.set(tp.schema_name, tp));
 
     if (isAssign) {
@@ -113,15 +113,15 @@ export const AssignPlanModal = ({ open, mode, plan, onClose }: Props) => {
             autoClose: 3000,
           });
         },
-      }
+      },
     );
   };
 
   const isLoading = loadingCustomers || loadingTenantPlans;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fadeIn">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-100 select-none">
+    <div className="animate-fadeIn fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+      <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl select-none">
         <div className="mb-5 flex items-center justify-between border-b border-gray-100 pb-3">
           <div className="flex items-center gap-2">
             <Award className="h-5 w-5 text-[#2c6671]" />
@@ -131,7 +131,7 @@ export const AssignPlanModal = ({ open, mode, plan, onClose }: Props) => {
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition cursor-pointer"
+            className="cursor-pointer rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
           >
             <X className="h-4 w-4" />
           </button>
@@ -147,16 +147,16 @@ export const AssignPlanModal = ({ open, mode, plan, onClose }: Props) => {
               value={schemaName}
               onChange={(e) => setSchemaName(e.target.value)}
               disabled={isLoading}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-xs font-medium text-gray-800 outline-none transition focus:border-[#2c6671] focus:bg-white focus:ring-1 focus:ring-[#2c6671] disabled:opacity-60 cursor-pointer"
+              className="w-full cursor-pointer rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-xs font-medium text-gray-800 transition outline-none focus:border-[#2c6671] focus:bg-white focus:ring-1 focus:ring-[#2c6671] disabled:opacity-60"
             >
               <option value="">
                 {isLoading
                   ? "Loading companies..."
                   : selectableCompanies.length === 0
-                  ? isAssign
-                    ? "No unassigned company available (all companies already have an assigned plan)"
-                    : "No company currently assigned to this plan"
-                  : "Select company..."}
+                    ? isAssign
+                      ? "No unassigned company available (all companies already have an assigned plan)"
+                      : "No company currently assigned to this plan"
+                    : "Select company..."}
               </option>
               {selectableCompanies.map((c) => (
                 <option key={c.id} value={c.schema_name}>
@@ -166,11 +166,11 @@ export const AssignPlanModal = ({ open, mode, plan, onClose }: Props) => {
             </select>
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
+          <div className="flex justify-end gap-2.5 border-t border-gray-100 pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+              className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
             >
               Cancel
             </button>
@@ -179,10 +179,8 @@ export const AssignPlanModal = ({ open, mode, plan, onClose }: Props) => {
               onClick={handleSubmit}
               disabled={mutation.isPending || selectableCompanies.length === 0 || !schemaName}
               className={`rounded-xl px-4 py-2 text-xs font-bold text-white shadow-xs transition ${
-                isAssign
-                  ? "bg-[#2c6671] hover:bg-[#1f4e57]"
-                  : "bg-rose-600 hover:bg-rose-700"
-              } disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
+                isAssign ? "bg-[#2c6671] hover:bg-[#1f4e57]" : "bg-rose-600 hover:bg-rose-700"
+              } cursor-pointer disabled:cursor-not-allowed disabled:opacity-50`}
             >
               {mutation.isPending ? "Processing..." : isAssign ? "Assign Plan" : "Unassign Plan"}
             </button>

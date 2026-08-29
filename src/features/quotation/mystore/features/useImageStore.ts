@@ -6,9 +6,7 @@ const normalizeImage = (img: any = {}) => ({
   file: img.file || null,
   dataUrl: img.dataUrl || null,
   caption: img.caption || "Map Screenshot",
-  supportingfiles: Array.isArray(img.supportingfiles)
-    ? img.supportingfiles
-    : [],
+  supportingfiles: Array.isArray(img.supportingfiles) ? img.supportingfiles : [],
 });
 
 const syncToStorage = (images: any[]) => {
@@ -92,7 +90,7 @@ export const useImageStore = create<ImageStore>((set) => ({
       if (!img) return state;
 
       const updatedSupporting = (img.supportingfiles || []).filter(
-        (f: any) => f.fileType !== fileType
+        (f: any) => f.fileType !== fileType,
       );
 
       const newImages = [...state.images];

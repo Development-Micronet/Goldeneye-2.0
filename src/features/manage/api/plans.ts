@@ -56,7 +56,6 @@ export interface EncryptedResponse {
   data: string;
 }
 
-
 // standard API request (No Decryption here)
 export const getPlans = async (): Promise<EncryptedResponse> => {
   const { data } = await apiClient.get<EncryptedResponse>("plans/");
@@ -73,12 +72,18 @@ export const deletePlan = async (planId: number): Promise<void> => {
   await apiClient.delete(`plans/${planId}/`);
 };
 
-export const updatePlan = async (planId: number, planData: Partial<CreatePlanDto>): Promise<Plan> => {
+export const updatePlan = async (
+  planId: number,
+  planData: Partial<CreatePlanDto>,
+): Promise<Plan> => {
   const { data } = await apiClient.patch<Plan>(`plans/${planId}/`, planData);
   return data;
 };
 
-export const assignPlan = async (planId: number, payload: { schema_name: string }): Promise<any> => {
+export const assignPlan = async (
+  planId: number,
+  payload: { schema_name: string },
+): Promise<any> => {
   const { data } = await apiClient.post<any>(`plans/${planId}/assign/`, payload);
   return data;
 };
@@ -90,9 +95,7 @@ export const assignPlan = async (planId: number, payload: { schema_name: string 
 
 export const getMyPlan = async (): Promise<MyPlanResponse | null> => {
   try {
-    const { data } = await apiClient.get<MyPlanResponse>(
-      "plans/my-plan/"
-    );
+    const { data } = await apiClient.get<MyPlanResponse>("plans/my-plan/");
 
     return data;
   } catch (error: any) {
@@ -109,4 +112,3 @@ export const unassignPlan = async (planId: number, schemaName: string): Promise<
   const { data } = await apiClient.delete<any>(`plans/${planId}/assign/${schemaName}/`);
   return data;
 };
-

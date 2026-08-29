@@ -38,20 +38,22 @@ export const useQuotationItemStore = create<QuotationItemStore>((set) => ({
 
   addQuotationItem: (newItemPayload) =>
     set((state) => {
-      const item: QuotationItem = newItemPayload ? { ...newItemPayload } as QuotationItem : {
-        item: "",
-        unit: "Sqkm",
-        area: "",
-        price: 0,
-        amount: 0,
-        cloud_cover: 10,
-        angle: "",
-        date: "",
-        geometricprocessing: "",
-        spectralbands: "",
-        task_type: "",
-        techSpecs: buildTechSpecs(""),
-      };
+      const item: QuotationItem = newItemPayload
+        ? ({ ...newItemPayload } as QuotationItem)
+        : {
+            item: "",
+            unit: "Sqkm",
+            area: "",
+            price: 0,
+            amount: 0,
+            cloud_cover: 10,
+            angle: "",
+            date: "",
+            geometricprocessing: "",
+            spectralbands: "",
+            task_type: "",
+            techSpecs: buildTechSpecs(""),
+          };
 
       item.amount = calculateAmount(item.area, item.price);
       if (!item.techSpecs) {
@@ -71,15 +73,11 @@ export const useQuotationItemStore = create<QuotationItemStore>((set) => ({
       if (field === "area" || field === "price") {
         updatedItem.amount = calculateAmount(updatedItem.area, updatedItem.price);
       }
-      if (
-        field === "geometricprocessing" ||
-        field === "spectralbands" ||
-        field === "task_type"
-      ) {
+      if (field === "geometricprocessing" || field === "spectralbands" || field === "task_type") {
         updatedItem.techSpecs = buildTechSpecs(
           updatedItem.item,
           updatedItem.geometricprocessing,
-          updatedItem.spectralbands
+          updatedItem.spectralbands,
         );
       }
 
@@ -134,9 +132,7 @@ export const useQuotationItemStore = create<QuotationItemStore>((set) => ({
 
       const updatedList = [...state.quotationItem];
       const updatedItem = { ...updatedList[index] };
-      updatedItem.techSpecs = (updatedItem.techSpecs || []).filter(
-        (_, i) => i !== specIndex
-      );
+      updatedItem.techSpecs = (updatedItem.techSpecs || []).filter((_, i) => i !== specIndex);
       updatedList[index] = updatedItem;
 
       return { quotationItem: updatedList };

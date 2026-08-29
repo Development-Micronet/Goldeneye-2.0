@@ -8,12 +8,12 @@ interface CustomFieldsetsProps {
 
 const CustomFieldsets: React.FC<CustomFieldsetsProps> = ({ legend, children }) => {
   return (
-    <fieldset className="rounded-lg px-3 pb-2 w-full bg-white">
-      <legend className="font-inter text-[17px] font-bold leading-[20.57px] text-left underline-from-font decoration-skip-ink-none">
+    <fieldset className="w-full rounded-lg bg-white px-3 pb-2">
+      <legend className="font-inter underline-from-font decoration-skip-ink-none text-left text-[17px] leading-[20.57px] font-bold">
         {legend}
       </legend>
       <div className="space-y-4">{children}</div>
-      <hr className="border-t border-gray-500 mt-4" />
+      <hr className="mt-4 border-t border-gray-500" />
     </fieldset>
   );
 };

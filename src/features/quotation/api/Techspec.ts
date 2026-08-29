@@ -35,7 +35,7 @@ const requestWithFallback = async (
   method: "get" | "post" | "put" | "delete",
   pathSuffix: string,
   dataOrParams?: any,
-  config?: any
+  config?: any,
 ) => {
   const primaryPath = `product-tech-image/${pathSuffix}`;
   const fallbackPath = `products/product-tech-image/${pathSuffix}`;
@@ -122,10 +122,7 @@ export const GetTechspecById = async (id: number | string): Promise<any> => {
 };
 
 // 4. PUT product-tech-image/{id}/
-export const UpdateTechspec = async (
-  id: number | string,
-  formData: FormData
-): Promise<any> => {
+export const UpdateTechspec = async (id: number | string, formData: FormData): Promise<any> => {
   const response = await requestWithFallback("put", `${id}/`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",

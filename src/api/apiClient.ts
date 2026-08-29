@@ -1,8 +1,4 @@
-import axios, {
-  type AxiosError,
-  type AxiosInstance,
-  type InternalAxiosRequestConfig,
-} from "axios";
+import axios, { type AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from "axios";
 
 import { useAuthStore } from "../store/useAuthStore";
 import { useMapStore } from "../features/data/store/useMapStore";
@@ -65,9 +61,7 @@ apiClient.interceptors.response.use(
       useMapStore.getState().clearMapState();
     }
 
-    logger.error(
-      `[API Error] [${status ?? "Network"}]: ${error.message}`,
-    );
+    logger.error(`[API Error] [${status ?? "Network"}]: ${error.message}`);
 
     return Promise.reject(error);
   },

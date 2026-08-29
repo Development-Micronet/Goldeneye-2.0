@@ -172,8 +172,9 @@ export default function LocationSearch() {
     >
       {/* Input row */}
       <div
-        className={`focus-within:border-primary focus-within:ring-primary/30 border-primary/25 flex items-center overflow-hidden border bg-white/95 shadow-md backdrop-blur transition-all duration-150 focus-within:ring-1 ${panelOpen ? "rounded-t-xl" : "rounded-xl"
-          }`}
+        className={`focus-within:border-primary focus-within:ring-primary/30 border-primary/25 flex items-center overflow-hidden border bg-white/95 shadow-md backdrop-blur transition-all duration-150 focus-within:ring-1 ${
+          panelOpen ? "rounded-t-xl" : "rounded-xl"
+        }`}
       >
         {/* Search icon */}
         <span aria-hidden className="text-primary flex shrink-0 items-center pr-1.5 pl-3.5">
@@ -202,9 +203,7 @@ export default function LocationSearch() {
           aria-autocomplete="list"
           aria-controls="location-search-results"
           aria-busy={isLoading}
-          aria-activedescendant={
-            activeIndex >= 0 ? `location-result-${activeIndex}` : undefined
-          }
+          aria-activedescendant={activeIndex >= 0 ? `location-result-${activeIndex}` : undefined}
           placeholder="Search for a location..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -286,10 +285,11 @@ export default function LocationSearch() {
                     e.preventDefault();
                     selectResult(result);
                   }}
-                  className={`flex cursor-pointer items-start gap-2.5 px-3.5 py-2.5 transition-colors duration-100 ${activeIndex === i
-                    ? "bg-primary-100 text-primary"
-                    : "hover:bg-primary-100/60 text-slate-800"
-                    }`}
+                  className={`flex cursor-pointer items-start gap-2.5 px-3.5 py-2.5 transition-colors duration-100 ${
+                    activeIndex === i
+                      ? "bg-primary-100 text-primary"
+                      : "hover:bg-primary-100/60 text-slate-800"
+                  }`}
                 >
                   <span className="text-primary mt-0.5 shrink-0">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
@@ -310,8 +310,6 @@ export default function LocationSearch() {
               ))}
             </ul>
           )}
-
-         
         </div>
       )}
     </div>

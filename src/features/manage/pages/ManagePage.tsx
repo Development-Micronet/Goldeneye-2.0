@@ -59,7 +59,6 @@ export const ManagePage: React.FC = () => {
     }
   };
 
-
   // Edit Action Handlers
   const handleEditRequest = (customer: Customer) => {
     Swal.fire({
@@ -79,7 +78,6 @@ export const ManagePage: React.FC = () => {
     setSelectedPlan(plan);
     setShowPlanModal(true); // Edit details ke sath modal open karein
   };
-
 
   // Delete Action Handlers
   const handleDeleteRequest = async (id: number) => {
@@ -124,17 +122,19 @@ export const ManagePage: React.FC = () => {
               {activeTab === "plan" && (roleName === "admin" ? "My Plan" : "Manage Plans")}
             </h2>
 
-            {activeTab !== "end-users" && activeTab !== "company-requests" && !(activeTab === "plan" && roleName === "admin") && (
-              <button
-                onClick={handleAddItem}
-                className="bg-primary cursor-pointer self-start rounded-full px-4 py-1.5 text-[11px] font-medium text-white shadow-sm transition-colors select-none hover:bg-[#1F4E57] active:scale-[0.98] sm:self-center sm:px-5 sm:text-xs"
-              >
-                {/* {activeTab === "company-requests" && "Add Request"} */}
-                {activeTab === "provider & Contracts" && "Add Provider"}
-                {activeTab === "subscription" && "Add Subscription"}
-                {activeTab === "plan" && "Add Plan"}
-              </button>
-            )}
+            {activeTab !== "end-users" &&
+              activeTab !== "company-requests" &&
+              !(activeTab === "plan" && roleName === "admin") && (
+                <button
+                  onClick={handleAddItem}
+                  className="bg-primary cursor-pointer self-start rounded-full px-4 py-1.5 text-[11px] font-medium text-white shadow-sm transition-colors select-none hover:bg-[#1F4E57] active:scale-[0.98] sm:self-center sm:px-5 sm:text-xs"
+                >
+                  {/* {activeTab === "company-requests" && "Add Request"} */}
+                  {activeTab === "provider & Contracts" && "Add Provider"}
+                  {activeTab === "subscription" && "Add Subscription"}
+                  {activeTab === "plan" && "Add Plan"}
+                </button>
+              )}
           </div>
 
           {/* Render Active Table Component */}
@@ -172,14 +172,8 @@ export const ManagePage: React.FC = () => {
         />
       )}
       {activeTab === "plan" && (
-        <PlanFormModal
-          open={showPlanModal}
-          onClose={handleClosePlanModal}
-          plan={selectedPlan}
-        />
-
+        <PlanFormModal open={showPlanModal} onClose={handleClosePlanModal} plan={selectedPlan} />
       )}
     </div>
   );
 };
-

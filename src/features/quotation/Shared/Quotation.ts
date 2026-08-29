@@ -25,7 +25,8 @@ export const CLS: {
     "text-xs font-black uppercase tracking-widest text-[#2c6671] flex items-center gap-1.5",
   divider: "border-t border-gray-200 my-2.5",
   card: "rounded-xl border border-gray-200 bg-white p-3.5 mt-2.5 shadow-xs",
-  badge: "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-[#2c6671]/10 text-[#2c6671]",
+  badge:
+    "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-[#2c6671]/10 text-[#2c6671]",
 };
 export const TODAY: string = new Date().toISOString().split("T")[0];
 export const COMPANY_HEADERS = [

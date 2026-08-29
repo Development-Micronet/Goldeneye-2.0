@@ -21,9 +21,7 @@ const captureMapCanvas = (): string | null => {
 
     if (!viewport) return null;
 
-    const canvases = Array.from(
-      viewport.querySelectorAll("canvas")
-    ) as HTMLCanvasElement[];
+    const canvases = Array.from(viewport.querySelectorAll("canvas")) as HTMLCanvasElement[];
 
     if (!canvases || canvases.length === 0) return null;
 
@@ -43,9 +41,7 @@ const captureMapCanvas = (): string | null => {
     let drawnCount = 0;
     canvases.forEach((canvas) => {
       if (canvas.width > 0 && canvas.height > 0) {
-        const opacity = canvas.style.opacity
-          ? parseFloat(canvas.style.opacity)
-          : 1;
+        const opacity = canvas.style.opacity ? parseFloat(canvas.style.opacity) : 1;
         ctx.globalAlpha = isNaN(opacity) ? 1 : opacity;
 
         const rect = canvas.getBoundingClientRect();
@@ -65,7 +61,7 @@ const captureMapCanvas = (): string | null => {
   } catch (e: any) {
     if (e?.name === "SecurityError") {
       console.warn(
-        "Direct map canvas capture tainted by CORS tiles, switching to display media capture fallback."
+        "Direct map canvas capture tainted by CORS tiles, switching to display media capture fallback.",
       );
     } else {
       console.error("Direct map canvas capture error:", e);

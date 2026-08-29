@@ -10,18 +10,17 @@ interface StkeyButtonProps {
   isDraggable?: boolean;
 }
 
-const StkeyButton: React.FC<StkeyButtonProps> = ({
-  className,
-  icon,
-  isDraggable = true,
-}) => {
+const StkeyButton: React.FC<StkeyButtonProps> = ({ className, icon, isDraggable = true }) => {
   const handleGoBack = () => {
     window.history.back();
   };
 
   const ButtonContent = (
     <button
-      className={className || "px-3 py-2 bg-[#2c6671] text-white hover:bg-[#204e57] rounded-lg shadow font-medium transition-colors stkey-button"}
+      className={
+        className ||
+        "stkey-button rounded-lg bg-[#2c6671] px-3 py-2 font-medium text-white shadow transition-colors hover:bg-[#204e57]"
+      }
       title="Back"
       onClick={handleGoBack}
     >
@@ -29,11 +28,7 @@ const StkeyButton: React.FC<StkeyButtonProps> = ({
     </button>
   );
 
-  return isDraggable ? (
-    <Draggable bounds="parent">{ButtonContent}</Draggable>
-  ) : (
-    ButtonContent
-  );
+  return isDraggable ? <Draggable bounds="parent">{ButtonContent}</Draggable> : ButtonContent;
 };
 
 export default StkeyButton;

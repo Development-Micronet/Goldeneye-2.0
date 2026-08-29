@@ -49,7 +49,7 @@ const openModal = (config: any): Promise<{ isConfirmed: boolean }> => {
         confirmButtonText={config.confirmButtonText}
         cancelButtonText={config.cancelButtonText}
       />,
-      modalDiv
+      modalDiv,
     );
   });
 };

@@ -47,9 +47,7 @@ export default function Navbar() {
 
   const hasAnalytics =
     roleName === "superadmin" ||
-    allowedServices.some(
-      (service) => service?.toLowerCase() === "analytics"
-    );
+    allowedServices.some((service) => service?.toLowerCase() === "analytics");
   // Search location handler using Nominatim API
   const searchPlaces = async (query: string) => {
     if (!query.trim()) {
@@ -60,7 +58,7 @@ export default function Navbar() {
     setIsSearchingLocation(true);
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`,
       );
       if (response.ok) {
         const data = await response.json();
@@ -117,7 +115,7 @@ export default function Navbar() {
 
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`,
       );
       if (response.ok) {
         const data = await response.json();
@@ -156,7 +154,8 @@ export default function Navbar() {
     setIsQuotationDropdownOpen(false);
   };
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-xs lg:text-sm font-medium transition-colors ${isActive ? "text-white " : "text-nav-inactive hover:text-white"
+    `text-xs lg:text-sm font-medium transition-colors ${
+      isActive ? "text-white " : "text-nav-inactive hover:text-white"
     }`;
 
   // Close profile dropdown when clicking outside
@@ -203,7 +202,7 @@ export default function Navbar() {
       if (Array.isArray(archiveProducts) && archiveProducts.length > 0) {
         return { hasProducts: true, data: archiveProducts };
       }
-    } catch { }
+    } catch {}
 
     // 2. Check useProductStore
     try {
@@ -211,7 +210,7 @@ export default function Navbar() {
       if (Array.isArray(zustandItems) && zustandItems.length > 0) {
         return { hasProducts: true, data: zustandItems };
       }
-    } catch { }
+    } catch {}
 
     // 3. Check sessionStorage storedCheckedProductList
     const rawData = sessionStorage.getItem("storedCheckedProductList");
@@ -250,7 +249,7 @@ export default function Navbar() {
         ) {
           return { hasProducts: true, data: parsed };
         }
-      } catch { }
+      } catch {}
     }
 
     return { hasProducts: false, data: {} };
@@ -263,7 +262,7 @@ export default function Navbar() {
     acquisitionDate: string,
     base64Image: any,
     screenshotImage: any,
-    area: any
+    area: any,
   ) => {
     if (!data) return [];
     const result: any[] = [];
@@ -356,9 +355,7 @@ export default function Navbar() {
 
   const handleAddQuotation = async () => {
     if (location.pathname !== "/data") {
-      toast.info(
-        "Please go to the Data page to select products and add to quotation."
-      );
+      toast.info("Please go to the Data page to select products and add to quotation.");
       navigate("/data");
       return;
     }
@@ -366,9 +363,7 @@ export default function Navbar() {
     const { hasProducts, data } = checkHasSelectedProducts();
 
     if (!hasProducts) {
-      toast.warn(
-        "Please draw an AOI on the map and select products from search results first."
-      );
+      toast.warn("Please draw an AOI on the map and select products from search results first.");
       return;
     }
 
@@ -393,7 +388,7 @@ export default function Navbar() {
       otherData?.acquisitionDate || "",
       null,
       null,
-      sessionStorage.getItem("area") || otherData?.area || ""
+      sessionStorage.getItem("area") || otherData?.area || "",
     );
 
     setQuotationItems([...quotationItem, ...formattedItems]);
@@ -402,8 +397,6 @@ export default function Navbar() {
     toast.success("✅ Products added to quotation successfully!");
   };
 
-
-
   const username = user?.user || "user";
   const initial = username[0]?.toUpperCase() || "U";
   // Filter navigation items based on user's roleName
@@ -411,7 +404,6 @@ export default function Navbar() {
     if (item.label === "Analytics") {
       return hasAnalytics;
     }
-
 
     return true;
   });
@@ -438,32 +430,35 @@ export default function Navbar() {
                   <div
                     key={item.path}
                     ref={quotationDropdownRef}
-                    className="relative inline-block group"
+                    className="group relative inline-block"
                   >
                     <button
                       type="button"
                       onClick={() => setIsQuotationDropdownOpen((prev) => !prev)}
-                      className={`flex items-center gap-1 text-xs lg:text-sm font-medium transition-colors cursor-pointer ${location.pathname.includes("/quotation")
-                        ? "text-white font-bold"
-                        : "text-nav-inactive hover:text-white"
-                        }`}
+                      className={`flex cursor-pointer items-center gap-1 text-xs font-medium transition-colors lg:text-sm ${
+                        location.pathname.includes("/quotation")
+                          ? "font-bold text-white"
+                          : "text-nav-inactive hover:text-white"
+                      }`}
                     >
                       <span>Quotation</span>
                       <ChevronDown
-                        className={`h-3.5 w-3.5 transition-transform duration-200 ${isQuotationDropdownOpen ? "rotate-180" : ""
-                          }`}
+                        className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                          isQuotationDropdownOpen ? "rotate-180" : ""
+                        }`}
                       />
                     </button>
 
                     <div
-                      className={`absolute top-full left-0 mt-1.5 w-48 rounded-xl bg-white shadow-xl border border-gray-100 py-1.5 z-50 transition-all ${isQuotationDropdownOpen ? "block" : "hidden group-hover:block"
-                        }`}
+                      className={`absolute top-full left-0 z-50 mt-1.5 w-48 rounded-xl border border-gray-100 bg-white py-1.5 shadow-xl transition-all ${
+                        isQuotationDropdownOpen ? "block" : "hidden group-hover:block"
+                      }`}
                     >
                       <div className="py-1">
                         <NavLink
                           to="/quotation"
                           onClick={() => setIsQuotationDropdownOpen(false)}
-                          className="block px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#2c6671]/10 hover:text-[#2c6671] transition-colors"
+                          className="block px-4 py-2.5 text-xs font-bold text-gray-700 transition-colors hover:bg-[#2c6671]/10 hover:text-[#2c6671]"
                         >
                           See All Quotations
                         </NavLink>
@@ -474,7 +469,7 @@ export default function Navbar() {
                             setIsQuotationDropdownOpen(false);
                             handleAddQuotation();
                           }}
-                          className="w-full text-left block px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#2c6671]/10 hover:text-[#2c6671] cursor-pointer transition-colors"
+                          className="block w-full cursor-pointer px-4 py-2.5 text-left text-xs font-bold text-gray-700 transition-colors hover:bg-[#2c6671]/10 hover:text-[#2c6671]"
                         >
                           Add Quotation Item
                         </button>
@@ -519,9 +514,9 @@ export default function Navbar() {
 
               {/* Search Results Dropdown */}
               {showSearchDropdown && (
-                <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-full min-w-[240px] max-w-[320px] rounded-lg border border-gray-200 bg-white py-1 shadow-2xl max-h-60 overflow-y-auto text-xs">
+                <div className="absolute top-[calc(100%+6px)] left-0 z-50 max-h-60 w-full max-w-[320px] min-w-[240px] overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 text-xs shadow-2xl">
                   {isSearchingLocation ? (
-                    <div className="px-3 py-2 text-gray-400 text-center text-xs">
+                    <div className="px-3 py-2 text-center text-xs text-gray-400">
                       Searching places...
                     </div>
                   ) : searchResults.length > 0 ? (
@@ -532,21 +527,21 @@ export default function Navbar() {
                           e.preventDefault();
                           handleSelectLocation(item);
                         }}
-                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-start gap-2 border-b border-gray-100 last:border-0"
+                        className="flex cursor-pointer items-start gap-2 border-b border-gray-100 px-3 py-2 last:border-0 hover:bg-gray-100"
                       >
-                        <MapPin className="h-3.5 w-3.5 text-[#2c6671] shrink-0 mt-0.5" />
+                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2c6671]" />
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-gray-900 truncate">
+                          <p className="truncate font-semibold text-gray-900">
                             {item.display_name.split(",")[0]}
                           </p>
-                          <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                          <p className="mt-0.5 truncate text-[10px] text-gray-500">
                             {item.display_name}
                           </p>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="px-3 py-2 text-gray-400 text-center text-xs">
+                    <div className="px-3 py-2 text-center text-xs text-gray-400">
                       No places found
                     </div>
                   )}
@@ -554,8 +549,6 @@ export default function Navbar() {
               )}
             </div>
           )}
-
-
 
           {/* User Profile Container with Click Trigger */}
           <div className="profile-menu-container relative">
@@ -650,15 +643,17 @@ export default function Navbar() {
                   <div key={item.path} className="flex flex-col gap-2">
                     <div
                       onClick={() => setIsQuotationDropdownOpen((prev) => !prev)}
-                      className={`flex items-center justify-between text-xs lg:text-sm font-medium cursor-pointer ${location.pathname.includes("/quotation")
-                        ? "text-white font-bold"
-                        : "text-nav-inactive hover:text-white"
-                        }`}
+                      className={`flex cursor-pointer items-center justify-between text-xs font-medium lg:text-sm ${
+                        location.pathname.includes("/quotation")
+                          ? "font-bold text-white"
+                          : "text-nav-inactive hover:text-white"
+                      }`}
                     >
                       <span>Quotation</span>
                       <ChevronDown
-                        className={`h-4 w-4 transition-transform ${isQuotationDropdownOpen ? "rotate-180" : ""
-                          }`}
+                        className={`h-4 w-4 transition-transform ${
+                          isQuotationDropdownOpen ? "rotate-180" : ""
+                        }`}
                       />
                     </div>
                     {isQuotationDropdownOpen && (
@@ -666,7 +661,7 @@ export default function Navbar() {
                         <NavLink
                           to="/quotation"
                           onClick={closeMenu}
-                          className="text-white hover:underline font-semibold"
+                          className="font-semibold text-white hover:underline"
                         >
                           See All Quotations
                         </NavLink>
@@ -676,7 +671,7 @@ export default function Navbar() {
                             closeMenu();
                             handleAddQuotation();
                           }}
-                          className="text-left text-white hover:underline font-semibold"
+                          className="text-left font-semibold text-white hover:underline"
                         >
                           Add Quotation Item
                         </button>
@@ -693,8 +688,6 @@ export default function Navbar() {
               );
             })}
 
-
-
             {/* Mobile User Profile */}
             <div className="profile-menu-container mt-1 border-t border-[#1f4e57] pt-3">
               <div
@@ -708,8 +701,9 @@ export default function Navbar() {
                   </div>
                 </div>
                 <ChevronDown
-                  className={`h-4 w-4 text-white transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""
-                    }`}
+                  className={`h-4 w-4 text-white transition-transform duration-200 ${
+                    isProfileOpen ? "rotate-180" : ""
+                  }`}
                 />
               </div>
 

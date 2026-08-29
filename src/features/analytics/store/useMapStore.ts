@@ -67,8 +67,7 @@ export const useMapStore = create<MapStore>()(
       setMapMode: (mode) => set({ mapMode: mode }, false, "map/setMapMode"),
       setMaptype: (type) => set({ Maptype: type }, false, "map/setMaptype"),
       setActiveDrawTool: (tool) => set({ activeDrawTool: tool }, false, "map/setActiveDrawTool"),
-      setBuildingColor: (color) =>
-        set({ buildingColor: color }, false, "map/setBuildingColor"),
+      setBuildingColor: (color) => set({ buildingColor: color }, false, "map/setBuildingColor"),
     }),
     {
       name: "MapStore",

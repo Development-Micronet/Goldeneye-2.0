@@ -77,25 +77,19 @@ export interface EncryptedResponse {
  * GET
  * /api/dashboard/tenant-superusers/
  */
-export const getTenantSuperusers =
-  async (): Promise<EncryptedResponse> => {
-    const { data } = await apiClient.get<EncryptedResponse>(
-      "dashboard/tenant-company/"
-    );
+export const getTenantSuperusers = async (): Promise<EncryptedResponse> => {
+  const { data } = await apiClient.get<EncryptedResponse>("dashboard/tenant-company/");
 
-    return data;
-  };
+  return data;
+};
 
 /**
  * GET
  * /api/dashboard/tenant-superusers/{schema_name}/users/
  */
-export const getCompanyUsers = async (
-  schemaName: string
-): Promise<EncryptedResponse> => {
+export const getCompanyUsers = async (schemaName: string): Promise<EncryptedResponse> => {
   const { data } = await apiClient.get<EncryptedResponse>(
-    `dashboard/tenant-company/${schemaName}/users/`
-
+    `dashboard/tenant-company/${schemaName}/users/`,
   );
 
   return data;
@@ -123,7 +117,10 @@ export const deleteUser = async (userId: number): Promise<any> => {
  * PATCH
  * /api/tenants/users/{user_id}/
  */
-export const updateCompanyUser = async (userId: number, payload: Partial<CompanyUser>): Promise<any> => {
+export const updateCompanyUser = async (
+  userId: number,
+  payload: Partial<CompanyUser>,
+): Promise<any> => {
   const { data } = await apiClient.patch(`tenants/users/${userId}/`, payload);
   return data;
 };
@@ -131,12 +128,8 @@ export const updateCompanyUser = async (userId: number, payload: Partial<Company
  * POST
  * /api/tenants/customer/{company_id}/delete/
  */
-export const deleteCompany = async (
-  company_id: number
-): Promise<any> => {
-  const { data } = await apiClient.post(
-    `tenants/customer/${company_id}/delete/`
-  );
+export const deleteCompany = async (company_id: number): Promise<any> => {
+  const { data } = await apiClient.post(`tenants/customer/${company_id}/delete/`);
 
   return data;
 };
@@ -146,8 +139,6 @@ export const deleteCompany = async (
  * /api/dashboard/tenant-plans/
  */
 export const getTenantPlans = async (): Promise<EncryptedResponse> => {
-  const { data } = await apiClient.get<EncryptedResponse>(
-    "dashboard/tenant-plans/"
-  );
+  const { data } = await apiClient.get<EncryptedResponse>("dashboard/tenant-plans/");
   return data;
 };

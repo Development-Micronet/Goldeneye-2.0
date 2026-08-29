@@ -14,10 +14,7 @@ interface UserProfileProps {
   userProfile?: any;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({
-  userProfile,
-  ref,
-}) => {
+const UserProfile: React.FC<UserProfileProps> = ({ userProfile, ref }) => {
   const { user, logout } = useUser();
   const navigate = useNavigate();
   const { handleClearAll, closeModifylayer } = useSearchMap();
@@ -40,7 +37,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       if (response) {
         logout();
@@ -56,7 +53,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
     const roleName = encodeURIComponent(user?.roleName || "");
     const accessToken = encodeURIComponent(user?.access || "");
     navigate(
-      `/ChangePassword?username=${username}&roleName=${roleName}&accessToken=${accessToken}`
+      `/ChangePassword?username=${username}&roleName=${roleName}&accessToken=${accessToken}`,
     );
   };
 
@@ -66,38 +63,27 @@ const UserProfile: React.FC<UserProfileProps> = ({
 
   return (
     <div>
-      <div className="modern-card bg-transparent " ref={ref}>
+      <div className="modern-card bg-transparent" ref={ref}>
         <div className="flex justify-end px-[1.5rem]">
           <svg width="20" height="10" viewBox="0 0 20 10">
             <polygon points="10,0 20,10 0,10" fill="white" />
           </svg>
         </div>
-        <div className=" bg-white p-2 rounded-lg ">
+        <div className="rounded-lg bg-white p-2">
           <header className="p-3 text-center">
             <div className="avatar">{user?.user?.charAt(0).toUpperCase()}</div>
             <h5 className="modern-card-title">{user?.user}</h5>
           </header>
           <div className="modern-card-item" onClick={handleUpdateProfile}>
-            <img
-              src={usericons?.User_Profile}
-              alt="user profile"
-              className="w-8 h-8"
-            />
+            <img src={usericons?.User_Profile} alt="user profile" className="h-8 w-8" />
             <span className="text-[.95rem]">Update Account</span>
           </div>
           <div className="modern-card-item" onClick={handleChangePassword}>
-            <img
-              src={usericons?.Reset}
-              alt="change password"
-              className="w-7 h-7"
-            />
+            <img src={usericons?.Reset} alt="change password" className="h-7 w-7" />
             <span className="text-[.95rem]">Change Password</span>
           </div>
-          <div
-            className="modern-card-item"
-            onClick={handleLogout}
-          >
-            <img src={usericons?.Logout} alt="Logout" className="w-7 h-7" />
+          <div className="modern-card-item" onClick={handleLogout}>
+            <img src={usericons?.Logout} alt="Logout" className="h-7 w-7" />
             <span className="text-[.95rem]">Logout</span>
           </div>
         </div>

@@ -3,9 +3,7 @@ import MapSidebar from "../component/MapSidebar";
 import MapView from "./MapView";
 import LocationSearch from "../component/LocationSearch";
 
-
 export default function MapLayout() {
-
   return (
     <div className="relative h-screen w-screen overflow-hidden">
       {/* Map */}

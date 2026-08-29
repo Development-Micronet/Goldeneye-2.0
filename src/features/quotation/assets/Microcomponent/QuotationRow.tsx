@@ -1,13 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  FiEdit3,
-  FiEye,
-  FiDownload,
-  FiCheck,
-  FiTrash2,
-  FiX,
-} from "react-icons/fi";
+import { FiEdit3, FiEye, FiDownload, FiCheck, FiTrash2, FiX } from "react-icons/fi";
 import { useUser } from "../../../auth/AuthProvider/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import { GetQuotation } from "../../api/Quotation";
@@ -47,7 +40,7 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
     mutationFn: GetQuotation,
     onSuccess: async (res) => {
       const specResults = await Promise.all(
-        (res.description || []).map((it: any) => GetTechspec(it.item).catch(() => null))
+        (res.description || []).map((it: any) => GetTechspec(it.item).catch(() => null)),
       );
       const freshSpecs = specResults.flat().filter(Boolean);
 
@@ -75,8 +68,7 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
           res.from_company_authorized_person_designation ?? "",
 
         to_company: res.to_company,
-        receiver_company_authorized_person:
-          res.receiver_company_authorized_person,
+        receiver_company_authorized_person: res.receiver_company_authorized_person,
         receiver_company_authorized_person_designation:
           res.receiver_company_authorized_person_designation,
         receiver_company_email: res.receiver_company_email ?? "",
@@ -148,58 +140,58 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
 
   return (
     <>
-      <tr className={`hover:bg-primary-50/30 transition-colors duration-150 border-b border-light-200 ${isSelected ? "bg-primary-50/60" : ""}`}>
-        <td className="px-3 py-2.5 text-center w-10">
+      <tr
+        className={`hover:bg-primary-50/30 border-light-200 border-b transition-colors duration-150 ${isSelected ? "bg-primary-50/60" : ""}`}
+      >
+        <td className="w-10 px-3 py-2.5 text-center">
           <input
             type="checkbox"
             checked={isSelected || false}
             onChange={() => onToggleSelect && onToggleSelect(q.quote_no)}
-            className="rounded border-gray-300 text-[#2c6671] focus:ring-[#2c6671] cursor-pointer w-4 h-4"
+            className="h-4 w-4 cursor-pointer rounded border-gray-300 text-[#2c6671] focus:ring-[#2c6671]"
           />
         </td>
-        <td className="px-3 py-2.5 text-primary-500 text-[11px] font-mono font-semibold">
+        <td className="text-primary-500 px-3 py-2.5 font-mono text-[11px] font-semibold">
           {String((currentPage - 1) * 10 + index + 1).padStart(2, "0")}
         </td>
 
-        <td className="px-3 py-2.5 font-semibold text-primary-900 max-w-[140px]">
+        <td className="text-primary-900 max-w-[140px] px-3 py-2.5 font-semibold">
           <div className="truncate text-sm" title={q.to_company}>
             {q.to_company}
           </div>
         </td>
 
-        <td className="px-3 py-2.5 text-primary-700 max-w-[120px] hidden lg:table-cell">
+        <td className="text-primary-700 hidden max-w-[120px] px-3 py-2.5 lg:table-cell">
           <div className="truncate text-sm" title={q.authorized_name}>
             {q.authorized_name}
           </div>
         </td>
 
-        <td className="px-3 py-2.5 font-mono text-[11px] font-bold text-primary-600">
+        <td className="text-primary-600 px-3 py-2.5 font-mono text-[11px] font-bold">
           {q.quote_no}
         </td>
 
-        <td className="px-3 py-2.5 text-primary-700 whitespace-nowrap text-xs hidden sm:table-cell">
+        <td className="text-primary-700 hidden px-3 py-2.5 text-xs whitespace-nowrap sm:table-cell">
           {q.date}
         </td>
 
-        <td className="px-3 py-2.5 text-primary-700 whitespace-nowrap text-xs hidden xl:table-cell">
+        <td className="text-primary-700 hidden px-3 py-2.5 text-xs whitespace-nowrap xl:table-cell">
           {q.validity}
         </td>
 
-        <td className="px-3 py-2.5 font-bold text-sm text-primary-900">
+        <td className="text-primary-900 px-3 py-2.5 text-sm font-bold">
           ₹{Number(q.total_amount || 0).toLocaleString()}
         </td>
 
-        <td className="px-3 py-2.5 hidden sm:table-cell">
+        <td className="hidden px-3 py-2.5 sm:table-cell">
           <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
-              q.verified
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700"
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+              q.verified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
             }`}
           >
             <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                q.verified ? "bg-green-600" : "bg-yellow-500 animate-pulse"
+              className={`h-1.5 w-1.5 rounded-full ${
+                q.verified ? "bg-green-600" : "animate-pulse bg-yellow-500"
               }`}
             />
             {q.verified ? "Verified" : "Pending"}
@@ -213,7 +205,7 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
               type="button"
               onClick={handlePreview}
               title="Preview Quotation"
-              className="p-1.5 rounded-md hover:bg-purple-50 text-purple-600 transition-colors"
+              className="rounded-md p-1.5 text-purple-600 transition-colors hover:bg-purple-50"
             >
               <FiEye size={16} />
             </button>
@@ -222,7 +214,7 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
             <Link
               to={`/quotation?view=update&id=${q.quote_no}`}
               title="Edit Quotation"
-              className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors inline-flex items-center"
+              className="inline-flex items-center rounded-md p-1.5 text-blue-600 transition-colors hover:bg-blue-50"
             >
               <FiEdit3 size={16} />
             </Link>
@@ -233,10 +225,10 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
               onClick={() => Exportpdf.mutate(q.quote_no)}
               disabled={!q.verified}
               title={q.verified ? "Export PDF" : "Must be verified to export PDF"}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`rounded-md p-1.5 transition-colors ${
                 q.verified
-                  ? "hover:bg-emerald-50 text-emerald-600 cursor-pointer"
-                  : "text-gray-300 cursor-not-allowed opacity-50"
+                  ? "cursor-pointer text-emerald-600 hover:bg-emerald-50"
+                  : "cursor-not-allowed text-gray-300 opacity-50"
               }`}
             >
               <FiDownload size={16} />
@@ -247,10 +239,8 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
               type="button"
               onClick={handleVerify}
               title={q.verified ? "Unverify Quotation" : "Verify Quotation"}
-              className={`p-1.5 rounded-md transition-colors ${
-                q.verified
-                  ? "hover:bg-amber-50 text-amber-600"
-                  : "hover:bg-teal-50 text-teal-600"
+              className={`rounded-md p-1.5 transition-colors ${
+                q.verified ? "text-amber-600 hover:bg-amber-50" : "text-teal-600 hover:bg-teal-50"
               }`}
             >
               <FiCheck size={16} />
@@ -262,10 +252,10 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
               onClick={() => handleDelete(q.quote_no)}
               disabled={deleteMutation.isPending || !isAuthorize}
               title={isAuthorize ? "Delete Quotation" : "Unauthorized to delete"}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`rounded-md p-1.5 transition-colors ${
                 isAuthorize
-                  ? "hover:bg-red-50 text-red-600 cursor-pointer"
-                  : "text-gray-300 cursor-not-allowed opacity-50"
+                  ? "cursor-pointer text-red-600 hover:bg-red-50"
+                  : "cursor-not-allowed text-gray-300 opacity-50"
               }`}
             >
               <FiTrash2 size={16} />
@@ -275,29 +265,27 @@ const QuotationRow: React.FC<QuotationRowProps> = ({
       </tr>
       {previewOpen && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/70 p-4">
-          <div className="flex items-center justify-between bg-primary-800 px-4 py-2.5 rounded-t-lg">
-            <span className="text-white text-sm font-bold">
-              Quotation Preview — {q.quote_no}
-            </span>
+          <div className="bg-primary-800 flex items-center justify-between rounded-t-lg px-4 py-2.5">
+            <span className="text-sm font-bold text-white">Quotation Preview — {q.quote_no}</span>
 
             <button
               onClick={() => setPreviewOpen(false)}
-              className="text-white hover:text-gray-300 p-1 rounded"
+              className="rounded p-1 text-white hover:text-gray-300"
             >
               <FiX size={18} />
             </button>
           </div>
 
-          <div className="flex-1 bg-light-300 p-4 overflow-auto rounded-b-lg">
+          <div className="bg-light-300 flex-1 overflow-auto rounded-b-lg p-4">
             {quotationMutation.isPending ? (
-              <div className="flex items-center justify-center py-20 text-white font-medium">
+              <div className="flex items-center justify-center py-20 font-medium text-white">
                 Loading preview...
               </div>
             ) : (
               <iframe
                 srcDoc={previewHtml}
                 title={`Preview ${q.quote_no}`}
-                className="w-full max-w-[850px] mx-auto block rounded shadow-lg bg-white"
+                className="mx-auto block w-full max-w-[850px] rounded bg-white shadow-lg"
                 style={{ minHeight: "calc(100vh - 100px)", border: "none" }}
               />
             )}

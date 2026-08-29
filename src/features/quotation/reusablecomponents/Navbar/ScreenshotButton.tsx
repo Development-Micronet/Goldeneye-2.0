@@ -24,11 +24,11 @@ export function ScreenshotButton({ fileName = "screenshot.png" }: ScreenshotButt
     <button
       onClick={handleScreenshot}
       disabled={loading}
-      className="px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      className="bg-primary-600 hover:bg-primary-500 flex items-center gap-2 rounded-lg px-3 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading ? (
         <>
-          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
             <circle
               className="opacity-25"
               cx="12"
@@ -37,11 +37,7 @@ export function ScreenshotButton({ fileName = "screenshot.png" }: ScreenshotButt
               stroke="currentColor"
               strokeWidth="4"
             />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8z"
-            />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
           </svg>
           Capturing...
         </>

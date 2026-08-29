@@ -15,9 +15,7 @@ function sanitizeExpression(expr: unknown): any {
     const right = sanitizeExpression(expr[2]);
 
     const safeLeft =
-      Array.isArray(left) && left[0] === "get" && left.length === 2
-        ? ["coalesce", left, 0]
-        : left;
+      Array.isArray(left) && left[0] === "get" && left.length === 2 ? ["coalesce", left, 0] : left;
 
     const safeRight =
       Array.isArray(right) && right[0] === "get" && right.length === 2

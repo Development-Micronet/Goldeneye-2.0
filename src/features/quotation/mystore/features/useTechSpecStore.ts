@@ -13,9 +13,7 @@ export const useTechSpecStore = create<TechSpecStore>((set) => ({
     set((state) => {
       const updatedList = [...state.techImages];
       (newImages || []).forEach((img: any) => {
-        const exists = updatedList.some(
-          (i) => i.techspec_id === img.techspec_id
-        );
+        const exists = updatedList.some((i) => i.techspec_id === img.techspec_id);
         if (!exists) {
           updatedList.push(img);
         }

@@ -38,8 +38,9 @@ export const DrawPopup: React.FC<DrawPopupProps> = ({ onClose }) => {
                 setActiveTool(isSelected ? null : option.toolName);
                 if (onClose) onClose();
               }}
-              className={`group flex cursor-pointer items-center justify-between rounded-md px-1.5 py-1 transition-colors ${isSelected ? "bg-primary/10 text-primary" : "text-gray-700 hover:bg-gray-50"
-                }`}
+              className={`group flex cursor-pointer items-center justify-between rounded-md px-1.5 py-1 transition-colors ${
+                isSelected ? "bg-primary/10 text-primary" : "text-gray-700 hover:bg-gray-50"
+              }`}
             >
               <div className="flex items-center gap-2 sm:gap-2.5">
                 <img

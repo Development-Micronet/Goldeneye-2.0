@@ -1,6 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { Upload, Eye, EyeOff, Trash2, Crosshair, Image, Map, X, AlertTriangle, Layers, Loader2 } from "lucide-react";
+import {
+  Upload,
+  Eye,
+  EyeOff,
+  Trash2,
+  Crosshair,
+  Image,
+  Map,
+  X,
+  AlertTriangle,
+  Layers,
+  Loader2,
+} from "lucide-react";
 
 import { useRasterStore } from "../../hooks/useRasterStore";
 import AOIDialog from "./component/AOIDialog";
@@ -11,8 +23,6 @@ interface RasterPopupProps {
   onClose: () => void;
 }
 const LARGE_FILE_WARNING_BYTES = 50 * 1024 * 1024; // 50MB
-
-
 
 type ServerPhase = "idle" | "converting" | "error";
 
@@ -38,12 +48,14 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
       if (!isDraggingPanel.current) return;
       setPanelPos({ x: e.clientX - dragOffset.current.x, y: e.clientY - dragOffset.current.y });
     };
-    const onMouseUp = () => { isDraggingPanel.current = false; };
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    const onMouseUp = () => {
+      isDraggingPanel.current = false;
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
     };
   }, []);
   const rasters = useRasterStore((state) => state.rasters);
@@ -58,7 +70,10 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
   const rasterStatus = useRasterStore((state) => state.rasterStatus);
   const rasterProgress = useRasterStore((state) => state.rasterProgress);
 
-  const [pendingImageData, setPendingImageData] = useState<{ file: File; uploadResult: UploadRasterResponse } | null>(null);
+  const [pendingImageData, setPendingImageData] = useState<{
+    file: File;
+    uploadResult: UploadRasterResponse;
+  } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [processingName, setProcessingName] = useState<string | null>(null);
   const [serverPhase, setServerPhase] = useState<ServerPhase>("idle");
@@ -96,7 +111,7 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
 
       if (file.size > LARGE_FILE_WARNING_BYTES) {
         toast.warn(
-          `${file.name} is ${(file.size / (1024 * 1024)).toFixed(1)}MB — this may take a while to upload.`
+          `${file.name} is ${(file.size / (1024 * 1024)).toFixed(1)}MB — this may take a while to upload.`,
         );
       }
 
@@ -115,8 +130,7 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
           console.error("Failed to process image", error);
 
           toast.error(
-            `Unable to upload image: ${error instanceof Error ? error.message : "Unknown error"
-            }`
+            `Unable to upload image: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
 
           // must not be reset in finally, or the error phase is erased
@@ -148,13 +162,13 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
           setRasterProgress(0);
           return;
         }
-        console.warn(meta.warning)
+        console.warn(meta.warning);
 
         setRasterProgress(35);
         setServerPhase("converting");
 
         const result = await uploadRaster(file, (fraction) =>
-          setRasterProgress(35 + Math.round(fraction * 55))
+          setRasterProgress(35 + Math.round(fraction * 55)),
         );
 
         setServerPhase("idle");
@@ -194,8 +208,7 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
         console.error("Failed to process GeoTIFF", error);
 
         toast.error(
-          `Unable to add GeoTIFF: ${error instanceof Error ? error.message : "Unknown error"
-          }`
+          `Unable to add GeoTIFF: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
 
         setRasterStatus("error");
@@ -213,7 +226,7 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
       setRasterProgress,
       setRasterStatus,
       setServerPhase,
-    ]
+    ],
   );
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -274,7 +287,6 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
       operations: [],
     });
 
-
     setFitRasterId(id);
     toast.success("Image layer added");
   };
@@ -303,21 +315,21 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
       ref={panelRef}
       className="pointer-events-auto z-[2000] flex flex-col rounded-xl border border-gray-200/80 bg-white/95 p-4 text-left shadow-2xl backdrop-blur-md select-none"
       style={{
-        position: 'fixed',
+        position: "fixed",
         left: panelPos?.x ?? 80,
-        top: panelPos?.y ?? '6rem',
-        right: 'auto',
+        top: panelPos?.y ?? "6rem",
+        right: "auto",
         width: 380,
         minWidth: 300,
-        maxWidth: '90vw',
+        maxWidth: "90vw",
         minHeight: 200,
-        resize: 'both',
-        overflow: 'hidden',
+        resize: "both",
+        overflow: "hidden",
       }}
     >
       {/* Header - grab this to drag the panel */}
       <div
-        className="flex cursor-grab active:cursor-grabbing items-center justify-between border-b border-gray-100 pb-3"
+        className="flex cursor-grab items-center justify-between border-b border-gray-100 pb-3 active:cursor-grabbing"
         onMouseDown={handlePanelMouseDown}
       >
         <div className="flex items-center gap-2">
@@ -345,7 +357,7 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
 
       {/* Status & Progress feedback */}
       {showGlobalProgress && globalProgressLabel && (
-        <div className="mt-3 rounded-lg bg-teal-50/80 p-3 text-xs border border-teal-100">
+        <div className="mt-3 rounded-lg border border-teal-100 bg-teal-50/80 p-3 text-xs">
           <div className="flex justify-between font-medium text-teal-900">
             <span className="truncate pr-2">{globalProgressLabel}</span>
             <span className="shrink-0">{rasterProgress}%</span>
@@ -360,7 +372,7 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
       )}
 
       {serverPhase === "converting" && (
-        <div className="mt-3 flex items-center gap-2.5 rounded-lg bg-amber-50/90 p-3 text-xs text-amber-900 border border-amber-200/60">
+        <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-amber-200/60 bg-amber-50/90 p-3 text-xs text-amber-900">
           <Loader2 size={16} className="shrink-0 animate-spin text-amber-600" />
           <span className="truncate">
             Converting {processingName ?? "file"} to COG on server...
@@ -369,7 +381,7 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
       )}
 
       {(rasterStatus === "error" || serverPhase === "error") && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-100">
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-xs text-red-700">
           <AlertTriangle size={16} className="shrink-0 text-red-500" />
           <span>Error processing the raster file. Please try again.</span>
         </div>
@@ -389,10 +401,11 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={handleChooseFile}
-          className={`group cursor-pointer rounded-xl border-2 border-dashed p-4 text-center transition-all ${isDragging
-            ? "border-teal-500 bg-teal-50/50 scale-[1.01]"
-            : "border-gray-200 hover:border-teal-400 hover:bg-gray-50/50"
-            }`}
+          className={`group cursor-pointer rounded-xl border-2 border-dashed p-4 text-center transition-all ${
+            isDragging
+              ? "scale-[1.01] border-teal-500 bg-teal-50/50"
+              : "border-gray-200 hover:border-teal-400 hover:bg-gray-50/50"
+          }`}
         >
           <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-teal-50 text-teal-600 transition-transform group-hover:scale-110">
             <Upload size={20} />
@@ -400,7 +413,9 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
           <p className="mt-2 text-xs font-semibold text-gray-700">
             {isDragging ? "Drop file to upload" : "Click to upload raster"}
           </p>
-          <p className="mt-0.5 text-[11px] text-gray-400">or drag and drop GeoTIFF / Image file here</p>
+          <p className="mt-0.5 text-[11px] text-gray-400">
+            or drag and drop GeoTIFF / Image file here
+          </p>
         </div>
       </div>
 
@@ -410,7 +425,9 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 py-8 text-center text-gray-400">
             <Image size={36} className="stroke-1 opacity-50" />
             <p className="mt-2 text-xs font-medium text-gray-500">No raster layers added</p>
-            <p className="mt-0.5 text-[11px] text-gray-400">Upload a GeoTIFF or Image to get started</p>
+            <p className="mt-0.5 text-[11px] text-gray-400">
+              Upload a GeoTIFF or Image to get started
+            </p>
           </div>
         ) : (
           rasters.map((raster) => (
@@ -427,12 +444,12 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
                     <p className="truncate text-xs font-semibold text-gray-800" title={raster.name}>
                       {raster.name}
                     </p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="rounded bg-gray-200/70 px-1.5 py-0.2 text-[10px] font-medium text-gray-600 uppercase">
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <span className="py-0.2 rounded bg-gray-200/70 px-1.5 text-[10px] font-medium text-gray-600 uppercase">
                         {raster.type === "image" ? "Image" : "GeoTIFF"}
                       </span>
                       {raster.projection && (
-                        <span className="text-[10px] text-gray-400 font-mono">
+                        <span className="font-mono text-[10px] text-gray-400">
                           {raster.projection}
                         </span>
                       )}
@@ -447,7 +464,11 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
                     aria-label={raster.visible ? "Hide layer" : "Show layer"}
                     title={raster.visible ? "Hide layer" : "Show layer"}
                   >
-                    {raster.visible ? <Eye size={16} className="text-teal-600" /> : <EyeOff size={16} />}
+                    {raster.visible ? (
+                      <Eye size={16} className="text-teal-600" />
+                    ) : (
+                      <EyeOff size={16} />
+                    )}
                   </button>
                   <button
                     onClick={() => handleZoom(raster.id)}
@@ -470,9 +491,11 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
 
               {/* Opacity slider */}
               <div className="mt-2.5 border-t border-gray-100 pt-2">
-                <div className="flex items-center justify-between text-[10px] text-gray-500 font-medium">
+                <div className="flex items-center justify-between text-[10px] font-medium text-gray-500">
                   <span>Opacity</span>
-                  <span className="font-mono text-gray-700">{Math.round((raster.opacity ?? 1) * 100)}%</span>
+                  <span className="font-mono text-gray-700">
+                    {Math.round((raster.opacity ?? 1) * 100)}%
+                  </span>
                 </div>
                 <input
                   type="range"
@@ -492,7 +515,11 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
       </div>
 
       {pendingImageData && (
-        <AOIDialog file={pendingImageData.file} onCancel={() => setPendingImageData(null)} onSave={saveImage} />
+        <AOIDialog
+          file={pendingImageData.file}
+          onCancel={() => setPendingImageData(null)}
+          onSave={saveImage}
+        />
       )}
     </div>
   );

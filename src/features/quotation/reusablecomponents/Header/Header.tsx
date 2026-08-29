@@ -9,7 +9,14 @@ const Header: React.FC = () => {
         <h1 className="heading">Golden Eye</h1>
       </div>
       <div className="right-side">
-        <img src={Micronetlogo} alt="Micronet Logo" className="logo" width="30" height="30" loading="lazy" />
+        <img
+          src={Micronetlogo}
+          alt="Micronet Logo"
+          className="logo"
+          width="30"
+          height="30"
+          loading="lazy"
+        />
       </div>
     </div>
   );

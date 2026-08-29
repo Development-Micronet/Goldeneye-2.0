@@ -6,7 +6,7 @@ import { getSpectralProcessing } from "../Shared/Product";
 export const buildTechSpecs = (
   itemName: string = "",
   geometricProcessing: string = "",
-  spectralBands: string = ""
+  spectralBands: string = "",
 ): string[] => {
   const name = itemName.toLowerCase();
 
@@ -43,9 +43,7 @@ export const buildTechSpecs = (
   const spectralConfig = getSpectralProcessing(itemName);
 
   const hasSpectral: boolean =
-    !!spectralConfig &&
-    Array.isArray(spectralConfig.values) &&
-    spectralConfig.values.length > 0;
+    !!spectralConfig && Array.isArray(spectralConfig.values) && spectralConfig.values.length > 0;
 
   /* ── Build specs dynamically ───────────────────────────────── */
   const specs: string[] = [
@@ -58,10 +56,7 @@ export const buildTechSpecs = (
     specs.push(`Spectral Bands: ${spectralBands || "Selected"}`);
   }
 
-  specs.push(
-    swath || "Swath: Standard",
-    "Identical Twin Satellite"
-  );
+  specs.push(swath || "Swath: Standard", "Identical Twin Satellite");
 
   if (processing) {
     specs.push(processing);

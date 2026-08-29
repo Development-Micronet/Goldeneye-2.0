@@ -57,15 +57,10 @@ const CentralizedInputs: React.FC<CentralizedInputsProps> = ({
     const rules = validationRules ? validationRules[inputName] : null;
     let formattedValue = inputValue;
 
-    if (
-      inputName === "firstName" ||
-      inputName === "middleName" ||
-      inputName === "lastName"
-    ) {
+    if (inputName === "firstName" || inputName === "middleName" || inputName === "lastName") {
       if (!letterRegex.test(formattedValue)) return;
       formattedValue =
-        formattedValue.charAt(0).toUpperCase() +
-        formattedValue.slice(1).toLowerCase();
+        formattedValue.charAt(0).toUpperCase() + formattedValue.slice(1).toLowerCase();
     } else if (
       inputName === "organization" ||
       inputName === "designation" ||
@@ -73,18 +68,13 @@ const CentralizedInputs: React.FC<CentralizedInputsProps> = ({
     ) {
       formattedValue = formattedValue.trimStart();
       formattedValue =
-        formattedValue.charAt(0).toUpperCase() +
-        formattedValue.slice(1).toLowerCase();
+        formattedValue.charAt(0).toUpperCase() + formattedValue.slice(1).toLowerCase();
     } else if (inputName === "registrationNumber") {
       formattedValue = formattedValue.trimStart().toUpperCase();
     } else if (inputName === "username") {
       if (!usernameRegex.test(formattedValue) && formattedValue !== "") return;
-    } else if (
-      inputName === "mobileNo" ||
-      inputName === "officeContactNumber"
-    ) {
-      if (formattedValue.charAt(0) === "0" || !/^\d*$/.test(formattedValue))
-        return;
+    } else if (inputName === "mobileNo" || inputName === "officeContactNumber") {
+      if (formattedValue.charAt(0) === "0" || !/^\d*$/.test(formattedValue)) return;
     } else if (inputName === "phoneLan" || inputName === "officelanNumber") {
       formattedValue = formattedValue.replace(/[^0-9\s()-]/g, "");
     } else if (inputName === "pin") {
@@ -127,10 +117,7 @@ const CentralizedInputs: React.FC<CentralizedInputsProps> = ({
   return (
     <div className="form-group w-full">
       {label && (
-        <label
-          htmlFor={name}
-          className="block mb-2 text-sm font-medium text-gray-700"
-        >
+        <label htmlFor={name} className="mb-2 block text-sm font-medium text-gray-700">
           {label} <span className="text-red-500">{required && "*"}</span>
         </label>
       )}
@@ -156,23 +143,15 @@ const CentralizedInputs: React.FC<CentralizedInputsProps> = ({
           }}
           containerClass="w-full"
           inputClass={`w-full h-12 border rounded-lg px-3 py-2 
-                        ${
-                          error || errorMessage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } 
+                        ${error || errorMessage ? "border-red-500" : "border-gray-300"} 
                         ${disable ? "cursor-not-allowed bg-gray-200" : ""}`}
         />
       ) : type === "select" ? (
         <select
           name={name}
-          className={`w-full h-12 border rounded-lg px-3 py-2
-                        ${
-                          error || errorMessage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } 
-                        ${disable ? "cursor-not-allowed bg-gray-200" : ""}`}
+          className={`h-12 w-full rounded-lg border px-3 py-2 ${
+            error || errorMessage ? "border-red-500" : "border-gray-300"
+          } ${disable ? "cursor-not-allowed bg-gray-200" : ""}`}
           value={value}
           onChange={handleChange}
           disabled={disable}
@@ -189,13 +168,9 @@ const CentralizedInputs: React.FC<CentralizedInputsProps> = ({
       ) : (
         <input
           type={type}
-          className={`w-full border rounded-lg px-3 py-2 
-                        ${
-                          error || errorMessage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } 
-                        ${disable ? "cursor-not-allowed bg-gray-200" : ""}`}
+          className={`w-full rounded-lg border px-3 py-2 ${
+            error || errorMessage ? "border-red-500" : "border-gray-300"
+          } ${disable ? "cursor-not-allowed bg-gray-200" : ""}`}
           name={name}
           value={value}
           onChange={handleChange}
