@@ -49,26 +49,27 @@ export default function MapSidebar({
     roleIsSuperadmin || allowedServices.some((service) => service.toLowerCase() === "search");
 
   const hasTasking = true; // Enabled by default, can be linked to api subscription check later
+
   const sidebarItems = [
     ...(hasSearch
       ? [
-          {
-            id: 1,
-            icon: archiveIcon,
-            tooltip: "Archive Search",
-            status: true,
-          },
-        ]
+        {
+          id: 1,
+          icon: archiveIcon,
+          tooltip: "Archive Search",
+          status: true,
+        },
+      ]
       : []),
     ...(hasTasking
       ? [
-          {
-            id: 2,
-            icon: taskingIcon,
-            tooltip: "Tasking",
-            status: true,
-          },
-        ]
+        {
+          id: 2,
+          icon: taskingIcon,
+          tooltip: "Tasking",
+          status: true,
+        },
+      ]
       : []),
     {
       id: 3,
@@ -102,13 +103,13 @@ export default function MapSidebar({
     // },
     ...(hasOrbitography
       ? [
-          {
-            id: 7,
-            icon: orbitIcon,
-            tooltip: "Orbitography",
-            status: true,
-          },
-        ]
+        {
+          id: 7,
+          icon: orbitIcon,
+          tooltip: "Orbitography",
+          status: true,
+        },
+      ]
       : []),
   ];
   // Filter out ID 6 (My Indent) for superadmin role (business rule from Phase 2)
@@ -149,17 +150,15 @@ export default function MapSidebar({
 
   return (
     <div
-      className={`absolute top-0 right-0 z-40 flex h-full flex-col overflow-visible border-l border-gray-200 bg-white py-4 shadow-lg transition-all duration-300 ease-in-out sm:py-5 md:py-6 ${
-        isExpanded ? "w-[180px] sm:w-[210px] md:w-[240px]" : "w-[50px] sm:w-[58px] md:w-[65px]"
-      }`}
+      className={`absolute top-0 right-0 z-40 flex h-full flex-col overflow-visible border-l border-gray-200 bg-white py-4 shadow-lg transition-all duration-300 ease-in-out sm:py-5 md:py-6 ${isExpanded ? "w-[180px] sm:w-[210px] md:w-[240px]" : "w-[50px] sm:w-[58px] md:w-[65px]"
+        }`}
     >
       {/* Sliding Content Sheet */}
       <div
-        className={`absolute top-0 z-30 flex h-full flex-col border-r border-gray-200 bg-white shadow-2xl transition-all duration-300 ease-in-out ${
-          activeIndex !== null
+        className={`absolute top-0 z-30 flex h-full flex-col border-r border-gray-200 bg-white shadow-2xl transition-all duration-300 ease-in-out ${activeIndex !== null
             ? "pointer-events-auto right-[50px] w-[calc(100vw-50px)] opacity-100 sm:right-full sm:w-[320px] md:w-[360px] lg:w-[550px]"
             : "pointer-events-none right-full w-0 overflow-hidden border-none opacity-0"
-        }`}
+          }`}
       >
         {activeIndex !== null && (
           <>
@@ -211,17 +210,15 @@ export default function MapSidebar({
                     data-tooltip-content={
                       isEnabled ? item.tooltip : `${item.tooltip} (Coming Soon)`
                     }
-                    className={`relative flex items-center transition-all duration-200 focus:outline-none ${
-                      isExpanded
+                    className={`relative flex items-center transition-all duration-200 focus:outline-none ${isExpanded
                         ? "h-11 w-full justify-start gap-2 px-3 text-left sm:h-12 sm:gap-3 sm:px-4 md:h-14 md:gap-4 md:px-6"
                         : "h-9 w-9 animate-none justify-center rounded-md sm:h-11 sm:w-11 sm:rounded-lg md:h-12 md:w-12"
-                    } ${
-                      !isEnabled
+                      } ${!isEnabled
                         ? "cursor-not-allowed text-gray-400 opacity-45"
                         : isActive
                           ? "bg-[#add3d3] text-black shadow-sm"
                           : "cursor-pointer text-gray-700 hover:bg-[#d5ebeb]"
-                    }`}
+                      }`}
                   >
                     <img
                       src={item.icon}
@@ -242,11 +239,10 @@ export default function MapSidebar({
               {/* Divider Line */}
               {index < filteredItems.length - 1 && (
                 <div
-                  className={`bg-primary/25 h-[1px] flex-shrink-0 transition-all duration-300 ${
-                    isExpanded
+                  className={`bg-primary/25 h-[1px] flex-shrink-0 transition-all duration-300 ${isExpanded
                       ? "my-1 w-[calc(100%-16px)] sm:my-1.5 sm:w-[calc(100%-24px)] md:w-[calc(100%-32px)]"
                       : "my-1 w-7 sm:w-9 md:w-10"
-                  }`}
+                    }`}
                 />
               )}
             </React.Fragment>

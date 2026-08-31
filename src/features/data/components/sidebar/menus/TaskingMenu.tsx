@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ChevronDown, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, ChevronDown, Loader2 } from "lucide-react";
 import axios from "axios";
 
 import { AoiDrawIcon } from "../icons/AoiDrawIcon";
@@ -21,9 +21,11 @@ import type {
   TaskingAttemptResponse,
   TaskingSegment,
 } from "../api/Tasking.service";
+
 import { useSelectedAOIStore } from "../../../hooks/useSelectedAOIStore";
 import { useLayersStore } from "../../../../../store/useLayersStore";
 import { useAuthStore } from "../../../../../store/useAuthStore";
+import { TaskingOrderForm } from "../component/Tasking/Taskingorderform";
 
 /* ------------------------------------------------------------------ */
 /* Options                                                             */
@@ -40,6 +42,9 @@ const INCIDENCE_OPTIONS = [20, 30, 50];
 const CLOUD_OPTIONS = [5, 10, 20];
 const AOI_TYPES = ["Polygon", "Box", "Coordinates", "Bound Coordinates"];
 const DEBOUNCE_MS = 500;
+
+/** Days shown side by side once the section is opened out. */
+const DAYS_PER_PAGE = 2;
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -91,7 +96,44 @@ const field =
 const labelStyle = "text-primary mb-1 block text-xs font-semibold";
 
 /* ------------------------------------------------------------------ */
-/* Mission card                                                        */
+/* Pass card                                                           */
+/* ------------------------------------------------------------------ */
+
+interface PassCardProps {
+  mission: MissionKey;
+  segment: TaskingSegment;
+  maxIncidence: number;
+  onSelect: () => void;
+}
+
+const PassCard: React.FC<PassCardProps> = ({ mission, segment, maxIncidence, onSelect }) => (
+  <div className="space-y-1">
+    <h4 className="text-[13px] font-bold tracking-wide text-slate-900">{mission}</h4>
+
+    <p className="text-[11.5px] text-slate-700">
+      {formatDay(segment.acquisitionStartDate)} {formatTime(segment.acquisitionStartDate)}
+    </p>
+    <p className="text-[11.5px] text-slate-700">
+      Incidence angle:{" "}
+      <span className="font-bold text-slate-900">{segment.incidenceAngle.toFixed(2)}°</span> -{" "}
+      {maxIncidence}°
+    </p>
+    <p className="text-[11.5px] text-slate-700">
+      Order deadline: {formatDay(segment.orderDeadline)} {formatTime(segment.orderDeadline)} (UTC)
+    </p>
+
+    <button
+      type="button"
+      onClick={onSelect}
+      className="bg-primary hover:bg-primary/90 mt-2 rounded-md px-5 py-2 text-xs font-semibold tracking-wide text-white"
+    >
+      SELECT
+    </button>
+  </div>
+);
+
+/* ------------------------------------------------------------------ */
+/* Mission summary                                                     */
 /* ------------------------------------------------------------------ */
 
 interface MissionCardProps {
@@ -99,77 +141,46 @@ interface MissionCardProps {
   segments: TaskingSegment[];
   reason: string | null;
   maxIncidence: number;
-  isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (segment: TaskingSegment) => void;
 }
 
+/** The summary shows the soonest pass; the rest live behind View more. */
 const MissionCard: React.FC<MissionCardProps> = ({
   mission,
   segments,
   reason,
   maxIncidence,
-  isSelected,
   onSelect,
 }) => (
-  <div className="space-y-3 p-4">
-    <h4 className="text-[13px] font-bold tracking-wide text-slate-900">{mission}</h4>
-
+  <div className="space-y-2 p-4">
     {segments.length > 0 && (
-      <>
-        <ol className="space-y-3">
-          {segments.map((segment, index) => (
-            <li key={segment.segmentKey} className="relative flex gap-2.5">
-              <span
-                className={`border-primary mt-1 h-2 w-2 shrink-0 rounded-full border-2 ${index === 0 ? "bg-primary" : "bg-white"
-                  }`}
-              />
-              {index < segments.length - 1 && (
-                <span className="border-primary/40 absolute top-4 -bottom-3 left-[3px] border-l border-dashed" />
-              )}
-
-              <p className="text-[11.5px] text-slate-700">
-                {formatDay(segment.acquisitionStartDate)}{" "}
-                {formatTime(segment.acquisitionStartDate)}{" "}
-                <span className="font-bold text-slate-900">
-                  {segment.incidenceAngle.toFixed(2)}°
-                </span>{" "}
-                <span className="text-text-secondary">- {maxIncidence}°</span>
-              </p>
-            </li>
-          ))}
-        </ol>
-
-        <p className="text-text-secondary text-[11px]">
-          Order deadline: {formatDay(earliestDeadline(segments))}{" "}
-          {formatTime(earliestDeadline(segments))} (UTC)
-        </p>
-
-        <button
-          type="button"
-          onClick={onSelect}
-          className={`rounded-md px-5 py-2 text-xs font-semibold tracking-wide ${isSelected
-            ? "border-primary text-primary hover:bg-primary/10 border"
-            : "bg-primary hover:bg-primary/90 text-white"
-            }`}
-        >
-          {isSelected ? "SELECTED" : "SELECT"}
-        </button>
-      </>
+      <PassCard
+        mission={mission}
+        segment={segments[0]}
+        maxIncidence={maxIncidence}
+        onSelect={() => onSelect(segments[0])}
+      />
     )}
 
-    {segments.length === 0 && reason && <p className="text-primary text-xs">{reason}</p>}
-
-    {segments.length === 0 && !reason && (
+    {segments.length === 0 && (
       <>
-        <p className="text-primary text-xs">For the Direct to satellite tasking</p>
-        <p className="text-xs font-bold text-slate-900">please adjust your parameters</p>
-        <div className="space-y-1 rounded bg-red-50 px-3 py-2">
-          {MISSION_LIMITS[mission].map((limit) => (
-            <p key={limit.label} className="text-[11.5px] text-slate-700">
-              {limit.label} <span className="font-medium text-orange-600">{limit.value}</span>
-            </p>
-          ))}
-        </div>
+        <h4 className="text-[13px] font-bold tracking-wide text-slate-900">{mission}</h4>
+
+        {reason ? (
+          <p className="text-primary text-xs">{reason}</p>
+        ) : (
+          <>
+            <p className="text-primary text-xs">For the Direct to satellite tasking</p>
+            <p className="text-xs font-bold text-slate-900">please adjust your parameters</p>
+            <div className="space-y-1 rounded bg-red-50 px-3 py-2">
+              {MISSION_LIMITS[mission].map((limit) => (
+                <p key={limit.label} className="text-[11.5px] text-slate-700">
+                  {limit.label} <span className="font-medium text-orange-600">{limit.value}</span>
+                </p>
+              ))}
+            </div>
+          </>
+        )}
       </>
     )}
   </div>
@@ -205,7 +216,16 @@ export const TaskingMenu: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openSections, setOpenSections] = useState<ProgTypeKey[]>(PROG_TYPES);
-  const [selectedKey, setSelectedKey] = useState<string>();
+  // The pass being ordered. Set by SELECT, cleared by Cancel.
+  const [orderPass, setOrderPass] = useState<{
+    mission: MissionKey;
+    progType: ProgTypeKey;
+    segment: TaskingSegment;
+  } | null>(null);
+
+  // The programme opened out into the day-by-day view, and which page it's on.
+  const [detailProgType, setDetailProgType] = useState<ProgTypeKey | null>(null);
+  const [dayPage, setDayPage] = useState(0);
 
   // Only the newest search is allowed to write its answer into state.
   const searchId = useRef(0);
@@ -238,7 +258,8 @@ export const TaskingMenu: React.FC = () => {
 
       setIsLoading(true);
       setError(null);
-      setSelectedKey(undefined);
+      setResult(null);
+      setDetailProgType(null);
 
       try {
         const data = await FetchAttempt(
@@ -298,6 +319,25 @@ export const TaskingMenu: React.FC = () => {
     return null;
   };
 
+  /** Every pass in a programme, grouped by the UTC day it lands on. */
+  const daysFor = (progType: ProgTypeKey) => {
+    const byDay = new Map<string, Array<{ mission: MissionKey; segment: TaskingSegment }>>();
+
+    sensorMissions.forEach((mission) => {
+      segmentsFor(mission, progType).forEach((segment) => {
+        const day = segment.acquisitionStartDate.slice(0, 10);
+        byDay.set(day, [...(byDay.get(day) ?? []), { mission, segment }]);
+      });
+    });
+
+    return [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b));
+  };
+
+  const openDetail = (progType: ProgTypeKey) => {
+    setDetailProgType(progType);
+    setDayPage(0);
+  };
+
   const toggleSection = (progType: ProgTypeKey) =>
     setOpenSections((open) =>
       open.includes(progType) ? open.filter((item) => item !== progType) : [...open, progType]
@@ -316,6 +356,27 @@ export const TaskingMenu: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  if (orderPass) {
+    const rings = selectedAoi ? polygonRings(selectedAoi.geojson) : null;
+
+    if (rings) {
+      return (
+        <div className="flex h-full min-h-0 flex-col">
+          <TaskingOrderForm
+            aoiLabel={selectedAoi?.label ?? "Area of interest"}
+            rings={rings}
+            mission={orderPass.mission}
+            progType={orderPass.progType}
+            segment={orderPass.segment}
+            maxIncidence={incidenceAngle}
+            onCancel={() => setOrderPass(null)}
+            onSubmitted={() => setOrderPass(null)}
+          />
+        </div>
+      );
+    }
   }
 
   return (
@@ -453,13 +514,6 @@ export const TaskingMenu: React.FC = () => {
 
       {/* Results */}
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
-        {isLoading && (
-          <p className="text-text-secondary flex items-center gap-1.5 text-[11px]">
-            <Loader2 size={12} className="animate-spin" />
-            Checking passes over {selectedAoi?.label ?? "your area"}
-          </p>
-        )}
-
         {!result && !isLoading && !error && (
           <div className="border-border rounded-lg border border-dashed bg-white px-4 py-8 text-center">
             <p className="text-primary text-xs font-semibold">No passes yet</p>
@@ -469,67 +523,159 @@ export const TaskingMenu: React.FC = () => {
           </div>
         )}
 
-        {result &&
+        {(result || isLoading) &&
           PROG_TYPES.map((progType) => {
             const meta = PROG_TYPE_META[progType];
             const isOpen = openSections.includes(progType);
-            const passCount = sensorMissions.reduce(
-              (total, mission) => total + segmentsFor(mission, progType).length,
-              0
-            );
+            const isDetail = detailProgType === progType;
+
+            const days = daysFor(progType);
+            const passCount = days.reduce((total, [, passes]) => total + passes.length, 0);
+            const missionsWithPasses = sensorMissions.filter(
+              (mission) => segmentsFor(mission, progType).length > 0
+            ).length;
+
+            // The summary only shows each mission's soonest pass.
+            const hasMore = passCount > missionsWithPasses;
+            const pageCount = Math.max(1, Math.ceil(days.length / DAYS_PER_PAGE));
+            const pageDays = days.slice(dayPage * DAYS_PER_PAGE, (dayPage + 1) * DAYS_PER_PAGE);
 
             return (
               <section key={progType} className="border-border overflow-hidden rounded-lg border">
-                <button
-                  type="button"
-                  onClick={() => toggleSection(progType)}
-                  aria-expanded={isOpen}
-                  className="bg-primary-100 flex w-full items-start justify-between gap-3 px-3.5 py-2.5 text-left"
-                >
-                  <span className="min-w-0">
-                    <span className="block text-base font-bold tracking-wide text-slate-900">
-                      {meta.title}
-                    </span>
-                    <span className="text-text-secondary mt-0.5 block text-[11px]">
-                      {meta.blurb} |{" "}
-                      <span className="font-semibold text-slate-700">Cloud coverage:</span>{" "}
-                      {meta.cloud}
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2 pt-0.5">
-                    <span className="text-text-secondary text-[11px]">
-                      {passCount ? `${passCount} pass${passCount === 1 ? "" : "es"}` : "No passes"}
-                    </span>
-                    <ChevronDown
-                      size={14}
-                      className={`text-primary ${isOpen ? "rotate-180" : ""}`}
-                    />
-                  </span>
-                </button>
+                <div className="bg-primary-100 flex items-start gap-2 px-3.5 py-2.5">
+                  {isDetail && (
+                    <button
+                      type="button"
+                      onClick={() => setDetailProgType(null)}
+                      aria-label={`Back to the ${meta.title} summary`}
+                      className="text-primary mt-0.5 shrink-0"
+                    >
+                      <ArrowLeft size={15} />
+                    </button>
+                  )}
 
-                {isOpen && (
-                  <div className="divide-border grid grid-cols-1 divide-y bg-white sm:grid-cols-2">
-                    {sensorMissions.map((mission) => {
-                      const segments = segmentsFor(mission, progType);
-                      // One key per mission group: every pass shares the booking.
-                      const groupKey = segments[0]?.segmentKey;
+                  <button
+                    type="button"
+                    onClick={() => !isDetail && toggleSection(progType)}
+                    aria-expanded={isOpen}
+                    className="flex min-w-0 flex-1 items-start justify-between gap-3 text-left"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-base font-bold tracking-wide text-slate-900">
+                        {meta.title}
+                      </span>
+                      <span className="text-text-secondary mt-0.5 block text-[11px]">
+                        {meta.blurb} |{" "}
+                        <span className="font-semibold text-slate-700">Cloud coverage:</span>{" "}
+                        {meta.cloud}
+                      </span>
+                    </span>
 
-                      return (
+                    {!isDetail && (
+                      <span className="flex shrink-0 items-center gap-2 pt-0.5">
+                        <span className="text-text-secondary text-[11px]">
+                          {isLoading
+                            ? ""
+                            : passCount
+                              ? `${passCount} pass${passCount === 1 ? "" : "es"}`
+                              : "No passes"}
+                        </span>
+                        <ChevronDown
+                          size={14}
+                          className={`text-primary ${isOpen ? "rotate-180" : ""}`}
+                        />
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Waiting on the search */}
+                {isOpen && isLoading && (
+                  <div className="flex items-center justify-center bg-white py-6">
+                    <Loader2 size={20} className="text-primary/70 animate-spin" />
+                    <span className="sr-only">Loading passes</span>
+                  </div>
+                )}
+
+                {/* Summary: one card per mission */}
+                {isOpen && !isLoading && !isDetail && (
+                  <div className="bg-white">
+                    <div className="divide-border grid grid-cols-1 divide-y sm:grid-cols-2">
+                      {sensorMissions.map((mission) => (
                         <MissionCard
                           key={mission}
                           mission={mission}
-                          segments={segments}
+                          segments={segmentsFor(mission, progType)}
                           reason={reasonFor(mission, progType)}
                           maxIncidence={incidenceAngle}
-                          isSelected={!!groupKey && groupKey === selectedKey}
-                          onSelect={() =>
-                            setSelectedKey((current) =>
-                              current === groupKey ? undefined : groupKey
-                            )
+                          onSelect={(segment) =>
+                            setOrderPass({ mission, progType, segment })
                           }
                         />
-                      );
-                    })}
+                      ))}
+                    </div>
+
+                    {hasMore && (
+                      <button
+                        type="button"
+                        onClick={() => openDetail(progType)}
+                        className="text-primary border-border w-full border-t py-2.5 text-xs font-semibold tracking-wide hover:bg-slate-50"
+                      >
+                        VIEW MORE
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Detail: passes day by day */}
+                {isDetail && !isLoading && (
+                  <div className="bg-white p-4">
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setDayPage((page) => Math.max(0, page - 1))}
+                        disabled={dayPage === 0}
+                        aria-label="Earlier days"
+                        className="text-primary disabled:opacity-30"
+                      >
+                        <ArrowLeft size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDayPage((page) => Math.min(pageCount - 1, page + 1))}
+                        disabled={dayPage >= pageCount - 1}
+                        aria-label="Later days"
+                        className="text-primary disabled:opacity-30"
+                      >
+                        <ArrowRight size={16} />
+                      </button>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      {pageDays.map(([day, passes]) => (
+                        <div key={day}>
+                          <h5 className="text-center text-sm font-bold text-slate-900">
+                            {formatDay(day)}
+                          </h5>
+
+                          <div className="mt-3 space-y-3">
+                            {passes.map(({ mission, segment }) => (
+                              <div
+                                key={segment.segmentKey}
+                                className="border-border rounded-lg border bg-white p-3 shadow-sm"
+                              >
+                                <PassCard
+                                  mission={mission}
+                                  segment={segment}
+                                  maxIncidence={incidenceAngle}
+                                  onSelect={() => setOrderPass({ mission, progType, segment })}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </section>
