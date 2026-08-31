@@ -32,7 +32,7 @@ import { useMapStore } from "../../../store/useMapStore";
 import { usePinnedProductStore } from "../../../hooks/usePinnedProductStore";
 import { useSelectedAOIStore } from "../../../hooks/useSelectedAOIStore";
 import { useLayersStore } from "../../../../../store/useLayersStore";
-import { ArchiveProductCardSkeleton } from "../component/ArchiveProductCardSkeleton";
+// import { ArchiveProductCardSkeleton } from "../component/ArchiveProductCardSkeleton";
 import { ChevronRight, Loader2 } from "lucide-react";
 import {
   exportCSV,
