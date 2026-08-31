@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, Loader2 } from "lucide-react";
-import { transformExtent } from "ol/proj";
 import axios from "axios";
 
 import { AoiDrawIcon } from "../icons/AoiDrawIcon";
@@ -66,12 +65,6 @@ const polygonRings = (geojson: any): number[][][] | null => {
   if (geometry?.type === "Polygon") return geometry.coordinates;
   if (geometry?.type === "MultiPolygon") return geometry.coordinates?.[0] ?? null;
   return null;
-};
-
-const bboxOf = (rings: number[][][]): [number, number, number, number] => {
-  const xs = rings[0].map(([x]) => x);
-  const ys = rings[0].map(([, y]) => y);
-  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
 };
 
 const field =
@@ -164,7 +157,8 @@ const MissionCard: React.FC<MissionCardProps> = ({
 /* ------------------------------------------------------------------ */
 
 export const TaskingMenu: React.FC = () => {
-  const map = useSelectedAOIStore((state) => state.map);
+  const selectedAOIId = useSelectedAOIStore((state) => state.selectedAOIId);
+  const setSelectedAOI = useSelectedAOIStore((state) => state.setSelectedAOI);
   const { accessToken } = useAuthStore();
   const layers = useLayersStore((state) => state.layers);
 
@@ -176,7 +170,6 @@ export const TaskingMenu: React.FC = () => {
   const today = useMemo(() => new Date(), []);
 
   /* Filters */
-  const [aoiId, setAoiId] = useState("");
   const [startDate, setStartDate] = useState(toInputDate(today));
   const [endDate, setEndDate] = useState(toInputDate(plusDays(today, 30)));
   const [sensorIndex, setSensorIndex] = useState(0);
@@ -194,48 +187,18 @@ export const TaskingMenu: React.FC = () => {
   // Only the newest search is allowed to write its answer into state.
   const searchId = useRef(0);
 
-  const selectedAoi = aoiLayers.find((layer) => layer.id === aoiId);
+  const selectedAoi = aoiLayers.find((layer) => layer.id === selectedAOIId);
   const sensorMissions = SENSORS[sensorIndex].missions;
 
   // Missions the API can actually be asked about with this mode.
   const missions = sensorMissions.filter((mission) => supportsMode(mission, mode));
 
-  /* Pick the first AOI, and drop the choice if that layer is deleted. */
+  /* Keep a valid AOI selected; the map handles moving the view. */
   useEffect(() => {
-    if (!aoiLayers.some((layer) => layer.id === aoiId)) {
-      setAoiId(aoiLayers[0]?.id ?? "");
+    if (!aoiLayers.some((layer) => layer.id === selectedAOIId)) {
+      setSelectedAOI(aoiLayers[0]?.id ?? null);
     }
-  }, [aoiLayers, aoiId]);
-
-  /* Zoom the map to the AOI whenever it changes. */
-  useEffect(() => {
-    const rings = selectedAoi ? polygonRings(selectedAoi.geojson) : null;
-    if (!map || !rings?.[0]?.length) return;
-
-    const view = map.getView();
-    const currentZoom = view.getZoom() ?? 0;
-
-    const maxZoom =
-      currentZoom <= 6
-        ? 7
-        : currentZoom <= 10
-          ? 10
-          : Math.min(Math.ceil(currentZoom), 18);
-
-    view.fit(
-      transformExtent(
-        bboxOf(rings),
-        "EPSG:4326",
-        view.getProjection()
-      ),
-      {
-        padding: [40, 40, 40, 40],
-        duration: 1000, // smooth animation
-        maxZoom,
-      }
-    );
-  }, [map, selectedAoi]);
-
+  }, [aoiLayers, selectedAOIId, setSelectedAOI]);
 
   /* Search whenever a filter changes. */
   useEffect(() => {
@@ -317,11 +280,6 @@ export const TaskingMenu: React.FC = () => {
       open.includes(progType) ? open.filter((item) => item !== progType) : [...open, progType]
     );
 
-  const selectedSegment = result?.progCapacities
-    .flatMap((capacity) => capacity.progTypes)
-    .flatMap((progType) => progType.segments ?? [])
-    .find((segment) => segment.segmentKey === selectedKey);
-
   /* ---------------------------------------------------------------- */
 
   if (!aoiLayers.length) {
@@ -372,8 +330,8 @@ export const TaskingMenu: React.FC = () => {
           </label>
           <select
             id="tasking-aoi"
-            value={aoiId}
-            onChange={(event) => setAoiId(event.target.value)}
+            value={selectedAOIId ?? ""}
+            onChange={(event) => setSelectedAOI(event.target.value)}
             className={field}
           >
             {aoiLayers.map((layer) => (
@@ -535,7 +493,11 @@ export const TaskingMenu: React.FC = () => {
                         segments={segmentsFor(mission, progType)}
                         reason={reasonFor(mission, progType)}
                         selectedKey={selectedKey}
-                        onSelect={(segment) => setSelectedKey(segment.segmentKey)}
+                        onSelect={(segment) =>
+                          setSelectedKey((current) =>
+                            current === segment.segmentKey ? undefined : segment.segmentKey
+                          )
+                        }
                       />
                     ))}
                   </div>
@@ -544,30 +506,6 @@ export const TaskingMenu: React.FC = () => {
             );
           })}
       </div>
-
-      {/* Selection footer */}
-      {selectedSegment && (
-        <div className="border-border flex shrink-0 items-center justify-between gap-3 border-t bg-white px-4 py-2.5">
-          <span className="text-text-secondary min-w-0 truncate text-[11px]">
-            Pass on {formatDay(selectedSegment.acquisitionStartDate)}
-          </span>
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedKey(undefined)}
-              className="text-text-muted hover:text-primary text-[11px]"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              className="bg-primary hover:bg-primary/90 rounded-md px-3 py-1.5 text-[11px] font-semibold text-white"
-            >
-              Get price
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
