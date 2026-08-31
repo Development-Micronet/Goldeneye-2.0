@@ -4,6 +4,9 @@ import type { SelectedArchiveProduct } from "../store/useArchiveProductStore";
 import { useArchiveHoverStore } from "../../../hooks/useArchiveHoverStore";
 import { usePinnedProductStore } from "../../../hooks/usePinnedProductStore";
 import { useArchiveInfoStore } from "../../../hooks/useArchiveInfoStore";
+import { useAuthStore } from "../../../../../store/useAuthStore";
+import { canPlaceOrder } from "../api/product.service";
+
 
 interface ArchiveProductCardProps {
   product: SelectedArchiveProduct;
@@ -12,6 +15,7 @@ interface ArchiveProductCardProps {
   onToggleSelect: (product: SelectedArchiveProduct) => void;
   onToggleVisibility: (product: SelectedArchiveProduct) => void;
   onFlyToProduct: (product: SelectedArchiveProduct) => void;
+  onOrder: (product: SelectedArchiveProduct) => void;
 }
 
 export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
@@ -21,10 +25,16 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
   onToggleSelect,
   onToggleVisibility,
   onFlyToProduct,
+  onOrder,
 }) => {
   const { setHoveredProduct } = useArchiveHoverStore();
   const { addPinnedProduct, removePinnedProduct, isPinned } = usePinnedProductStore();
   const { infoProduct, setInfoProduct } = useArchiveInfoStore();
+  const { user } = useAuthStore();
+
+  // A plain user raises a request; only a superadmin orders outright.
+  const orderLabel = canPlaceOrder(user?.roleName) ? "Add to Cart" : "Raise a request";
+
   return (
     <div
       onMouseEnter={() => setHoveredProduct(product)}
@@ -36,9 +46,8 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
         <div className="relative h-20 w-20 shrink-0 overflow-hidden bg-gray-100">
           <button
             onClick={() => onToggleSelect(product)}
-            className={`absolute top-1 left-1 z-10 flex h-4 w-4 items-center justify-center border transition ${
-              checked ? "border-primary bg-primary text-white" : "border-white bg-white"
-            }`}
+            className={`absolute top-1 left-1 z-10 flex h-4 w-4 items-center justify-center border transition ${checked ? "border-primary bg-primary text-white" : "border-white bg-white"
+              }`}
           >
             {checked && <Check size={10} strokeWidth={3} />}
           </button>
@@ -85,6 +94,7 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
             >
               <Crosshair size={14} />
             </button>
+
             <button
               onClick={() => {
                 if (isPinned(product.id)) {
@@ -93,22 +103,21 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
                   addPinnedProduct(product);
                 }
               }}
-
               className="hover:text-primary p-1 transition hover:bg-gray-100"
               title={isPinned(product.id) ? "Remove Pin" : "Pin Product"}
             >
               <Pin size={14} className={isPinned(product.id) ? "text-primary" : "text-gray-400"} />
             </button>
+
             <button
               disabled={!checked}
               onClick={() => onToggleVisibility(product)}
-              className={`p-1 transition ${
-                !checked
+              className={`p-1 transition ${!checked
                   ? "cursor-not-allowed text-gray-300"
                   : isVisible
                     ? "text-primary"
                     : "hover:text-primary hover:bg-gray-100"
-              }`}
+                }`}
               title={!checked ? "Select product first" : isVisible ? "Hide Image" : "Show Image"}
             >
               <Eye size={14} />
@@ -118,19 +127,19 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
               onClick={() =>
                 infoProduct?.id === product.id ? setInfoProduct(null) : setInfoProduct(product)
               }
-              className={`flex h-6 w-6 items-center justify-center rounded-md transition-all duration-200 ${
-                infoProduct?.id === product.id
+              className={`flex h-6 w-6 items-center justify-center rounded-md transition-all duration-200 ${infoProduct?.id === product.id
                   ? "bg-primary shadow-primary/30 text-white shadow-sm"
                   : "hover:text-primary text-gray-500 hover:bg-gray-100"
-              } `}
+                } `}
               title={infoProduct?.id === product.id ? "Close Information" : "Show Information"}
             >
               <Info size={14} />
             </button>
 
             <button
+              onClick={() => onOrder(product)}
               className="hover:text-primary p-1 transition hover:bg-gray-100"
-              title="Add to Cart"
+              title={orderLabel}
             >
               <ShoppingCart size={14} />
             </button>
