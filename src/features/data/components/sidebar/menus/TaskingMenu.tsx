@@ -1,31 +1,25 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Camera, ChevronDown, Clock, Gauge, Loader2 } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, ChevronDown, Loader2 } from "lucide-react";
 import { transformExtent } from "ol/proj";
 import axios from "axios";
 
 import { AoiDrawIcon } from "../icons/AoiDrawIcon";
 import {
-  ACQUISITION_MODES,
-  ACQUISITION_MODE_LABELS,
   FetchAttempt,
   MISSIONS,
-  MISSION_LABELS,
+  MISSION_LIMITS,
+  MODES,
+  MODE_LABELS,
+  PROG_TYPES,
   PROG_TYPE_META,
-  PROG_TYPE_ORDER,
-  explainUnavailable,
-  missionSupportsMode,
-  missionSupportsProgType,
-  modeNeedsContract,
-  orderEndpointFor,
-  validateAttemptPayload,
+  supportsMode,
+  supportsProgType,
 } from "../api/Tasking.service";
 import type {
   AcquisitionMode,
   MissionKey,
   ProgTypeKey,
-  TaskingAttemptPayload,
   TaskingAttemptResponse,
-  TaskingProgType,
   TaskingSegment,
 } from "../api/Tasking.service";
 import { useSelectedAOIStore } from "../../../hooks/useSelectedAOIStore";
@@ -36,7 +30,7 @@ import { useAuthStore } from "../../../../../store/useAuthStore";
 /* Options                                                             */
 /* ------------------------------------------------------------------ */
 
-const SENSOR_OPTIONS: Array<{ label: string; missions: MissionKey[] }> = [
+const SENSORS: Array<{ label: string; missions: MissionKey[] }> = [
   { label: "All sensors", missions: MISSIONS },
   { label: "Pléiades", missions: ["PLEIADES"] },
   { label: "SPOT", missions: ["SPOT"] },
@@ -46,9 +40,7 @@ const SENSOR_OPTIONS: Array<{ label: string; missions: MissionKey[] }> = [
 const INCIDENCE_OPTIONS = [20, 30, 50];
 const CLOUD_OPTIONS = [5, 10, 20];
 const AOI_TYPES = ["Polygon", "Box", "Coordinates", "Bound Coordinates"];
-
-/** Filters change on every keystroke of a date field, so settle first. */
-const SEARCH_DEBOUNCE_MS = 500;
+const DEBOUNCE_MS = 500;
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -56,7 +48,7 @@ const SEARCH_DEBOUNCE_MS = 500;
 
 const toInputDate = (date: Date) => date.toISOString().slice(0, 10);
 
-const addDays = (date: Date, days: number) => {
+const plusDays = (date: Date, days: number) => {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next;
@@ -68,130 +60,102 @@ const formatDay = (iso: string) =>
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
-/** Layers store either a Feature or a bare geometry, so accept both. */
-const toGeometry = (geojson: any) => geojson?.geometry ?? geojson ?? null;
-
-const toPolygonCoordinates = (geojson: any): number[][][] | null => {
-  const geometry = toGeometry(geojson);
-  if (!geometry) return null;
-  if (geometry.type === "Polygon") return geometry.coordinates;
-  if (geometry.type === "MultiPolygon") return geometry.coordinates?.[0] ?? null;
+/** Layers hold either a Feature or a bare geometry. */
+const polygonRings = (geojson: any): number[][][] | null => {
+  const geometry = geojson?.geometry ?? geojson;
+  if (geometry?.type === "Polygon") return geometry.coordinates;
+  if (geometry?.type === "MultiPolygon") return geometry.coordinates?.[0] ?? null;
   return null;
 };
 
-/** Bounding box of a polygon's outer ring, in lon/lat. */
-const extentOf = (coordinates: number[][][]): [number, number, number, number] | null => {
-  const ring = coordinates?.[0];
-  if (!ring?.length) return null;
-
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
-  ring.forEach(([x, y]) => {
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x);
-    maxY = Math.max(maxY, y);
-  });
-
-  return Number.isFinite(minX) && maxX > -Infinity ? [minX, minY, maxX, maxY] : null;
+const bboxOf = (rings: number[][][]): [number, number, number, number] => {
+  const xs = rings[0].map(([x]) => x);
+  const ys = rings[0].map(([, y]) => y);
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
 };
 
-const fieldClass =
-  "border-border text-text-muted focus:border-primary focus:ring-primary/30 w-full min-w-0 rounded-md border bg-white px-2 py-1.5 text-xs outline-none transition-colors focus:ring-1";
+const field =
+  "border-border text-text-muted focus:border-primary w-full min-w-0 rounded-md border bg-white px-2 py-1.5 text-xs outline-none";
 
-const labelClass = "text-primary mb-1 block text-xs font-semibold";
+const labelStyle = "text-primary mb-1 block text-xs font-semibold";
 
 /* ------------------------------------------------------------------ */
-/* Sub-components                                                      */
+/* Mission card                                                        */
 /* ------------------------------------------------------------------ */
 
-const MissionUnavailable: React.FC<{
+interface MissionCardProps {
   mission: MissionKey;
-  progType: ProgTypeKey;
-  record?: TaskingProgType;
-}> = ({ mission, progType, record }) => {
-  const { headline, lines } = explainUnavailable(mission, progType, record);
+  segments: TaskingSegment[];
+  reason: string | null;
+  selectedKey?: string;
+  onSelect: (segment: TaskingSegment) => void;
+}
 
-  return (
-    <div>
-      <h4 className="text-[13px] font-bold tracking-wide text-slate-900">{mission}</h4>
-      <p className="text-primary mt-1 text-xs">{headline}</p>
-      {lines.length > 0 && (
-        <>
-          <p className="mt-0.5 text-xs font-bold text-slate-900">please adjust your parameters</p>
-          <div className="mt-2 space-y-1 rounded bg-red-50 px-3 py-2">
-            {lines.map((line) => {
-              // The trailing figure carries the limit, so it gets the accent.
-              const split = line.lastIndexOf(" ");
-              const label = split > 0 ? line.slice(0, split) : line;
-              const value = split > 0 ? line.slice(split + 1) : "";
+const MissionCard: React.FC<MissionCardProps> = ({
+  mission,
+  segments,
+  reason,
+  selectedKey,
+  onSelect,
+}) => (
+  <div className="space-y-2 p-4">
+    <h4 className="text-[13px] font-bold tracking-wide text-slate-900">{mission}</h4>
 
-              return (
-                <p key={line} className="text-[11.5px] text-slate-700">
-                  {label} <span className="font-medium text-orange-600">{value}</span>
-                </p>
-              );
-            })}
+    {segments.length > 0 &&
+      segments.map((segment) => {
+        const isSelected = segment.segmentKey === selectedKey;
+
+        return (
+          <div
+            key={segment.segmentKey}
+            className={`rounded-md border px-2.5 py-2 ${isSelected ? "border-primary bg-primary/5" : "border-border bg-white"
+              }`}
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-primary text-xs font-semibold">
+                {formatDay(segment.acquisitionStartDate)}
+              </span>
+              <span className="text-text-secondary text-[11px]">
+                {formatTime(segment.acquisitionStartDate)}
+              </span>
+            </div>
+
+            <p className="text-text-muted mt-1 text-[11px]">
+              {segment.incidenceAngle.toFixed(1)}° incidence · {segment.instrumentMode}
+            </p>
+            <p className="text-text-muted text-[11px]">
+              Order by {formatDay(segment.orderDeadline)}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => onSelect(segment)}
+              className={`mt-2 w-full rounded-md px-3 py-1.5 text-[11px] font-semibold ${isSelected
+                ? "bg-primary text-white"
+                : "border-primary text-primary hover:bg-primary/10 border"
+                }`}
+            >
+              {isSelected ? "Selected" : "Select this pass"}
+            </button>
           </div>
-        </>
-      )}
-    </div>
-  );
-};
+        );
+      })}
 
-const SegmentRow: React.FC<{
-  segment: TaskingSegment;
-  selected: boolean;
-  onSelect: () => void;
-}> = ({ segment, selected, onSelect }) => (
-  <div
-    className={`rounded-md border px-2.5 py-2 transition-colors ${selected ? "border-primary bg-primary/5" : "border-border bg-white hover:border-primary/50"
-      }`}
-  >
-    <div className="flex items-baseline justify-between gap-2">
-      <span className="text-primary text-xs font-semibold">
-        {formatDay(segment.acquisitionStartDate)}
-      </span>
-      <span className="text-text-secondary text-[11px]">
-        {formatTime(segment.acquisitionStartDate)}
-      </span>
-    </div>
+    {segments.length === 0 && reason && <p className="text-primary text-xs">{reason}</p>}
 
-    <dl className="mt-1.5 space-y-1">
-      <div className="text-text-muted flex items-center gap-1.5 text-[11px]">
-        <Gauge size={11} className="shrink-0" />
-        <dt className="sr-only">Incidence angle</dt>
-        <dd>
-          {segment.incidenceAngle.toFixed(1)}° incidence
-          {segment.extendedAngle ? " (extended)" : ""}
-        </dd>
-      </div>
-      <div className="text-text-muted flex items-center gap-1.5 text-[11px]">
-        <Camera size={11} className="shrink-0" />
-        <dt className="sr-only">Instrument mode</dt>
-        <dd>{segment.instrumentMode}</dd>
-      </div>
-      <div className="text-text-muted flex items-center gap-1.5 text-[11px]">
-        <Clock size={11} className="shrink-0" />
-        <dt className="sr-only">Order deadline</dt>
-        <dd>Order by {formatDay(segment.orderDeadline)}</dd>
-      </div>
-    </dl>
-
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`mt-2 w-full rounded-md px-3 py-1.5 text-[11px] font-semibold transition-colors ${selected
-        ? "bg-primary text-white"
-        : "border-primary text-primary hover:bg-primary/10 border"
-        }`}
-    >
-      {selected ? "Selected" : "Select this pass"}
-    </button>
+    {segments.length === 0 && !reason && (
+      <>
+        <p className="text-primary text-xs">For the Direct to satellite tasking</p>
+        <p className="text-xs font-bold text-slate-900">please adjust your parameters</p>
+        <div className="space-y-1 rounded bg-red-50 px-3 py-2">
+          {MISSION_LIMITS[mission].map((limit) => (
+            <p key={limit.label} className="text-[11.5px] text-slate-700">
+              {limit.label} <span className="font-medium text-orange-600">{limit.value}</span>
+            </p>
+          ))}
+        </div>
+      </>
+    )}
   </div>
 );
 
@@ -199,22 +163,8 @@ const SegmentRow: React.FC<{
 /* Main                                                                */
 /* ------------------------------------------------------------------ */
 
-export interface TaskingSelection {
-  segment: TaskingSegment;
-  mission: MissionKey;
-  progType: ProgTypeKey;
-  orderEndpoint?: string;
-}
-
-interface TaskingMenuProps {
-  onContinue?: (selection: TaskingSelection) => void;
-}
-
-export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
-  // Read-only: the panel follows the map's selection but never sets it.
-  const selectedAOIId = useSelectedAOIStore((state) => state.selectedAOIId);
+export const TaskingMenu: React.FC = () => {
   const map = useSelectedAOIStore((state) => state.map);
-
   const { accessToken } = useAuthStore();
   const layers = useLayersStore((state) => state.layers);
 
@@ -223,177 +173,154 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
     [layers]
   );
 
-  /* Filters */
   const today = useMemo(() => new Date(), []);
+
+  /* Filters */
   const [aoiId, setAoiId] = useState("");
   const [startDate, setStartDate] = useState(toInputDate(today));
-  const [endDate, setEndDate] = useState(toInputDate(addDays(today, 30)));
+  const [endDate, setEndDate] = useState(toInputDate(plusDays(today, 30)));
   const [sensorIndex, setSensorIndex] = useState(0);
-  const [incidenceAngle, setIncidenceAngle] = useState(INCIDENCE_OPTIONS[0]);
+  const [mode, setMode] = useState<AcquisitionMode>("MONO");
+  const [incidenceAngle, setIncidenceAngle] = useState(INCIDENCE_OPTIONS[2]);
   const [cloudCover, setCloudCover] = useState(CLOUD_OPTIONS[1]);
-  const [acquisitionMode, setAcquisitionMode] = useState<AcquisitionMode>("MONO");
 
   /* Results */
   const [result, setResult] = useState<TaskingAttemptResponse | null>(null);
-  const [searchedMissions, setSearchedMissions] = useState<MissionKey[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const [openSections, setOpenSections] = useState<Set<ProgTypeKey>>(new Set(PROG_TYPE_ORDER));
-  const [selection, setSelection] = useState<TaskingSelection | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [openSections, setOpenSections] = useState<ProgTypeKey[]>(PROG_TYPES);
+  const [selectedKey, setSelectedKey] = useState<string>();
 
-  const abortRef = useRef<AbortController | null>(null);
-  const fittedAoiRef = useRef<string | null>(null);
-
-  // Fall back to the first AOI, follow the map's pick, and let go if deleted.
-  useEffect(() => {
-    if (!aoiLayers.length) {
-      setAoiId("");
-      return;
-    }
-
-    const fromMap = aoiLayers.find((layer) => layer.id === selectedAOIId);
-    if (fromMap) {
-      setAoiId(fromMap.id);
-      return;
-    }
-
-    setAoiId((current) =>
-      aoiLayers.some((layer) => layer.id === current) ? current : aoiLayers[0].id
-    );
-  }, [aoiLayers, selectedAOIId]);
+  // Only the newest search is allowed to write its answer into state.
+  const searchId = useRef(0);
 
   const selectedAoi = aoiLayers.find((layer) => layer.id === aoiId);
-  const chosenMissions = SENSOR_OPTIONS[sensorIndex].missions;
+  const sensorMissions = SENSORS[sensorIndex].missions;
 
-  // Frame the AOI once per change, so edits and renames don't move the view.
+  // Missions the API can actually be asked about with this mode.
+  const missions = sensorMissions.filter((mission) => supportsMode(mission, mode));
+
+  /* Pick the first AOI, and drop the choice if that layer is deleted. */
   useEffect(() => {
-    if (!map || !aoiId || fittedAoiRef.current === aoiId) return;
+    if (!aoiLayers.some((layer) => layer.id === aoiId)) {
+      setAoiId(aoiLayers[0]?.id ?? "");
+    }
+  }, [aoiLayers, aoiId]);
 
-    const layer = aoiLayers.find((item) => item.id === aoiId);
-    const coordinates = layer ? toPolygonCoordinates(layer.geojson) : null;
-    const extent = coordinates ? extentOf(coordinates) : null;
-    if (!extent) return;
+  /* Zoom the map to the AOI whenever it changes. */
+  useEffect(() => {
+    const rings = selectedAoi ? polygonRings(selectedAoi.geojson) : null;
+    if (!map || !rings?.[0]?.length) return;
 
     const view = map.getView();
-    view.fit(transformExtent(extent, "EPSG:4326", view.getProjection()), {
-      padding: [40, 40, 40, 40],
-      duration: 400,
-      maxZoom: 16,
-    });
+    const currentZoom = view.getZoom() ?? 0;
 
-    fittedAoiRef.current = aoiId;
-  }, [map, aoiId, aoiLayers]);
+    const maxZoom =
+      currentZoom <= 6
+        ? 7
+        : currentZoom <= 10
+          ? 10
+          : Math.min(Math.ceil(currentZoom), 18);
 
-  /* Compatibility, worked out before the request goes anywhere. */
-  const requestMissions = useMemo(
-    () => chosenMissions.filter((mission) => missionSupportsMode(mission, acquisitionMode)),
-    [chosenMissions, acquisitionMode]
-  );
-
-  const droppedByMode = chosenMissions.filter(
-    (mission) => !missionSupportsMode(mission, acquisitionMode)
-  );
-
-  const requestProgTypes = useMemo(
-    () =>
-      PROG_TYPE_ORDER.filter((progType) =>
-        requestMissions.some((mission) => missionSupportsProgType(mission, progType))
+    view.fit(
+      transformExtent(
+        bboxOf(rings),
+        "EPSG:4326",
+        view.getProjection()
       ),
-    [requestMissions]
-  );
-
-  const runSearch = useCallback(async () => {
-    const coordinates = selectedAoi ? toPolygonCoordinates(selectedAoi.geojson) : null;
-    if (!coordinates) return;
-
-    const payload: TaskingAttemptPayload = {
-      acquisitionStartDate: `${startDate}T00:00:00Z`,
-      acquisitionEndDate: `${endDate}T23:59:59Z`,
-      missions: requestMissions,
-      progTypeNames: requestProgTypes,
-      acquisitionMode,
-      maxCloudCover: cloudCover,
-      maxIncidenceAngle: incidenceAngle,
-      aoi: { type: "Polygon", coordinates },
-    };
-
-    const invalid = validateAttemptPayload(payload);
-    if (invalid) {
-      setSearchError(invalid);
-      return;
-    }
-
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    setIsSearching(true);
-    setSearchError(null);
-    setSelection(null);
-
-    try {
-      const data = await FetchAttempt(payload, accessToken ?? "", controller.signal);
-      if (controller.signal.aborted) return;
-
-      setResult(data);
-      setSearchedMissions(requestMissions);
-
-      // Open whichever programmes actually came back with passes.
-      const withPasses = requestProgTypes.filter((progType) =>
-        data.progCapacities.some((capacity) =>
-          capacity.progTypes.some((record) => record.name === progType && record.segments?.length)
-        )
-      );
-      setOpenSections(new Set(withPasses.length ? withPasses : requestProgTypes));
-    } catch (error) {
-      if (axios.isCancel(error) || controller.signal.aborted) return;
-      if (axios.isAxiosError(error)) {
-        setSearchError(
-          error.response?.data?.detail ??
-          error.response?.data?.message ??
-          `The tasking service returned ${error.response?.status ?? "an error"}.`
-        );
-      } else {
-        setSearchError("Could not reach the tasking service.");
+      {
+        padding: [40, 40, 40, 40],
+        duration: 1000, // smooth animation
+        maxZoom,
       }
-    } finally {
-      if (!controller.signal.aborted) setIsSearching(false);
-    }
+    );
+  }, [map, selectedAoi]);
+
+
+  /* Search whenever a filter changes. */
+  useEffect(() => {
+    const rings = selectedAoi ? polygonRings(selectedAoi.geojson) : null;
+    const progTypeNames = PROG_TYPES.filter((progType) =>
+      missions.some((mission) => supportsProgType(mission, progType))
+    );
+
+    if (!rings || !missions.length || !progTypeNames.length) return;
+
+    const timer = window.setTimeout(async () => {
+      const id = searchId.current + 1;
+      searchId.current = id;
+
+      setIsLoading(true);
+      setError(null);
+      setSelectedKey(undefined);
+
+      try {
+        const data = await FetchAttempt(
+          {
+            acquisitionStartDate: `${startDate}T00:00:00Z`,
+            acquisitionEndDate: `${endDate}T23:59:59Z`,
+            missions,
+            progTypeNames,
+            acquisitionMode: mode,
+            maxCloudCover: cloudCover,
+            maxIncidenceAngle: incidenceAngle,
+            aoi: { type: "Polygon", coordinates: rings },
+          },
+          accessToken ?? ""
+        );
+
+        if (id === searchId.current) setResult(data);
+      } catch (caught) {
+        if (id !== searchId.current) return;
+        setError(
+          (axios.isAxiosError(caught) && caught.response?.data?.detail) ||
+          "Could not load passes from the tasking service."
+        );
+      } finally {
+        if (id === searchId.current) setIsLoading(false);
+      }
+    }, DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedAoi,
     startDate,
     endDate,
-    requestMissions,
-    requestProgTypes,
-    acquisitionMode,
+    sensorIndex,
+    mode,
     cloudCover,
     incidenceAngle,
     accessToken,
   ]);
 
-  // Results follow the filters; no search button to press.
-  useEffect(() => {
-    const timer = window.setTimeout(runSearch, SEARCH_DEBOUNCE_MS);
-    return () => window.clearTimeout(timer);
-  }, [runSearch]);
+  /** Segments the API returned for one mission and programme. */
+  const segmentsFor = (mission: MissionKey, progType: ProgTypeKey) => {
+    const record = result?.progCapacities
+      .find((capacity) => capacity.mission === mission)
+      ?.progTypes.find((entry) => entry.name === progType);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
+    return record?.available ? record.segments ?? [] : [];
+  };
 
-  const progTypeFor = useCallback(
-    (mission: MissionKey, name: ProgTypeKey): TaskingProgType | undefined =>
-      result?.progCapacities
-        .find((capacity) => capacity.mission === mission)
-        ?.progTypes.find((progType) => progType.name === name),
-    [result]
-  );
+  /** Why a mission has no passes, when the reason is a rule rather than capacity. */
+  const reasonFor = (mission: MissionKey, progType: ProgTypeKey) => {
+    if (!supportsMode(mission, mode)) return `${MODE_LABELS[mode]} isn't offered on this mission.`;
+    if (!supportsProgType(mission, progType)) {
+      return `${PROG_TYPE_META[progType].title} isn't offered on this mission.`;
+    }
+    return null;
+  };
 
-  const toggleSection = (name: ProgTypeKey) =>
-    setOpenSections((previous) => {
-      const next = new Set(previous);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
+  const toggleSection = (progType: ProgTypeKey) =>
+    setOpenSections((open) =>
+      open.includes(progType) ? open.filter((item) => item !== progType) : [...open, progType]
+    );
+
+  const selectedSegment = result?.progCapacities
+    .flatMap((capacity) => capacity.progTypes)
+    .flatMap((progType) => progType.segments ?? [])
+    .find((segment) => segment.segmentKey === selectedKey);
 
   /* ---------------------------------------------------------------- */
 
@@ -403,7 +330,7 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
         <p className="text-primary mb-4 max-w-[240px] text-sm font-semibold sm:text-base">
           Draw an area of interest to start tasking.
         </p>
-        <div className="border-primary bg-primary/10 hover:bg-primary/30 flex h-12 w-12 cursor-pointer items-center justify-center rounded border shadow-sm transition-colors">
+        <div className="border-primary bg-primary/10 hover:bg-primary/30 flex h-12 w-12 cursor-pointer items-center justify-center rounded border shadow-sm">
           <AoiDrawIcon />
         </div>
       </div>
@@ -415,7 +342,7 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
       {/* Filters */}
       <div className="border-border shrink-0 space-y-2.5 border-b px-4 py-3">
         <div>
-          <label className={labelClass} htmlFor="tasking-start">
+          <label className={labelStyle} htmlFor="tasking-start">
             Capture window
           </label>
           <div className="flex items-center gap-2">
@@ -425,7 +352,7 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
               value={startDate}
               min={toInputDate(today)}
               onChange={(event) => setStartDate(event.target.value)}
-              className={fieldClass}
+              className={field}
             />
             <span className="text-text-secondary shrink-0 text-[11px]">to</span>
             <input
@@ -434,20 +361,20 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
               min={startDate}
               onChange={(event) => setEndDate(event.target.value)}
               aria-label="End of capture window"
-              className={fieldClass}
+              className={field}
             />
           </div>
         </div>
 
         <div>
-          <label className={labelClass} htmlFor="tasking-aoi">
+          <label className={labelStyle} htmlFor="tasking-aoi">
             Area of interest
           </label>
           <select
             id="tasking-aoi"
             value={aoiId}
             onChange={(event) => setAoiId(event.target.value)}
-            className={fieldClass}
+            className={field}
           >
             {aoiLayers.map((layer) => (
               <option key={layer.id} value={layer.id}>
@@ -459,56 +386,54 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
 
         <div className="grid grid-cols-2 gap-2.5">
           <div>
-            <label className={labelClass} htmlFor="tasking-sensor">
+            <label className={labelStyle} htmlFor="tasking-sensor">
               Sensor
             </label>
             <select
               id="tasking-sensor"
               value={sensorIndex}
               onChange={(event) => setSensorIndex(Number(event.target.value))}
-              className={fieldClass}
+              className={field}
             >
-              {SENSOR_OPTIONS.map((option, index) => (
-                <option key={option.label} value={index}>
-                  {option.label}
+              {SENSORS.map((sensor, index) => (
+                <option key={sensor.label} value={index}>
+                  {sensor.label}
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className={labelClass} htmlFor="tasking-mode">
+            <label className={labelStyle} htmlFor="tasking-mode">
               Acquisition mode
             </label>
             <select
               id="tasking-mode"
-              value={acquisitionMode}
-              onChange={(event) => setAcquisitionMode(event.target.value as AcquisitionMode)}
-              className={fieldClass}
+              value={mode}
+              onChange={(event) => setMode(event.target.value as AcquisitionMode)}
+              className={field}
             >
-              {ACQUISITION_MODES.map((mode) => {
-                const supported = chosenMissions.some((mission) =>
-                  missionSupportsMode(mission, mode)
-                );
-                return (
-                  <option key={mode || "auto"} value={mode} disabled={!supported}>
-                    {ACQUISITION_MODE_LABELS[mode]}
-                    {supported ? "" : " — not on this sensor"}
-                  </option>
-                );
-              })}
+              {MODES.map((option) => (
+                <option
+                  key={option}
+                  value={option}
+                  disabled={!sensorMissions.some((mission) => supportsMode(mission, option))}
+                >
+                  {MODE_LABELS[option]}
+                </option>
+              ))}
             </select>
           </div>
 
           <div>
-            <label className={labelClass} htmlFor="tasking-incidence">
+            <label className={labelStyle} htmlFor="tasking-incidence">
               Incidence angle
             </label>
             <select
               id="tasking-incidence"
               value={incidenceAngle}
               onChange={(event) => setIncidenceAngle(Number(event.target.value))}
-              className={fieldClass}
+              className={field}
             >
               {INCIDENCE_OPTIONS.map((value) => (
                 <option key={value} value={value}>
@@ -519,14 +444,14 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
           </div>
 
           <div>
-            <label className={labelClass} htmlFor="tasking-cloud">
+            <label className={labelStyle} htmlFor="tasking-cloud">
               Cloud cover
             </label>
             <select
               id="tasking-cloud"
               value={cloudCover}
               onChange={(event) => setCloudCover(Number(event.target.value))}
-              className={fieldClass}
+              className={field}
             >
               {CLOUD_OPTIONS.map((value) => (
                 <option key={value} value={value}>
@@ -537,38 +462,24 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
           </div>
         </div>
 
-        {droppedByMode.length > 0 && (
-          <p className="text-text-secondary text-[11px]">
-            {droppedByMode.map((mission) => MISSION_LABELS[mission]).join(" and ")} sits out of these
-            results — {ACQUISITION_MODE_LABELS[acquisitionMode]} isn't offered on it.
-          </p>
-        )}
-
-        {modeNeedsContract(acquisitionMode) && (
-          <p className="text-text-secondary text-[11px]">
-            {ACQUISITION_MODE_LABELS[acquisitionMode]} needs stereo capability on your Airbus
-            contract and matching passes over the area.
-          </p>
-        )}
-
-        {searchError && (
+        {error && (
           <p className="flex items-start gap-1.5 rounded-md bg-red-50 px-2.5 py-2 text-[11px] text-red-700">
             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
-            {searchError}
+            {error}
           </p>
         )}
       </div>
 
       {/* Results */}
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
-        {isSearching && (
+        {isLoading && (
           <p className="text-text-secondary flex items-center gap-1.5 text-[11px]">
             <Loader2 size={12} className="animate-spin" />
             Checking passes over {selectedAoi?.label ?? "your area"}
           </p>
         )}
 
-        {!result && !isSearching && !searchError && (
+        {!result && !isLoading && !error && (
           <div className="border-border rounded-lg border border-dashed bg-white px-4 py-8 text-center">
             <p className="text-primary text-xs font-semibold">No passes yet</p>
             <p className="text-text-secondary mt-1 text-[11px]">
@@ -578,30 +489,19 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
         )}
 
         {result &&
-          PROG_TYPE_ORDER.map((name) => {
-            const meta = PROG_TYPE_META[name];
-            const isOpen = openSections.has(name);
-
-            const entries = searchedMissions.map((mission) => {
-              const record = progTypeFor(mission, name);
-              const supported = missionSupportsProgType(mission, name);
-              return {
-                mission,
-                record,
-                segments: supported && record?.available ? record.segments ?? [] : [],
-              };
-            });
-
-            if (!entries.length) return null;
-
-            const passCount = entries.reduce((total, entry) => total + entry.segments.length, 0);
-            const twoColumns = entries.length > 1;
+          PROG_TYPES.map((progType) => {
+            const meta = PROG_TYPE_META[progType];
+            const isOpen = openSections.includes(progType);
+            const passCount = sensorMissions.reduce(
+              (total, mission) => total + segmentsFor(mission, progType).length,
+              0
+            );
 
             return (
-              <section key={name} className="border-border overflow-hidden rounded-lg border">
+              <section key={progType} className="border-border overflow-hidden rounded-lg border">
                 <button
                   type="button"
-                  onClick={() => toggleSection(name)}
+                  onClick={() => toggleSection(progType)}
                   aria-expanded={isOpen}
                   className="bg-primary-100 flex w-full items-start justify-between gap-3 px-3.5 py-2.5 text-left"
                 >
@@ -621,63 +521,23 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
                     </span>
                     <ChevronDown
                       size={14}
-                      className={`text-primary transition-transform ${isOpen ? "rotate-180" : ""}`}
+                      className={`text-primary ${isOpen ? "rotate-180" : ""}`}
                     />
                   </span>
                 </button>
 
                 {isOpen && (
-                  <div className={`grid grid-cols-1 bg-white ${twoColumns ? "sm:grid-cols-2" : ""}`}>
-                    {(twoColumns ? [0, 1] : [0]).map((column) => {
-                      const columnEntries = twoColumns
-                        ? entries.filter((_, index) => index % 2 === column)
-                        : entries;
-
-                      if (!columnEntries.length) return <div key={column} />;
-
-                      return (
-                        <div
-                          key={column}
-                          className={`divide-border divide-y ${column === 1 ? "border-border border-t sm:border-t-0 sm:border-l" : ""
-                            }`}
-                        >
-                          {columnEntries.map(({ mission, record, segments }) => (
-                            <div key={mission} className="space-y-2 p-4">
-                              {segments.length ? (
-                                <>
-                                  <h4 className="text-[13px] font-bold tracking-wide text-slate-900">
-                                    {mission}
-                                  </h4>
-                                  {segments.map((segment) => (
-                                    <SegmentRow
-                                      key={segment.segmentKey}
-                                      segment={segment}
-                                      selected={
-                                        selection?.segment.segmentKey === segment.segmentKey
-                                      }
-                                      onSelect={() =>
-                                        setSelection({
-                                          segment,
-                                          mission,
-                                          progType: name,
-                                          orderEndpoint: orderEndpointFor(mission, name),
-                                        })
-                                      }
-                                    />
-                                  ))}
-                                </>
-                              ) : (
-                                <MissionUnavailable
-                                  mission={mission}
-                                  progType={name}
-                                  record={record}
-                                />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })}
+                  <div className="divide-border grid grid-cols-1 divide-y bg-white sm:grid-cols-2">
+                    {sensorMissions.map((mission) => (
+                      <MissionCard
+                        key={mission}
+                        mission={mission}
+                        segments={segmentsFor(mission, progType)}
+                        reason={reasonFor(mission, progType)}
+                        selectedKey={selectedKey}
+                        onSelect={(segment) => setSelectedKey(segment.segmentKey)}
+                      />
+                    ))}
                   </div>
                 )}
               </section>
@@ -686,30 +546,22 @@ export const TaskingMenu: React.FC<TaskingMenuProps> = ({ onContinue }) => {
       </div>
 
       {/* Selection footer */}
-      {selection && (
+      {selectedSegment && (
         <div className="border-border flex shrink-0 items-center justify-between gap-3 border-t bg-white px-4 py-2.5">
           <span className="text-text-secondary min-w-0 truncate text-[11px]">
-            {selection.mission} · {PROG_TYPE_META[selection.progType].title} ·{" "}
-            {formatDay(selection.segment.acquisitionStartDate)}
+            Pass on {formatDay(selectedSegment.acquisitionStartDate)}
           </span>
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={() => setSelection(null)}
+              onClick={() => setSelectedKey(undefined)}
               className="text-text-muted hover:text-primary text-[11px]"
             >
               Clear
             </button>
             <button
               type="button"
-              onClick={() => onContinue?.(selection)}
-              disabled={!selection.orderEndpoint}
-              title={
-                selection.orderEndpoint
-                  ? undefined
-                  : "No order endpoint is published for this mission and programme yet."
-              }
-              className="bg-primary hover:bg-primary/90 rounded-md px-3 py-1.5 text-[11px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+              className="bg-primary hover:bg-primary/90 rounded-md px-3 py-1.5 text-[11px] font-semibold text-white"
             >
               Get price
             </button>
