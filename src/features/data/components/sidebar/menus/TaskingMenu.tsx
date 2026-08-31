@@ -53,11 +53,29 @@ const plusDays = (date: Date, days: number) => {
   return next;
 };
 
-const formatDay = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+const dayFormat = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+const timeFormat = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "UTC",
+});
+
+const formatDay = (iso: string) => dayFormat.format(new Date(iso));
+const formatTime = (iso: string) => timeFormat.format(new Date(iso));
+
+/** Earliest deadline in the group — the one the whole booking has to beat. */
+const earliestDeadline = (segments: TaskingSegment[]) =>
+  segments.reduce(
+    (soonest, segment) => (segment.orderDeadline < soonest ? segment.orderDeadline : soonest),
+    segments[0].orderDeadline
+  );
 
 /** Layers hold either a Feature or a bare geometry. */
 const polygonRings = (geojson: any): number[][][] | null => {
@@ -80,59 +98,64 @@ interface MissionCardProps {
   mission: MissionKey;
   segments: TaskingSegment[];
   reason: string | null;
-  selectedKey?: string;
-  onSelect: (segment: TaskingSegment) => void;
+  maxIncidence: number;
+  isSelected: boolean;
+  onSelect: () => void;
 }
 
 const MissionCard: React.FC<MissionCardProps> = ({
   mission,
   segments,
   reason,
-  selectedKey,
+  maxIncidence,
+  isSelected,
   onSelect,
 }) => (
-  <div className="space-y-2 p-4">
+  <div className="space-y-3 p-4">
     <h4 className="text-[13px] font-bold tracking-wide text-slate-900">{mission}</h4>
 
-    {segments.length > 0 &&
-      segments.map((segment) => {
-        const isSelected = segment.segmentKey === selectedKey;
+    {segments.length > 0 && (
+      <>
+        <ol className="space-y-3">
+          {segments.map((segment, index) => (
+            <li key={segment.segmentKey} className="relative flex gap-2.5">
+              <span
+                className={`border-primary mt-1 h-2 w-2 shrink-0 rounded-full border-2 ${index === 0 ? "bg-primary" : "bg-white"
+                  }`}
+              />
+              {index < segments.length - 1 && (
+                <span className="border-primary/40 absolute top-4 -bottom-3 left-[3px] border-l border-dashed" />
+              )}
 
-        return (
-          <div
-            key={segment.segmentKey}
-            className={`rounded-md border px-2.5 py-2 ${isSelected ? "border-primary bg-primary/5" : "border-border bg-white"
-              }`}
-          >
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-primary text-xs font-semibold">
-                {formatDay(segment.acquisitionStartDate)}
-              </span>
-              <span className="text-text-secondary text-[11px]">
-                {formatTime(segment.acquisitionStartDate)}
-              </span>
-            </div>
+              <p className="text-[11.5px] text-slate-700">
+                {formatDay(segment.acquisitionStartDate)}{" "}
+                {formatTime(segment.acquisitionStartDate)}{" "}
+                <span className="font-bold text-slate-900">
+                  {segment.incidenceAngle.toFixed(2)}°
+                </span>{" "}
+                <span className="text-text-secondary">- {maxIncidence}°</span>
+              </p>
+            </li>
+          ))}
+        </ol>
 
-            <p className="text-text-muted mt-1 text-[11px]">
-              {segment.incidenceAngle.toFixed(1)}° incidence · {segment.instrumentMode}
-            </p>
-            <p className="text-text-muted text-[11px]">
-              Order by {formatDay(segment.orderDeadline)}
-            </p>
+        <p className="text-text-secondary text-[11px]">
+          Order deadline: {formatDay(earliestDeadline(segments))}{" "}
+          {formatTime(earliestDeadline(segments))} (UTC)
+        </p>
 
-            <button
-              type="button"
-              onClick={() => onSelect(segment)}
-              className={`mt-2 w-full rounded-md px-3 py-1.5 text-[11px] font-semibold ${isSelected
-                ? "bg-primary text-white"
-                : "border-primary text-primary hover:bg-primary/10 border"
-                }`}
-            >
-              {isSelected ? "Selected" : "Select this pass"}
-            </button>
-          </div>
-        );
-      })}
+        <button
+          type="button"
+          onClick={onSelect}
+          className={`rounded-md px-5 py-2 text-xs font-semibold tracking-wide ${isSelected
+            ? "border-primary text-primary hover:bg-primary/10 border"
+            : "bg-primary hover:bg-primary/90 text-white"
+            }`}
+        >
+          {isSelected ? "SELECTED" : "SELECT"}
+        </button>
+      </>
+    )}
 
     {segments.length === 0 && reason && <p className="text-primary text-xs">{reason}</p>}
 
@@ -486,20 +509,27 @@ export const TaskingMenu: React.FC = () => {
 
                 {isOpen && (
                   <div className="divide-border grid grid-cols-1 divide-y bg-white sm:grid-cols-2">
-                    {sensorMissions.map((mission) => (
-                      <MissionCard
-                        key={mission}
-                        mission={mission}
-                        segments={segmentsFor(mission, progType)}
-                        reason={reasonFor(mission, progType)}
-                        selectedKey={selectedKey}
-                        onSelect={(segment) =>
-                          setSelectedKey((current) =>
-                            current === segment.segmentKey ? undefined : segment.segmentKey
-                          )
-                        }
-                      />
-                    ))}
+                    {sensorMissions.map((mission) => {
+                      const segments = segmentsFor(mission, progType);
+                      // One key per mission group: every pass shares the booking.
+                      const groupKey = segments[0]?.segmentKey;
+
+                      return (
+                        <MissionCard
+                          key={mission}
+                          mission={mission}
+                          segments={segments}
+                          reason={reasonFor(mission, progType)}
+                          maxIncidence={incidenceAngle}
+                          isSelected={!!groupKey && groupKey === selectedKey}
+                          onSelect={() =>
+                            setSelectedKey((current) =>
+                              current === groupKey ? undefined : groupKey
+                            )
+                          }
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </section>
