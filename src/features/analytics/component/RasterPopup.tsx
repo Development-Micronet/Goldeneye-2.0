@@ -20,6 +20,7 @@ import { uploadRaster, type UploadRasterResponse } from "../service/Analytics.se
 import OpacitySlider from "./OpacitySlider";
 import { useMapStore } from "../store/useMapStore";
 import { utmToLngLatBounds } from "../utils/projection";
+import { useQueryClient } from "@tanstack/react-query";
 
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "tif", "tiff"];
 const TIFF_EXTENSIONS = ["tif", "tiff"];
@@ -50,7 +51,7 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
   const rasterProgress = useRasterStore((s) => s.rasterProgress);
   const setRasterStatus = useRasterStore((s) => s.setRasterStatus);
   const setRasterProgress = useRasterStore((s) => s.setRasterProgress);
-
+  const queryClient = useQueryClient();
   const map = useMapStore((state) => state.map);
   const mapType = useMapStore((state) => state.Maptype);
   const setMaptype = useMapStore((state) => state.setMaptype);
@@ -138,6 +139,10 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
         setRasterStatus("done");
         setRasterProgress(100);
         toast.success("GeoTIFF layer added");
+        queryClient.invalidateQueries({
+          queryKey: ["company-images"],
+        });
+
       } else {
         // Plain image: upload, then ask the user for an AOI before adding.
         setRasterStatus("rendering");

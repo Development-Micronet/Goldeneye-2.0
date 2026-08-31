@@ -16,6 +16,7 @@ import { LayerSelect } from "./Layerselect";
 import { ServiceCard } from "./Servicecard";
 import { ResultCard } from "./Resultcard";
 import { usePredictions, type PredictionOperation } from "../utils/Usepredictions";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Field: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div className="min-w-0">
@@ -41,7 +42,7 @@ export const AnalyticsMenu: React.FC = () => {
   const renameOperation = useRasterStore((state) => state.renameOperation);
   const removeOperation = useRasterStore((state) => state.removeOperation);
   const requestZoom = useRasterStore((state) => state.requestZoom);
-
+  const queryClient = useQueryClient();
   const { predictions, activeCount, run, clearHistory } = usePredictions();
 
   const [selectedServices, setSelectedServices] = useState<DetectionType[]>([]);
@@ -102,6 +103,11 @@ export const AnalyticsMenu: React.FC = () => {
 
     try {
       await run(selectedRaster, services);
+      queryClient.invalidateQueries({
+        queryKey: ["company-images"],
+      });
+
+
     } catch (error) {
       console.error("[analytics] prediction failed", error);
       toast.error(error instanceof Error ? error.message : "Prediction failed");
@@ -213,11 +219,10 @@ export const AnalyticsMenu: React.FC = () => {
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span
-            className={`font-mona rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
-              showingOriginal
-                ? "bg-primary-100 text-primary ring-primary/25 ring-1"
-                : "bg-primary text-white"
-            }`}
+            className={`font-mona rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${showingOriginal
+              ? "bg-primary-100 text-primary ring-primary/25 ring-1"
+              : "bg-primary text-white"
+              }`}
           >
             {showingOriginal
               ? "Showing original"
@@ -359,9 +364,8 @@ export const AnalyticsMenu: React.FC = () => {
 
               <ChevronDown
                 size={14}
-                className={`text-text-secondary transition-transform duration-200 ${
-                  historyOpen ? "rotate-180" : ""
-                }`}
+                className={`text-text-secondary transition-transform duration-200 ${historyOpen ? "rotate-180" : ""
+                  }`}
               />
             </span>
           </button>
@@ -376,9 +380,8 @@ export const AnalyticsMenu: React.FC = () => {
                   >
                     <span
                       /* an unrecognised status would otherwise read .bar of undefined */
-                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                        STATUS_STYLE[prediction.status]?.bar ?? "bg-border"
-                      }`}
+                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_STYLE[prediction.status]?.bar ?? "bg-border"
+                        }`}
                     />
 
                     <span className="min-w-0 flex-1">

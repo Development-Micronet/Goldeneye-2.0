@@ -7,6 +7,7 @@ import polygonIcon from "./LeftBar/DrawMenu/Polygon.png";
 import polylineIcon from "./LeftBar/DrawMenu/Polyline.png";
 import selectionIcon from "./LeftBar/DrawMenu/Selection.png";
 import RasterIcon from "./LeftBar/Raster.svg";
+import HistoryIcon from "./LeftBar/History.svg"
 import importIcon from "./LeftBar/Import.png";
 import selectIcon from "./LeftBar/Select.png";
 // Sidebar assets
@@ -50,6 +51,7 @@ export {
   importIcon,
   drawIcon,
   RasterIcon,
+  HistoryIcon,
   Baselayer,
   // DrawMenu export
   coordinateIcon,

@@ -15,9 +15,8 @@ export default function MapTypeToggle() {
       <button
         type="button"
         onClick={() => setMaptype("3d")}
-        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
-          maptype === "3d" ? "bg-primary text-white shadow-sm" : "text-gray-600 hover:bg-gray-100"
-        }`}
+        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${maptype === "3d" ? "bg-primary text-white shadow-sm" : "text-gray-600 hover:bg-gray-100"
+          }`}
       >
         3D
       </button>
@@ -26,9 +25,8 @@ export default function MapTypeToggle() {
       <button
         type="button"
         onClick={() => setMaptype("2d")}
-        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
-          maptype === "2d" ? "bg-primary text-white shadow-sm" : "text-gray-600 hover:bg-gray-100"
-        }`}
+        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${maptype === "2d" ? "bg-primary text-white shadow-sm" : "text-gray-600 hover:bg-gray-100"
+          }`}
       >
         2D
       </button>

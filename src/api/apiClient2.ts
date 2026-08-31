@@ -9,10 +9,6 @@ export const apiClient2 = axios.create({
 apiClient2.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().accessToken;
-    // const user = useAuthStore.getState().user;
-    // // if (user?.schema_name) {
-    // //   config.headers.set("X-Schema-Name", user.schema_name);
-    // // }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
