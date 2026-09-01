@@ -95,12 +95,6 @@ export default function MapSidebar({
       tooltip: "My Order",
       status: true,
     },
-    // {
-    //   id: 7,
-    //   icon: orbitIcon,
-    //   tooltip: "Orbitography",
-    //   status: true,
-    // },
     ...(hasOrbitography
       ? [
         {
@@ -111,6 +105,13 @@ export default function MapSidebar({
         },
       ]
       : []),
+    {
+      id: 8,
+      icon: orderIcon,
+      tooltip: "My Order",
+      status: true,
+    },
+
   ];
   // Filter out ID 6 (My Indent) for superadmin role (business rule from Phase 2)
   const filteredItems = sidebarItems.filter((item) =>
@@ -143,6 +144,8 @@ export default function MapSidebar({
         return <MyOrderMenu />;
       case 7:
         return <OrbitographyMenu />;
+      case 8:
+        return <MyOrderMenu />
       default:
         return null;
     }

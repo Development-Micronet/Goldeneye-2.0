@@ -10,7 +10,7 @@ const API_KEY = import.meta.env.VITE_API_KEY;
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/api/`,
-  timeout: 15000,
+  timeout: 150000,
 });
 
 /**

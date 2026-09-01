@@ -25,6 +25,7 @@ import goldeneyeLogo from "./logo/goldeneyeLogo.svg";
 import reactLogo from "./react.svg";
 import loginpagevideo from "./video/loginpagevideo.mp4";
 import viteLogo from "./vite.svg";
+import OrderIcon from "./LeftBar/Order.svg";
 import Baselayer from "./LeftBar/Baselayer.svg";
 export {
   heroImg,
@@ -53,6 +54,7 @@ export {
   RasterIcon,
   HistoryIcon,
   Baselayer,
+  OrderIcon,
   // DrawMenu export
   coordinateIcon,
   pointIcon,
