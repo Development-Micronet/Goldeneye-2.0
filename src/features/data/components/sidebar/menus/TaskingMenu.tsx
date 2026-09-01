@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, ChevronDown, Loader2 } from "lucide-react";
-import axios from "axios";
 
 import { AoiDrawIcon } from "../icons/AoiDrawIcon";
 import {
@@ -11,6 +10,8 @@ import {
   MODE_LABELS,
   PROG_TYPES,
   PROG_TYPE_META,
+  apiErrorMessage,
+  earliestAcquisitionDate,
   supportsMode,
   supportsProgType,
 } from "../api/Tasking.service";
@@ -21,7 +22,6 @@ import type {
   TaskingAttemptResponse,
   TaskingSegment,
 } from "../api/Tasking.service";
-
 import { useSelectedAOIStore } from "../../../hooks/useSelectedAOIStore";
 import { useLayersStore } from "../../../../../store/useLayersStore";
 import { useAuthStore } from "../../../../../store/useAuthStore";
@@ -50,12 +50,11 @@ const DAYS_PER_PAGE = 2;
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-const toInputDate = (date: Date) => date.toISOString().slice(0, 10);
-
-const plusDays = (date: Date, days: number) => {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
+/** Shift a yyyy-mm-dd string by a number of days. */
+const addDays = (isoDay: string, days: number) => {
+  const date = new Date(isoDay);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
 };
 
 const dayFormat = new Intl.DateTimeFormat("en-GB", {
@@ -74,13 +73,6 @@ const timeFormat = new Intl.DateTimeFormat("en-GB", {
 
 const formatDay = (iso: string) => dayFormat.format(new Date(iso));
 const formatTime = (iso: string) => timeFormat.format(new Date(iso));
-
-/** Earliest deadline in the group — the one the whole booking has to beat. */
-const earliestDeadline = (segments: TaskingSegment[]) =>
-  segments.reduce(
-    (soonest, segment) => (segment.orderDeadline < soonest ? segment.orderDeadline : soonest),
-    segments[0].orderDeadline
-  );
 
 /** Layers hold either a Feature or a bare geometry. */
 const polygonRings = (geojson: any): number[][][] | null => {
@@ -201,11 +193,12 @@ export const TaskingMenu: React.FC = () => {
     [layers]
   );
 
-  const today = useMemo(() => new Date(), []);
+  // Airbus needs a month of lead time, so the window can't start today.
+  const minStart = useMemo(() => earliestAcquisitionDate(), []);
 
   /* Filters */
-  const [startDate, setStartDate] = useState(toInputDate(today));
-  const [endDate, setEndDate] = useState(toInputDate(plusDays(today, 30)));
+  const [startDate, setStartDate] = useState(minStart);
+  const [endDate, setEndDate] = useState(() => addDays(minStart, 30));
   const [sensorIndex, setSensorIndex] = useState(0);
   const [mode, setMode] = useState<AcquisitionMode>("MONO");
   const [incidenceAngle, setIncidenceAngle] = useState(INCIDENCE_OPTIONS[2]);
@@ -252,6 +245,11 @@ export const TaskingMenu: React.FC = () => {
 
     if (!rings || !missions.length || !progTypeNames.length) return;
 
+    if (startDate < minStart) {
+      setError(`The capture window can't start before ${minStart}.`);
+      return;
+    }
+
     const timer = window.setTimeout(async () => {
       const id = searchId.current + 1;
       searchId.current = id;
@@ -279,10 +277,7 @@ export const TaskingMenu: React.FC = () => {
         if (id === searchId.current) setResult(data);
       } catch (caught) {
         if (id !== searchId.current) return;
-        setError(
-          (axios.isAxiosError(caught) && caught.response?.data?.detail) ||
-          "Could not load passes from the tasking service."
-        );
+        setError(apiErrorMessage(caught) || "Could not load passes from the tasking service.");
       } finally {
         if (id === searchId.current) setIsLoading(false);
       }
@@ -292,6 +287,7 @@ export const TaskingMenu: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedAoi,
+    minStart,
     startDate,
     endDate,
     sensorIndex,
@@ -369,7 +365,11 @@ export const TaskingMenu: React.FC = () => {
             rings={rings}
             mission={orderPass.mission}
             progType={orderPass.progType}
+            acquisitionMode={mode}
             segment={orderPass.segment}
+            startDate={startDate}
+            endDate={endDate}
+            cloudCover={cloudCover}
             maxIncidence={incidenceAngle}
             onCancel={() => setOrderPass(null)}
             onSubmitted={() => setOrderPass(null)}
@@ -392,7 +392,7 @@ export const TaskingMenu: React.FC = () => {
               id="tasking-start"
               type="date"
               value={startDate}
-              min={toInputDate(today)}
+              min={minStart}
               onChange={(event) => setStartDate(event.target.value)}
               className={field}
             />
@@ -535,9 +535,10 @@ export const TaskingMenu: React.FC = () => {
               (mission) => segmentsFor(mission, progType).length > 0
             ).length;
 
-            // The summary only shows each mission's soonest pass.
-            const hasMore = passCount > missionsWithPasses;
-            const pageCount = Math.max(1, Math.ceil(days.length / DAYS_PER_PAGE));
+            // The summary only shows each mission's soonest pass. One Now has
+            // no day-by-day view, so it never opens out.
+            const hasMore = progType !== "ONENOW" && passCount > missionsWithPasses;
+            const lastPage = Math.ceil(days.length / DAYS_PER_PAGE) - 1;
             const pageDays = days.slice(dayPage * DAYS_PER_PAGE, (dayPage + 1) * DAYS_PER_PAGE);
 
             return (
@@ -642,8 +643,8 @@ export const TaskingMenu: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setDayPage((page) => Math.min(pageCount - 1, page + 1))}
-                        disabled={dayPage >= pageCount - 1}
+                        onClick={() => setDayPage((page) => Math.min(lastPage, page + 1))}
+                        disabled={dayPage >= lastPage}
                         aria-label="Later days"
                         className="text-primary disabled:opacity-30"
                       >

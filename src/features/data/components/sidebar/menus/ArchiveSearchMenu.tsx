@@ -40,7 +40,6 @@ import {
   exportKMZ,
   exportShape,
 } from "../../../../../utils/Exportfunction";
-import { logger } from "../../../../../utils/logger";
 import Spinners from "../assets/Archive-search/Spinner.gif";
 import { ArchiveProductCard } from "../component/ArchiveProductCard";
 import { ArchiveOrderForm } from "../component/Archiveorderform";
@@ -458,7 +457,7 @@ export const ArchiveSearchMenu: React.FC = () => {
 
                         setOpen(false);
                       } catch (error) {
-                        logger.error(error);
+
                         toast.error("Failed to export HTML.");
                       }
                     }}
@@ -482,7 +481,7 @@ export const ArchiveSearchMenu: React.FC = () => {
 
                         setOpen(false);
                       } catch (error) {
-                        logger.error(error);
+
                         toast.error("Failed to export HTML.");
                       }
                     }}
@@ -512,7 +511,7 @@ export const ArchiveSearchMenu: React.FC = () => {
 
                         setOpen(false);
                       } catch (error) {
-                        logger.error("KML Export Error:", error);
+
 
                         toast.error("Failed to export KML.");
                       }
@@ -543,7 +542,7 @@ export const ArchiveSearchMenu: React.FC = () => {
 
                         setOpen(false);
                       } catch (error) {
-                        logger.error("KMZ Export Error:", error);
+
 
                         toast.error("Failed to export KMZ.");
                       }

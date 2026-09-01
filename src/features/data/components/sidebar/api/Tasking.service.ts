@@ -125,6 +125,44 @@ export const ORDER_ENDPOINTS: Record<string, string> = {
 };
 
 /* ------------------------------------------------------------------ */
+/* Lead time and errors                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Airbus rejects a window that starts less than a month out, so the earliest
+ * date the UI offers is a month plus a day — the extra day keeps the request
+ * clear of the server's own boundary check while it is in flight.
+ */
+export const earliestAcquisitionDate = () => {
+  const date = new Date();
+  date.setMonth(date.getMonth() + 1);
+  date.setDate(date.getDate() + 1);
+  return date.toISOString().slice(0, 10);
+};
+
+/**
+ * Pulls the useful line out of a DRF error body. Validation failures arrive as
+ * { errors: { non_field_errors: [...] } }, not as `detail`.
+ */
+export const apiErrorMessage = (error: unknown): string | null => {
+  const data = (error as any)?.response?.data;
+  if (!data) return null;
+
+  if (typeof data.detail === "string") return data.detail;
+  if (typeof data.message === "string") return data.message;
+
+  const errors = data.errors ?? data;
+  if (typeof errors !== "object") return null;
+
+  for (const value of Object.values(errors)) {
+    if (typeof value === "string") return value;
+    if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  }
+
+  return null;
+};
+
+/* ------------------------------------------------------------------ */
 /* Requests                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -148,125 +186,220 @@ export const FetchPrice = async (segmentKey: string, token: string) => {
 };
 
 /* ------------------------------------------------------------------ */
-/* Product and delivery options                                        */
+/* Order form options                                                  */
 /* ------------------------------------------------------------------ */
 
-export const PRODUCT_OPTIONS = {
-  geometric_processing: ["ortho", "Projected", "Primary"],
-  projection_code: [
-    "4326 WGS 1984-GEOGRAPHIC",
-    "3857 WGS84/Web Mercator(World-between 80S. and 84N.) -PROJECTED",
-    "3395 WGS84/World Mercator(World-between 80S. and 84N.) -PROJECTED",
-    "3349 WGS84/PDC Mercator(Pacific Ocean 99E. to 70W.) -PROJECTED",
-    "32645 WGS84/UTM 45N(N. hemisphere-84E to 90E) -PROJECTED",
-    "32644 WGS84/UTM 44N(N. hemisphere-78E to 84E) -PROJECTED",
-    "32643 WGS84/UTM 43N(N. hemisphere-72E to 78E) -PROJECTED",
-    "32444 WGS72BE/UTM 44N(N. hemisphere-78E to 84E) -PROJECTED",
-    "32244 WGS72/UTM 44N(N. hemisphere-78E to 84E) -PROJECTED",
-    "24372 Kalianpur 1880/India IIa(IN.-21N to 28N and W. of 82E, PK. -S of 28N) -PROJECTED",
-  ],
-  spectral_bands_combination: [
-    "Pansharpened 50cm 3-Band, Natural Color",
-    "Panchromatic 50cm",
-    "Pansharpened 50cm 4-Band",
-    "Multispectral 2m 4-Band",
-    "Pansharpened 50cm 3-Band,False Color",
-    "Bundle:Panchromatic 50cm + Multispectral 2m 4-band",
-  ],
-  orthorectification_dem_reference: ["Best Available", "SRTM", "Globe"],
-  product_format: [
-    "DIMAP-Regular JPEG 2000",
-    "DIMAP-Optimized JPEG 2000",
-    "DIMAP-GeoTIFF",
-    "NITF-Regular JPEG 2000",
-    "NITF-GeoTIFF",
-  ],
-  pixel_coding: ["8 bits(JPEG 2000/GeoTIFF)", "12 bits (JPEG 2000)/16 bits (GeoTIFF)"],
-  radiometric_processing: ["basic", "display", "reflectance"],
-  licence: [
-    "Standard Licence Agreement",
-    "Standard and Background Layer Licence Agreement",
-    "Background Layer Licence Agreement",
-  ],
-} as const;
+export interface Option {
+  /** What the order API receives. */
+  value: string;
+  /** What the dropdown shows. */
+  label: string;
+}
 
-export const PRODUCT_LABELS: Record<keyof typeof PRODUCT_OPTIONS, string> = {
-  geometric_processing: "Geometric Processing",
-  projection_code: "Projection Code",
-  spectral_bands_combination: "Spectral Bands Combination",
-  orthorectification_dem_reference: "Orthorectification DEM Reference",
-  product_format: "Product Format",
+export type OrderFieldKey =
+  | "processing_level"
+  | "projection_1"
+  | "spectral_processing"
+  | "dem"
+  | "image_format"
+  | "pixel_coding"
+  | "radiometric_processing"
+  | "licence";
+
+export const ORDER_OPTIONS: Record<OrderFieldKey, Option[]> = {
+  processing_level: [
+    { value: "ortho", label: "Ortho" },
+    { value: "projected", label: "Projected" },
+    { value: "primary", label: "Primary" },
+  ],
+  projection_1: [
+    { value: "4326", label: "4326 WGS 1984 - Geographic" },
+    { value: "3857", label: "3857 WGS 84 - Web Mercator" },
+    { value: "32643", label: "32643 WGS 84 / UTM 43N" },
+    { value: "32644", label: "32644 WGS 84 / UTM 44N" },
+    { value: "32645", label: "32645 WGS 84 / UTM 45N" },
+  ],
+  spectral_processing: [
+    { value: "pansharpened_natural_color", label: "Pansharpened, Natural Colour" },
+    { value: "pansharpened_false_color", label: "Pansharpened, False Colour" },
+    { value: "panchromatic", label: "Panchromatic" },
+    { value: "multispectral", label: "Multispectral" },
+    { value: "bundle", label: "Bundle" },
+  ],
+  dem: [
+    { value: "best_available", label: "Best Available" },
+    { value: "srtm", label: "SRTM" },
+    { value: "globe", label: "Globe" },
+  ],
+  image_format: [
+    { value: "dimap_jpeg2000_regular", label: "DIMAP - Regular JPEG 2000" },
+    { value: "dimap_jpeg2000_optimized", label: "DIMAP - Optimised JPEG 2000" },
+    { value: "dimap_geotiff", label: "DIMAP - GeoTIFF" },
+    { value: "nitf_jpeg2000_regular", label: "NITF - Regular JPEG 2000" },
+    { value: "nitf_geotiff", label: "NITF - GeoTIFF" },
+  ],
+  pixel_coding: [
+    { value: "8bits", label: "8 bits" },
+    { value: "12bits", label: "12 bits / 16 bits" },
+  ],
+  radiometric_processing: [
+    { value: "basic", label: "Basic" },
+    { value: "reflectance", label: "Reflectance" },
+    { value: "display", label: "Display" },
+  ],
+  licence: [
+    { value: "standard", label: "Standard Licence" },
+    { value: "standard_background", label: "Standard + Background Layer" },
+    { value: "background", label: "Background Layer" },
+  ],
+};
+
+export const ORDER_LABELS: Record<OrderFieldKey, string> = {
+  processing_level: "Processing Level",
+  projection_1: "Projection",
+  spectral_processing: "Spectral Processing",
+  dem: "DEM",
+  image_format: "Image Format",
   pixel_coding: "Pixel Coding",
   radiometric_processing: "Radiometric Processing",
   licence: "Licence",
 };
 
-export const APPLICATIONS = [
-  "Agriculture",
-  "Civil Engineering",
-  "Consumer Market",
-  "Defencde and Security",
-  "Distribution Network",
-  "Early Warning",
-  "Energy",
-  "Environment",
-  "Forest",
-  "Health",
-  "Insurence",
-  "Mapping",
-  "Maritime",
-  "Media, Press, Publishing",
-  "Mobile",
-  "other",
-  "Telecommunications",
-  "Tourism",
-  "Transport",
-  "Unspecified",
+/** Airbus market codes. Confirm against the contract before going live. */
+export const MARKETS: Option[] = [
+  { value: "AGRI", label: "Agriculture" },
+  { value: "CIVIL_ENGINEERING", label: "Civil Engineering" },
+  { value: "CONSUMER_MARKET", label: "Consumer Market" },
+  { value: "DEFENCE_SECURITY", label: "Defence and Security" },
+  { value: "ENERGY", label: "Energy" },
+  { value: "ENVIRONMENT", label: "Environment" },
+  { value: "FOREST", label: "Forest" },
+  { value: "MAPPING", label: "Mapping" },
+  { value: "MARITIME", label: "Maritime" },
+  { value: "MEDIA", label: "Media, Press, Publishing" },
+  { value: "TELECOM", label: "Telecommunications" },
+  { value: "TRANSPORT", label: "Transport" },
+  { value: "UNSPECIFIED", label: "Unspecified" },
 ];
 
-export const DELIVERY_TYPES = ["FTP + My Data", "MEDIA"];
+export const labelFor = (key: OrderFieldKey, value: string) =>
+  ORDER_OPTIONS[key].find((option) => option.value === value)?.label ?? value;
 
-/** Defaults that don't sit first in their list. */
-export const DEFAULT_APPLICATION = "Consumer Market";
-export const DEFAULT_DELIVERY_TYPE = "MEDIA";
+/** Every production field, defaulted to its first option. */
+export const defaultProduction = (): Record<OrderFieldKey, string> =>
+  Object.fromEntries(
+    (Object.keys(ORDER_OPTIONS) as OrderFieldKey[]).map((key) => [key, ORDER_OPTIONS[key][0].value])
+  ) as Record<OrderFieldKey, string>;
 
 /* ------------------------------------------------------------------ */
-/* Placing the request                                                 */
+/* Roles                                                               */
 /* ------------------------------------------------------------------ */
 
-export interface TaskingRequestItem {
-  indentType: "Tasking";
-  aoi: { type: "Polygon"; coordinates: number[][][] };
-  missions: MissionKey;
-  progTypeNames: ProgTypeKey;
-  segmentKey: string;
-  geometric_processing: string;
-  projection_code: string;
-  spectral_bands_combination: string;
-  orthorectification_dem_reference: string;
-  product_format: string;
-  pixel_coding: string;
-  radiometric_processing: string;
-  licence: string;
-  deliveryType: string;
-  customerReference: string;
-  emailId: string;
-  // Collected by the form but not part of the documented payload.
-  application?: string;
-  program?: string;
-}
-
-/** Only a superadmin orders directly; everyone else raises an indent. */
+/** Only a superadmin places an order. Everyone else raises an indent. */
 export const canPlaceOrder = (roleName?: string) => roleName === "superadmin";
 
-export const ORDER_ENDPOINT = "/tasking/orders/";
+/** Direct ordering exists only where Airbus publishes an endpoint. */
+export const orderEndpointFor = (mission: MissionKey, progType: ProgTypeKey) =>
+  ORDER_ENDPOINTS[`${mission}_${progType}`];
+
+/* ------------------------------------------------------------------ */
+/* Payloads                                                            */
+/* ------------------------------------------------------------------ */
+
+/** What the form collects, before it is shaped for either endpoint. */
+export interface TaskingOrderForm extends Record<OrderFieldKey, string> {
+  acquisitionStartDate: string;
+  acquisitionEndDate: string;
+  maxCloudCover: number;
+  maxIncidenceAngle: number;
+  customerReference: string;
+  comments: string;
+  emailId: string;
+  primaryMarket: string;
+  secondaryMarket: string;
+  cost: number;
+}
+
+export interface TaskingOrderContext {
+  aoi: { type: "Polygon"; coordinates: number[][][] };
+  mission: MissionKey;
+  progType: ProgTypeKey;
+  acquisitionMode: AcquisitionMode;
+  segmentKey: string;
+}
+
+/** Direct order payload — mirrors the documented Pleiades/SPOT OneDay body. */
+export const buildOrderPayload = (form: TaskingOrderForm, context: TaskingOrderContext) => ({
+  aoi: context.aoi,
+  progTypeNames: context.progType,
+  acquisitionMode: context.acquisitionMode,
+  acquisitionStartDate: `${form.acquisitionStartDate}T00:00:00Z`,
+  acquisitionEndDate: `${form.acquisitionEndDate}T23:59:59Z`,
+  segmentKey: context.segmentKey,
+  maxCloudCover: String(form.maxCloudCover),
+  maxIncidenceAngle: String(form.maxIncidenceAngle),
+  customerReference: form.customerReference.trim(),
+  comments: form.comments.trim(),
+  emailId: form.emailId.trim(),
+  primaryMarket: form.primaryMarket,
+  secondaryMarket: form.secondaryMarket,
+  spectral_processing: form.spectral_processing,
+  radiometric_processing: form.radiometric_processing,
+  image_format: form.image_format,
+  pixel_coding: form.pixel_coding,
+  processing_level: form.processing_level,
+  projection_1: form.projection_1,
+  licence: form.licence,
+  dem: form.dem,
+  cost: form.cost,
+});
+
+/** Indent payload — the same choices, spelled out for the approval queue. */
+export const buildIndentPayload = (form: TaskingOrderForm, context: TaskingOrderContext) => ({
+  indentType: "Tasking" as const,
+  aoi: context.aoi,
+  missions: context.mission,
+  progTypeNames: context.progType,
+  acquisitionMode: context.acquisitionMode,
+  acquisitionStartDate: `${form.acquisitionStartDate}T00:00:00Z`,
+  acquisitionEndDate: `${form.acquisitionEndDate}T23:59:59Z`,
+  segmentKey: context.segmentKey,
+  maxCloudCover: form.maxCloudCover,
+  maxIncidenceAngle: form.maxIncidenceAngle,
+  geometric_processing: labelFor("processing_level", form.processing_level),
+  projection_code: labelFor("projection_1", form.projection_1),
+  spectral_bands_combination: labelFor("spectral_processing", form.spectral_processing),
+  orthorectification_dem_reference: labelFor("dem", form.dem),
+  product_format: labelFor("image_format", form.image_format),
+  pixel_coding: labelFor("pixel_coding", form.pixel_coding),
+  radiometric_processing: labelFor("radiometric_processing", form.radiometric_processing),
+  licence: labelFor("licence", form.licence),
+  primaryMarket: form.primaryMarket,
+  secondaryMarket: form.secondaryMarket,
+  customerReference: form.customerReference.trim(),
+  comments: form.comments.trim(),
+  emailId: form.emailId.trim(),
+});
+
+/* ------------------------------------------------------------------ */
+/* Submitting                                                          */
+/* ------------------------------------------------------------------ */
+
 export const INDENT_ENDPOINT = "/indent/";
 
-export const submitTasking = async (
-  items: TaskingRequestItem,
-  token: string,
-  asOrder: boolean
+export const submitTaskingOrder = async (
+  endpoint: string,
+  payload: ReturnType<typeof buildOrderPayload>,
+  token: string
 ) => {
-  const res = await apiClient.post(asOrder ? ORDER_ENDPOINT : INDENT_ENDPOINT, items);
+  const res = await apiClient.post(endpoint, payload);
+  return unwrap(res.data, token);
+};
+
+export const submitTaskingIndent = async (
+  payload: ReturnType<typeof buildIndentPayload>,
+  token: string
+) => {
+  const res = await apiClient.post(INDENT_ENDPOINT, payload);
   return unwrap(res.data, token);
 };

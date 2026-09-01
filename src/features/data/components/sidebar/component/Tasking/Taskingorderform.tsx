@@ -1,24 +1,31 @@
 import React, { useMemo, useState } from "react";
-import { AlertTriangle, ChevronDown, Info, Loader2, Plus, X } from "lucide-react";
-import axios from "axios";
+import { ChevronDown, Info, Loader2 } from "lucide-react";
+import { toast } from "react-toastify";
 
 import {
-    APPLICATIONS,
-    DELIVERY_TYPES,
-    PRODUCT_LABELS,
-    PRODUCT_OPTIONS,
+    MARKETS,
+    apiErrorMessage,
+    earliestAcquisitionDate,
+    ORDER_LABELS,
+    ORDER_OPTIONS,
+    buildIndentPayload,
+    buildOrderPayload,
     canPlaceOrder,
-    submitTasking,
+    defaultProduction,
+    labelFor,
+    orderEndpointFor,
+    submitTaskingIndent,
+    submitTaskingOrder,
 } from "../../api/Tasking.service";
 import type {
+    AcquisitionMode,
     MissionKey,
+    OrderFieldKey,
     ProgTypeKey,
-    TaskingRequestItem,
+    TaskingOrderForm as OrderFormValues,
     TaskingSegment,
 } from "../../api/Tasking.service";
 import { useAuthStore } from "../../../../../../store/useAuthStore";
-import Swal from "sweetalert2";
-
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -41,14 +48,10 @@ const areaKm2 = (rings: number[][][]) => {
     return Math.abs((sum * radius * radius) / 2);
 };
 
-const dayFormat = new Intl.DateTimeFormat("en-GB", {
+const dateTimeFormat = new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-    timeZone: "UTC",
-});
-
-const timeFormat = new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -63,6 +66,7 @@ const field =
 const labelStyle = "mb-1 block text-xs font-semibold text-slate-900";
 
 const outlineButton = "border-border text-text-muted rounded-full border px-5 py-2 text-xs";
+
 const solidButton =
     "bg-primary hover:bg-primary/90 rounded-full px-5 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -97,6 +101,13 @@ const Step: React.FC<{
     </section>
 );
 
+const Detail: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+    <p className="text-xs text-slate-900">
+        <span className="font-semibold">{label}:</span>{" "}
+        <span className="text-text-secondary">{value || "N/A"}</span>
+    </p>
+);
+
 /* ------------------------------------------------------------------ */
 /* Main                                                                */
 /* ------------------------------------------------------------------ */
@@ -106,7 +117,12 @@ interface TaskingOrderFormProps {
     rings: number[][][];
     mission: MissionKey;
     progType: ProgTypeKey;
+    acquisitionMode: AcquisitionMode;
     segment: TaskingSegment;
+    /** Search filters, used as the starting values for the order. */
+    startDate: string;
+    endDate: string;
+    cloudCover: number;
     maxIncidence: number;
     onCancel: () => void;
     onSubmitted: () => void;
@@ -117,86 +133,88 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
     rings,
     mission,
     progType,
+    acquisitionMode,
     segment,
+    startDate,
+    endDate,
+    cloudCover,
     maxIncidence,
     onCancel,
     onSubmitted,
 }) => {
     const { accessToken, user } = useAuthStore();
-    const isSuperadmin = canPlaceOrder(user?.roleName);
+
+    // Direct ordering needs both the role and a published endpoint for this pass.
+    const orderEndpoint = orderEndpointFor(mission, progType);
+    const isOrder = canPlaceOrder(user?.roleName) && Boolean(orderEndpoint);
 
     const [step, setStep] = useState(1);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    /* Step 1 — production */
-    const [production, setProduction] = useState({
-        geometric_processing: PRODUCT_OPTIONS.geometric_processing[0],
-        projection_code: PRODUCT_OPTIONS.projection_code[0],
-        spectral_bands_combination: PRODUCT_OPTIONS.spectral_bands_combination[0],
-        orthorectification_dem_reference: PRODUCT_OPTIONS.orthorectification_dem_reference[0],
-        product_format: PRODUCT_OPTIONS.product_format[0],
-        pixel_coding: PRODUCT_OPTIONS.pixel_coding[0],
-        radiometric_processing: PRODUCT_OPTIONS.radiometric_processing[0],
-        licence: PRODUCT_OPTIONS.licence[0],
-    } as Record<keyof typeof PRODUCT_OPTIONS, string>);
+    // The order carries its own window, and it faces the same lead-time rule.
+    const minStart = useMemo(() => earliestAcquisitionDate(), []);
 
-    /* Step 2 — delivery */
-    const [customerReference, setCustomerReference] = useState(aoiLabel);
-    const [application, setApplication] = useState(APPLICATIONS[0]);
-    const [program, setProgram] = useState("");
-    const [deliveryType, setDeliveryType] = useState(DELIVERY_TYPES[0]);
-    const [extraEmails, setExtraEmails] = useState<string[]>([]);
-    const [emailDraft, setEmailDraft] = useState("");
+    const [form, setForm] = useState<OrderFormValues>({
+        ...defaultProduction(),
+        acquisitionStartDate: startDate,
+        acquisitionEndDate: endDate,
+        maxCloudCover: cloudCover,
+        maxIncidenceAngle: maxIncidence,
+        customerReference: aoiLabel,
+        comments: "",
+        emailId: user?.email ?? "",
+        primaryMarket: MARKETS[0].value,
+        secondaryMarket: "",
+        cost: 0,
+    });
 
-    /* Step 3 — confirmation */
     const [acceptedLicence, setAcceptedLicence] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const set = <K extends keyof OrderFormValues>(key: K, value: OrderFormValues[K]) =>
+        setForm((current) => ({ ...current, [key]: value }));
 
     const area = useMemo(() => areaKm2(rings), [rings]);
-    const deliveryReady = customerReference.trim() !== "" && !!user?.email;
 
-    const addEmail = () => {
-        const email = emailDraft.trim();
-        if (!isEmail(email) || extraEmails.includes(email)) return;
-        setExtraEmails((current) => [...current, email]);
-        setEmailDraft("");
-    };
+    const detailsReady =
+        form.acquisitionStartDate >= minStart &&
+        form.customerReference.trim() !== "" &&
+        form.primaryMarket !== "" &&
+        isEmail(form.emailId.trim()) &&
+        form.acquisitionEndDate >= form.acquisitionStartDate &&
+        form.maxCloudCover >= 0 &&
+        form.maxCloudCover <= 100 &&
+        form.maxIncidenceAngle >= 0 &&
+        form.maxIncidenceAngle <= 90;
 
     const submit = async () => {
+        if (isSubmitting) return;
         setIsSubmitting(true);
-        setError(null);
 
-        const item: TaskingRequestItem = {
-            indentType: "Tasking",
-            aoi: { type: "Polygon", coordinates: rings },
-            missions: mission,
-            progTypeNames: progType,
+        const context = {
+            aoi: { type: "Polygon" as const, coordinates: rings },
+            mission,
+            progType,
+            acquisitionMode,
             segmentKey: segment.segmentKey,
-            ...production,
-            deliveryType,
-            customerReference: customerReference.trim(),
-            emailId: [user?.email, ...extraEmails].filter(Boolean).join(","),
-            application,
-            program: program.trim(),
         };
 
         try {
-            await submitTasking(item, accessToken ?? "", isSuperadmin);
-            await Swal.fire({
-                icon: "success",
-                title: isSuperadmin ? "Order Placed Successfully!" : "Request Raised Successfully!",
-                text: isSuperadmin
-                    ? "Your order has been placed successfully."
-                    : "Your indent/request has been submitted successfully.",
-                confirmButtonText: "OK",
-            });
+            if (isOrder) {
+                await submitTaskingOrder(orderEndpoint!, buildOrderPayload(form, context), accessToken ?? "");
+                toast.success("Order placed successfully.");
+            } else {
+                await submitTaskingIndent(buildIndentPayload(form, context), accessToken ?? "");
+                toast.success("Request raised successfully.");
+            }
+
             onSubmitted();
         } catch (caught) {
-            setError(
-                (axios.isAxiosError(caught) && caught.response?.data?.detail) ||
-                (isSuperadmin ? "Could not place the order." : "Could not raise the request.")
+            toast.error(
+                apiErrorMessage(caught) ||
+                (isOrder
+                    ? "Failed to place order. Please try again."
+                    : "Failed to raise the request. Please try again.")
             );
         } finally {
             setIsSubmitting(false);
@@ -204,11 +222,19 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
     };
 
     // Ortho at a wide angle degrades geometry, so warn before committing.
-    const showAngleWarning =
-        production.geometric_processing === "ortho" && segment.incidenceAngle > 20;
+    const showAngleWarning = form.processing_level === "ortho" && segment.incidenceAngle > 20;
 
     return (
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
+            <div>
+                <h2 className="text-sm font-semibold tracking-wide text-slate-900">
+                    {isOrder ? "ORDER IMAGE" : "ORDER CRITERIA SELECTION"}
+                </h2>
+                <p className="text-text-secondary mt-0.5 text-[11px]">
+                    {mission} · {progType} · {dateTimeFormat.format(new Date(segment.acquisitionStartDate))}
+                </p>
+            </div>
+
             {/* 1 — Production */}
             <Step
                 number={1}
@@ -217,22 +243,20 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                 onToggle={() => setStep(step === 1 ? 0 : 1)}
             >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {(Object.keys(PRODUCT_OPTIONS) as Array<keyof typeof PRODUCT_OPTIONS>).map((key) => (
+                    {(Object.keys(ORDER_OPTIONS) as OrderFieldKey[]).map((key) => (
                         <div key={key}>
-                            <label className={labelStyle} htmlFor={`production-${key}`}>
-                                {PRODUCT_LABELS[key]}
+                            <label className={labelStyle} htmlFor={`order-${key}`}>
+                                {ORDER_LABELS[key]}
                             </label>
                             <select
-                                id={`production-${key}`}
-                                value={production[key]}
-                                onChange={(event) =>
-                                    setProduction((current) => ({ ...current, [key]: event.target.value }))
-                                }
+                                id={`order-${key}`}
+                                value={form[key]}
+                                onChange={(event) => set(key, event.target.value)}
                                 className={field}
                             >
-                                {PRODUCT_OPTIONS[key].map((option) => (
-                                    <option key={option} value={option}>
-                                        {option}
+                                {ORDER_OPTIONS[key].map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
                                     </option>
                                 ))}
                             </select>
@@ -250,130 +274,168 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                 </div>
             </Step>
 
-            {/* 2 — Delivery */}
+            {/* 2 — Order details */}
             <Step
                 number={2}
-                title="Delivery"
+                title="Order details"
                 isOpen={step === 2}
                 onToggle={() => setStep(step === 2 ? 0 : 2)}
             >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                        <label className={labelStyle} htmlFor="delivery-reference">
+                        <label className={labelStyle} htmlFor="order-start">
+                            Acquisition start <span className="text-red-600">*</span>
+                        </label>
+                        <input
+                            id="order-start"
+                            type="date"
+                            min={minStart}
+                            value={form.acquisitionStartDate}
+                            onChange={(event) => set("acquisitionStartDate", event.target.value)}
+                            className={field}
+                        />
+                    </div>
+
+                    <div>
+                        <label className={labelStyle} htmlFor="order-end">
+                            Acquisition end <span className="text-red-600">*</span>
+                        </label>
+                        <input
+                            id="order-end"
+                            type="date"
+                            min={form.acquisitionStartDate}
+                            value={form.acquisitionEndDate}
+                            onChange={(event) => set("acquisitionEndDate", event.target.value)}
+                            className={field}
+                        />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                        <p className="text-text-secondary text-[11px]">
+                            The window has to start on or after {minStart} — Airbus needs a month of lead time.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label className={labelStyle} htmlFor="order-cloud">
+                            Max cloud cover (%)
+                        </label>
+                        <input
+                            id="order-cloud"
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={form.maxCloudCover}
+                            onChange={(event) => set("maxCloudCover", Number(event.target.value))}
+                            className={field}
+                        />
+                    </div>
+
+                    <div>
+                        <label className={labelStyle} htmlFor="order-incidence">
+                            Max incidence angle (°)
+                        </label>
+                        <input
+                            id="order-incidence"
+                            type="number"
+                            min={0}
+                            max={90}
+                            value={form.maxIncidenceAngle}
+                            onChange={(event) => set("maxIncidenceAngle", Number(event.target.value))}
+                            className={field}
+                        />
+                    </div>
+
+                    <div>
+                        <label className={labelStyle} htmlFor="order-reference">
                             Customer reference <span className="text-red-600">*</span>
                         </label>
                         <input
-                            id="delivery-reference"
-                            value={customerReference}
-                            onChange={(event) => setCustomerReference(event.target.value)}
+                            id="order-reference"
+                            value={form.customerReference}
+                            onChange={(event) => set("customerReference", event.target.value)}
                             className={field}
                         />
                     </div>
 
                     <div>
-                        <label className={labelStyle} htmlFor="delivery-application">
-                            Application <span className="text-red-600">*</span>
+                        <label className={labelStyle} htmlFor="order-email">
+                            Email <span className="text-red-600">*</span>
+                        </label>
+                        <input
+                            id="order-email"
+                            type="email"
+                            value={form.emailId}
+                            onChange={(event) => set("emailId", event.target.value)}
+                            className={field}
+                        />
+                    </div>
+
+                    <div>
+                        <label className={labelStyle} htmlFor="order-primary-market">
+                            Primary market <span className="text-red-600">*</span>
                         </label>
                         <select
-                            id="delivery-application"
-                            value={application}
-                            onChange={(event) => setApplication(event.target.value)}
+                            id="order-primary-market"
+                            value={form.primaryMarket}
+                            onChange={(event) => set("primaryMarket", event.target.value)}
                             className={field}
                         >
-                            {APPLICATIONS.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
+                            {MARKETS.map((market) => (
+                                <option key={market.value} value={market.value}>
+                                    {market.label}
                                 </option>
                             ))}
                         </select>
                     </div>
 
                     <div>
-                        <label className={labelStyle} htmlFor="delivery-program">
-                            Program
-                        </label>
-                        <input
-                            id="delivery-program"
-                            value={program}
-                            onChange={(event) => setProgram(event.target.value)}
-                            className={field}
-                        />
-                    </div>
-
-                    <div>
-                        <label className={labelStyle} htmlFor="delivery-type">
-                            Delivery type <span className="text-red-600">*</span>
+                        <label className={labelStyle} htmlFor="order-secondary-market">
+                            Secondary market
                         </label>
                         <select
-                            id="delivery-type"
-                            value={deliveryType}
-                            onChange={(event) => setDeliveryType(event.target.value)}
+                            id="order-secondary-market"
+                            value={form.secondaryMarket}
+                            onChange={(event) => set("secondaryMarket", event.target.value)}
                             className={field}
                         >
-                            {DELIVERY_TYPES.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
+                            <option value="">None</option>
+                            {MARKETS.map((market) => (
+                                <option key={market.value} value={market.value}>
+                                    {market.label}
                                 </option>
                             ))}
                         </select>
                     </div>
-                </div>
 
-                <div>
-                    <span className={labelStyle}>Notifications</span>
-                    <p className="border-border rounded-md border bg-slate-50 px-2.5 py-2 text-xs text-slate-700">
-                        {user?.email ?? "No email on this account"}
-                    </p>
-                </div>
-
-                <div>
-                    <label className={labelStyle} htmlFor="delivery-email">
-                        Add emails
-                    </label>
-                    <div className="flex items-center gap-2">
-                        <input
-                            id="delivery-email"
-                            value={emailDraft}
-                            placeholder="Add another email"
-                            onChange={(event) => setEmailDraft(event.target.value)}
-                            onKeyDown={(event) => {
-                                if (event.key === "Enter") {
-                                    event.preventDefault();
-                                    addEmail();
-                                }
-                            }}
-                            className={field}
-                        />
-                        <button
-                            type="button"
-                            onClick={addEmail}
-                            disabled={!isEmail(emailDraft.trim())}
-                            aria-label="Add email"
-                            className="border-border text-text-muted shrink-0 rounded-md border bg-slate-50 p-2 disabled:opacity-40"
-                        >
-                            <Plus size={14} />
-                        </button>
-                    </div>
-
-                    {extraEmails.length > 0 && (
-                        <ul className="mt-2 flex flex-wrap gap-1.5">
-                            {extraEmails.map((email) => (
-                                <li
-                                    key={email}
-                                    className="bg-primary-100 text-primary flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px]"
-                                >
-                                    {email}
-                                    <button
-                                        type="button"
-                                        onClick={() => setExtraEmails((current) => current.filter((e) => e !== email))}
-                                        aria-label={`Remove ${email}`}
-                                    >
-                                        <X size={11} />
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                    {isOrder && (
+                        <div>
+                            <label className={labelStyle} htmlFor="order-cost">
+                                Cost
+                            </label>
+                            <input
+                                id="order-cost"
+                                type="number"
+                                min={0}
+                                value={form.cost}
+                                onChange={(event) => set("cost", Number(event.target.value))}
+                                className={field}
+                            />
+                        </div>
                     )}
+                </div>
+
+                <div>
+                    <label className={labelStyle} htmlFor="order-comments">
+                        Comments
+                    </label>
+                    <textarea
+                        id="order-comments"
+                        rows={2}
+                        value={form.comments}
+                        onChange={(event) => set("comments", event.target.value)}
+                        className={field}
+                    />
                 </div>
 
                 <div className="flex items-center gap-2 pt-1">
@@ -386,7 +448,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                     <button
                         type="button"
                         onClick={() => setStep(3)}
-                        disabled={!deliveryReady}
+                        disabled={!detailsReady}
                         className={solidButton}
                     >
                         Proceed
@@ -401,24 +463,28 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                 isOpen={step === 3}
                 onToggle={() => setStep(step === 3 ? 0 : 3)}
             >
-                <div className="divide-border grid grid-cols-1 gap-4 sm:grid-cols-2 sm:divide-x">
-                    <div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
                         <h4 className="text-sm font-bold text-slate-900">AOI details</h4>
-                        <p className="text-text-secondary mt-2 text-xs">{aoiLabel}</p>
-                        <p className="mt-2 text-xs font-semibold text-slate-900">{area.toFixed(2)} km²</p>
+                        <Detail label="Area of interest" value={aoiLabel} />
+                        <Detail label="Area" value={`${area.toFixed(2)} km²`} />
+                        <Detail label="Customer reference" value={form.customerReference} />
+                        <Detail label="Market" value={form.primaryMarket} />
                     </div>
 
-                    <div className="sm:pl-4">
+                    <div className="space-y-2 sm:border-l sm:border-slate-200 sm:pl-4">
                         <h4 className="text-sm font-bold text-slate-900">Satellite details</h4>
-                        <p className="text-text-secondary mt-2 text-xs">{mission}</p>
-                        <p className="text-text-secondary mt-2 text-xs">{area.toFixed(2)} km² invoiced</p>
-                        <p className="text-text-secondary mt-2 text-xs">
-                            {dayFormat.format(new Date(segment.acquisitionStartDate))}{" "}
-                            {timeFormat.format(new Date(segment.acquisitionStartDate))}
-                        </p>
-                        <p className="mt-2 text-xs font-semibold text-slate-900">
-                            Incidence angle: {segment.incidenceAngle.toFixed(2)}° - {maxIncidence}°
-                        </p>
+                        <Detail label="Mission" value={`${mission} · ${progType}`} />
+                        <Detail
+                            label="Acquisition"
+                            value={dateTimeFormat.format(new Date(segment.acquisitionStartDate))}
+                        />
+                        <Detail
+                            label="Incidence angle"
+                            value={`${segment.incidenceAngle.toFixed(2)}° - ${form.maxIncidenceAngle}°`}
+                        />
+                        <Detail label="Processing" value={labelFor("processing_level", form.processing_level)} />
+                        <Detail label="Format" value={labelFor("image_format", form.image_format)} />
                     </div>
                 </div>
 
@@ -439,7 +505,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                     />
                     <span>
                         I have read and accept the product licence —{" "}
-                        <span className="font-semibold text-slate-900">{production.licence}</span>
+                        <span className="font-semibold text-slate-900">{labelFor("licence", form.licence)}</span>
                     </span>
                 </label>
 
@@ -456,16 +522,11 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                     </span>
                 </label>
 
-                {!isSuperadmin && (
+                {!isOrder && (
                     <p className="text-text-secondary text-[11px]">
-                        Your role raises a request for approval. An administrator places the order.
-                    </p>
-                )}
-
-                {error && (
-                    <p className="flex items-start gap-1.5 rounded-md bg-red-50 px-2.5 py-2 text-[11px] text-red-700">
-                        <AlertTriangle size={12} className="mt-0.5 shrink-0" />
-                        {error}
+                        {canPlaceOrder(user?.roleName)
+                            ? "Direct ordering isn't published for this mission and programme, so this goes to the approval queue."
+                            : "Your role raises a request for approval. An administrator places the order."}
                     </p>
                 )}
 
@@ -483,7 +544,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                         className={`${solidButton} flex items-center gap-1.5`}
                     >
                         {isSubmitting && <Loader2 size={13} className="animate-spin" />}
-                        {isSuperadmin ? "Add to cart" : "Raise request"}
+                        {isOrder ? "Place order" : "Raise request"}
                     </button>
                 </div>
             </Step>

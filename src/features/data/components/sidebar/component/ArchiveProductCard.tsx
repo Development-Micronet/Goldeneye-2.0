@@ -113,10 +113,10 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
               disabled={!checked}
               onClick={() => onToggleVisibility(product)}
               className={`p-1 transition ${!checked
-                  ? "cursor-not-allowed text-gray-300"
-                  : isVisible
-                    ? "text-primary"
-                    : "hover:text-primary hover:bg-gray-100"
+                ? "cursor-not-allowed text-gray-300"
+                : isVisible
+                  ? "text-primary"
+                  : "hover:text-primary hover:bg-gray-100"
                 }`}
               title={!checked ? "Select product first" : isVisible ? "Hide Image" : "Show Image"}
             >
@@ -128,8 +128,8 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
                 infoProduct?.id === product.id ? setInfoProduct(null) : setInfoProduct(product)
               }
               className={`flex h-6 w-6 items-center justify-center rounded-md transition-all duration-200 ${infoProduct?.id === product.id
-                  ? "bg-primary shadow-primary/30 text-white shadow-sm"
-                  : "hover:text-primary text-gray-500 hover:bg-gray-100"
+                ? "bg-primary shadow-primary/30 text-white shadow-sm"
+                : "hover:text-primary text-gray-500 hover:bg-gray-100"
                 } `}
               title={infoProduct?.id === product.id ? "Close Information" : "Show Information"}
             >
