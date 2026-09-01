@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { AlertTriangle, CalendarDays, ChevronDown, Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
     APPLICATIONS,
@@ -119,6 +120,7 @@ export const ArchiveOrderForm: React.FC<ArchiveOrderFormProps> = ({
     onClose,
 }) => {
     const { accessToken, user } = useAuthStore();
+    const queryClient = useQueryClient();
     const isSuperadmin = canPlaceOrder(user?.roleName);
 
     const [step, setStep] = useState(1);
@@ -191,6 +193,7 @@ export const ArchiveOrderForm: React.FC<ArchiveOrderFormProps> = ({
 
         try {
             await submitArchiveRequest(payload, accessToken ?? "", user?.roleName);
+            await queryClient.invalidateQueries({ queryKey: ["taskings"] });
             await Swal.fire({
                 icon: "success",
                 title: isSuperadmin ? "Order Placed Successfully!" : "Request Raised Successfully!",

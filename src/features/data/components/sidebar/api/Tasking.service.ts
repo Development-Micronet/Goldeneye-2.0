@@ -295,8 +295,11 @@ export const defaultProduction = (): Record<OrderFieldKey, string> =>
 /* Roles                                                               */
 /* ------------------------------------------------------------------ */
 
-/** Only a superadmin places an order. Everyone else raises an indent. */
-export const canPlaceOrder = (roleName?: string) => roleName === "superadmin";
+/** Admin and superadmin place an order directly. Users and other roles create an indent. */
+export const canPlaceOrder = (roleName?: string) => {
+  const normalized = roleName?.toLowerCase().trim();
+  return normalized === "admin" || normalized === "superadmin";
+};
 
 /** Direct ordering exists only where Airbus publishes an endpoint. */
 export const orderEndpointFor = (mission: MissionKey, progType: ProgTypeKey) =>

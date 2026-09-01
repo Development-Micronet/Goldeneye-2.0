@@ -166,8 +166,11 @@ export interface ArchiveIndentPayload {
 /* Roles                                                               */
 /* ------------------------------------------------------------------ */
 
-/** Only a superadmin orders directly. Everyone else raises an indent. */
-export const canPlaceOrder = (roleName?: string) => roleName === "superadmin";
+/** Admin and superadmin order directly. Everyone else raises an indent. */
+export const canPlaceOrder = (roleName?: string) => {
+  const normalized = roleName?.toLowerCase().trim();
+  return normalized === "admin" || normalized === "superadmin";
+};
 
 /* ------------------------------------------------------------------ */
 /* Requests                                                            */

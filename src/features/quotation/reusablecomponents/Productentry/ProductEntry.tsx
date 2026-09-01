@@ -235,26 +235,26 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
 
   return (
     <div className="border-light-300 overflow-hidden rounded-lg border text-[11px] shadow-sm">
-      <div className="bg-primary-700 flex items-center justify-between px-3 py-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-white">
+      <div className="flex items-center justify-between bg-[#2c6671] px-3.5 py-2 text-white shadow-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-bold text-white tracking-wide">
             Group {groupNumber}
-            <span className="ml-1.5 text-[9px] font-normal opacity-70">
-              {groupIndices.length} item{groupIndices.length !== 1 ? "s" : ""}
+            <span className="ml-1.5 text-[9px] font-medium text-teal-100/90">
+              ({groupIndices.length} item{groupIndices.length !== 1 ? "s" : ""})
             </span>
           </span>
           {cloudVal && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-blue-300/40 bg-blue-500/20 px-2 py-0.5 text-[9px] font-semibold text-blue-100">
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/15 px-2.5 py-0.5 text-[9px] font-semibold text-white">
               ☁ Cloud {cloudDisplay}
             </span>
           )}
           {angleVal && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-purple-300/40 bg-purple-500/20 px-2 py-0.5 text-[9px] font-semibold text-purple-100">
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/15 px-2.5 py-0.5 text-[9px] font-semibold text-white">
               ⊿ Angle {angleDisplay}
             </span>
           )}
           {showMinWarn && (
-            <span className="inline-flex items-center rounded-full border border-amber-300/40 bg-amber-400/20 px-2 py-0.5 text-[9px] font-semibold text-amber-200">
+            <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-400/30 px-2 py-0.5 text-[9px] font-bold text-amber-100">
               ⚠ Min {minArchivalArea} sqkm
             </span>
           )}
@@ -262,21 +262,21 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
         <button
           type="button"
           onClick={addItemToGroup}
-          className="bg-primary-600 hover:bg-primary-500 flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold text-white transition-colors"
+          className="flex items-center gap-1 rounded border border-white/20 bg-white/15 px-2.5 py-1 text-[10px] font-bold text-white shadow-xs transition-colors hover:bg-white/25 cursor-pointer"
         >
-          <FiPlus className="h-3 w-3" /> Add Item
+          <FiPlus className="h-3 w-3 stroke-[2.5]" /> Add Item
         </button>
       </div>
 
       <div className="space-y-2 bg-white px-2.5 py-2">
-        <div className="bg-primary-50 border-primary-100 grid grid-cols-2 gap-2 rounded border px-2.5 py-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 rounded-lg border border-teal-100 bg-teal-50/40 p-2.5 sm:grid-cols-4">
           <div className="flex flex-col gap-0.5">
-            <label className="text-primary-400 text-[9px] leading-none font-bold tracking-widest uppercase">
+            <label className="text-[9px] leading-none font-bold tracking-widest text-[#2c6671] uppercase">
               Task Type
             </label>
             <div className="flex gap-3 pt-0.5">
               {Archivalortasking.map((t) => (
-                <label key={t.value} className="flex cursor-pointer items-center gap-1 text-[10px]">
+                <label key={t.value} className="flex cursor-pointer items-center gap-1 text-[10px] font-medium text-gray-800">
                   <input
                     type="radio"
                     name={`task_type_group_${groupNumber}`}
@@ -285,7 +285,7 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       handleSharedField("task_type", e.target.value)
                     }
-                    className="accent-primary-600 h-3 w-3"
+                    className="accent-[#2c6671] h-3 w-3"
                   />
                   {t.label}
                 </label>
@@ -294,27 +294,27 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-primary-400 text-[9px] leading-none font-bold tracking-widest uppercase">
+            <label className="text-[9px] leading-none font-bold tracking-widest text-[#2c6671] uppercase">
               Cloud Cover
             </label>
-            <span className="flex items-center gap-1 py-0.5 text-[11px] font-medium text-gray-700">
-              <span className="text-blue-500">☁</span>
+            <span className="flex items-center gap-1 py-0.5 text-[11px] font-semibold text-gray-800">
+              <span className="text-blue-600">☁</span>
               {cloudDisplay}
             </span>
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-primary-400 text-[9px] leading-none font-bold tracking-widest uppercase">
+            <label className="text-[9px] leading-none font-bold tracking-widest text-[#2c6671] uppercase">
               Incidence Angle
             </label>
-            <span className="flex items-center gap-1 py-0.5 text-[11px] font-medium text-gray-700">
-              <span className="text-purple-500">⊿</span>
+            <span className="flex items-center gap-1 py-0.5 text-[11px] font-semibold text-gray-800">
+              <span className="text-purple-600">⊿</span>
               {angleDisplay}
             </span>
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-primary-400 text-[9px] leading-none font-bold tracking-widest uppercase">
+            <label className="text-[9px] leading-none font-bold tracking-widest text-[#2c6671] uppercase">
               {rep.task_type === "tasking" ? "Tasking Date" : "Acq. Date"}
             </label>
             {rep.task_type === "tasking" ? (
@@ -328,7 +328,7 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
                 }
               />
             ) : (
-              <span className="py-0.5 text-[11px] font-medium text-gray-700">
+              <span className="py-0.5 text-[11px] font-semibold text-gray-800">
                 {dateDisplay || "—"}
               </span>
             )}
@@ -336,23 +336,23 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
         </div>
 
         <div className="border-light-200 overflow-hidden rounded border">
-          <div className="bg-light-100 border-light-200 hidden gap-1 border-b px-2.5 py-1.5 sm:grid sm:grid-cols-12">
-            <span className="text-primary-400 col-span-4 text-[9px] font-bold tracking-widest uppercase">
+          <div className="hidden gap-1 border-b border-gray-200 bg-gray-100/90 px-2.5 py-1.5 sm:grid sm:grid-cols-12">
+            <span className="col-span-4 text-[9px] font-bold tracking-widest text-gray-700 uppercase">
               # Item Description
             </span>
-            <span className="text-primary-400 col-span-1 text-[9px] font-bold tracking-widest uppercase">
+            <span className="col-span-1 text-[9px] font-bold tracking-widest text-gray-700 uppercase">
               Unit
             </span>
-            <span className="text-primary-400 col-span-2 text-[9px] font-bold tracking-widest uppercase">
+            <span className="col-span-2 text-[9px] font-bold tracking-widest text-gray-700 uppercase">
               Area {isArchival ? `(min ${minArchivalArea})` : "(Sqkm)"}
             </span>
-            <span className="text-primary-400 col-span-2 text-[9px] font-bold tracking-widest uppercase">
+            <span className="col-span-2 text-[9px] font-bold tracking-widest text-gray-700 uppercase">
               Price/Sqkm (₹)
             </span>
-            <span className="text-primary-400 col-span-2 text-[9px] font-bold tracking-widest uppercase">
+            <span className="col-span-2 text-[9px] font-bold tracking-widest text-gray-700 uppercase">
               Amount (₹)
             </span>
-            <span className="text-primary-400 col-span-1 text-right text-[9px] font-bold tracking-widest uppercase">
+            <span className="col-span-1 text-right text-[9px] font-bold tracking-widest text-gray-700 uppercase">
               Del
             </span>
           </div>
@@ -475,12 +475,12 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
                 {(hasGeo || spectralOpts) && (
                   <div className="flex flex-wrap items-center gap-1.5 px-2.5 pb-2">
                     {hasGeo && (
-                      <div className="flex items-center gap-1.5 rounded border border-blue-100 bg-blue-50 px-2 py-1">
-                        <label className="text-[9px] font-bold tracking-widest whitespace-nowrap text-blue-400 uppercase">
+                      <div className="flex items-center gap-1.5 rounded border border-blue-200 bg-blue-50/80 px-2 py-1">
+                        <label className="text-[9px] font-bold tracking-widest whitespace-nowrap text-blue-700 uppercase">
                           Geo.
                         </label>
                         <select
-                          className="border-light-300 w-32 rounded border bg-white px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-blue-400 focus:outline-none"
+                          className="border-light-300 w-32 rounded border bg-white px-1.5 py-0.5 text-[11px] font-medium text-gray-800 focus:ring-1 focus:ring-blue-400 focus:outline-none"
                           value={item.geometricprocessing || ""}
                           onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                             handleItemField(idx, "geometricprocessing", e.target.value)
@@ -499,12 +499,12 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
                     )}
 
                     {spectralOpts && (
-                      <div className="flex items-center gap-1.5 rounded border border-violet-100 bg-violet-50 px-2 py-1">
-                        <label className="text-[9px] font-bold tracking-widest whitespace-nowrap text-violet-400 uppercase">
+                      <div className="flex items-center gap-1.5 rounded border border-violet-200 bg-violet-50/80 px-2 py-1">
+                        <label className="text-[9px] font-bold tracking-widest whitespace-nowrap text-violet-700 uppercase">
                           Spectral
                         </label>
                         <select
-                          className="border-light-300 w-32 rounded border bg-white px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-violet-400 focus:outline-none"
+                          className="border-light-300 w-32 rounded border bg-white px-1.5 py-0.5 text-[11px] font-medium text-gray-800 focus:ring-1 focus:ring-violet-400 focus:outline-none"
                           value={item.spectralbands || ""}
                           onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                             handleItemField(idx, "spectralbands", e.target.value)
@@ -531,16 +531,16 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
                     ].map(({ key, label, val }) => (
                       <div
                         key={key}
-                        className="bg-primary-50 border-primary-100 flex items-center gap-1 rounded border px-2 py-1"
+                        className="border-teal-200 bg-teal-50/70 flex items-center gap-1 rounded border px-2 py-1"
                       >
-                        <label className="text-primary-400 text-[9px] font-bold tracking-widest whitespace-nowrap uppercase">
+                        <label className="text-[9px] font-bold tracking-widest whitespace-nowrap text-[#2c6671] uppercase">
                           {label}%
                         </label>
                         <input
                           type="number"
                           min="0"
                           max="100"
-                          className="border-light-300 focus:ring-primary-400 w-10 rounded border bg-white px-1 py-0.5 text-center text-[11px] focus:ring-1 focus:outline-none"
+                          className="border-light-300 focus:ring-primary-400 w-10 rounded border bg-white px-1 py-0.5 text-center text-[11px] font-semibold text-gray-800 focus:ring-1 focus:outline-none"
                           value={val}
                           placeholder="0"
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -553,10 +553,10 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
                     <button
                       type="button"
                       onClick={() => toggleSpec(idx)}
-                      className={`flex items-center gap-1 rounded border px-2 py-1 text-[9px] font-bold tracking-widest uppercase transition-colors ${
+                      className={`flex items-center gap-1 rounded border px-2 py-1 text-[9px] font-bold tracking-widest uppercase transition-colors cursor-pointer ${
                         isSpecOpen
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-600"
-                          : "bg-light-50 border-light-200 text-light-400 hover:border-emerald-200 hover:text-emerald-500"
+                          ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+                          : "border-gray-300 bg-gray-50 text-gray-700 hover:border-emerald-300 hover:text-emerald-700"
                       }`}
                     >
                       {isSpecOpen ? (
@@ -566,7 +566,7 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
                       )}
                       Tech Spec
                       {techSpecs.length > 0 && (
-                        <span className="ml-1 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[8px] leading-none font-bold text-white">
+                        <span className="ml-1 rounded-full bg-emerald-600 px-1.5 py-0.5 text-[8px] leading-none font-bold text-white">
                           {techSpecs.length}
                         </span>
                       )}
@@ -578,21 +578,21 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
                 {isSpecOpen && (
                   <div className="m-2 space-y-2">
                     <div className="m-3 flex items-center justify-between">
-                      <span className="text-primary-400 text-[9px] font-bold tracking-widest uppercase">
+                      <span className="text-[9px] font-bold tracking-widest text-gray-700 uppercase">
                         Technical Specifications
                       </span>
 
                       <button
                         type="button"
                         onClick={addtechRow}
-                        className="bg-primary-50 hover:bg-primary-100 border-primary-200 text-primary-600 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold"
+                        className="flex items-center gap-1 rounded border border-teal-200 bg-teal-50 px-2 py-0.5 text-[9px] font-bold text-[#2c6671] hover:bg-teal-100 cursor-pointer"
                       >
                         <FiPlus className="h-2.5 w-2.5" /> Add Row
                       </button>
                     </div>
 
                     {techSpecs.length === 0 ? (
-                      <div className="text-light-400 rounded border border-dashed p-2 text-[10px]">
+                      <div className="text-gray-500 rounded border border-dashed border-gray-300 p-2 text-[10px]">
                         No specs yet — click Add Row
                       </div>
                     ) : (
@@ -610,7 +610,7 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
                           <button
                             type="button"
                             onClick={() => removetechRow(i)}
-                            className="text-red-500"
+                            className="text-red-500 hover:text-red-700 cursor-pointer"
                           >
                             <FiTrash2 className="h-3 w-3" />
                           </button>
@@ -624,36 +624,36 @@ const GroupedProductEntry: React.FC<GroupedProductEntryProps> = ({
           })}
         </div>
 
-        <div className="border-primary-100 bg-primary-50 rounded border px-2.5 py-2">
+        <div className="rounded-lg border border-teal-200/80 bg-teal-50/60 px-3 py-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span className="text-[10px] text-gray-500">
-              Base: <strong className="text-primary-800 tabular-nums">₹ {fmt(baseTotal)}</strong>
+            <span className="text-[10px] text-gray-600">
+              Base: <strong className="font-bold text-gray-900 tabular-nums">₹ {fmt(baseTotal)}</strong>
             </span>
             {discountEnabled && parseFloat(String(discountPct)) > 0 && (
-              <span className="text-[10px] text-amber-600">
+              <span className="text-[10px] text-amber-700 font-medium">
                 Discount ({discountPct}%):{" "}
-                <strong className="tabular-nums">− ₹ {fmt(discTotal)}</strong>
+                <strong className="font-bold tabular-nums">− ₹ {fmt(discTotal)}</strong>
               </span>
             )}
             {cgst_pct > 0 && (
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-gray-600">
                 CGST ({cgst_pct}%):{" "}
-                <strong className="text-primary-800 tabular-nums">₹ {fmt(groupCgstAmt)}</strong>
+                <strong className="font-bold text-gray-900 tabular-nums">₹ {fmt(groupCgstAmt)}</strong>
               </span>
             )}
             {sgst_pct > 0 && (
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-gray-600">
                 SGST ({sgst_pct}%):{" "}
-                <strong className="text-primary-800 tabular-nums">₹ {fmt(groupSgstAmt)}</strong>
+                <strong className="font-bold text-gray-900 tabular-nums">₹ {fmt(groupSgstAmt)}</strong>
               </span>
             )}
             {igst_pct > 0 && (
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-gray-600">
                 IGST ({igst_pct}%):{" "}
-                <strong className="text-primary-800 tabular-nums">₹ {fmt(groupIgstAmt)}</strong>
+                <strong className="font-bold text-gray-900 tabular-nums">₹ {fmt(groupIgstAmt)}</strong>
               </span>
             )}
-            <span className="text-primary-700 ml-auto text-[12px] font-black tabular-nums">
+            <span className="ml-auto text-[12px] font-black text-[#2c6671] tabular-nums">
               Group Total: ₹ {fmt(groupTotal)}
             </span>
           </div>

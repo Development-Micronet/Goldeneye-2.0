@@ -89,12 +89,12 @@ export default function MapSidebar({
       tooltip: "My Indent",
       status: true,
     },
-    {
-      id: 6,
-      icon: orderIcon,
-      tooltip: "My Order",
-      status: true,
-    },
+    // {
+    //   id: 6,
+    //   icon: orderIcon,
+    //   tooltip: "My Order",
+    //   status: true,
+    // },
     ...(hasOrbitography
       ? [
         {
