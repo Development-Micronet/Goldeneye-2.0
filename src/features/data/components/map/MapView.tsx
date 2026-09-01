@@ -17,6 +17,10 @@ import type { Type } from "ol/geom/Geometry";
 import Point from "ol/geom/Point";
 import Polygon from "ol/geom/Polygon";
 import Draw, { createBox } from "ol/interaction/Draw";
+import Modify from "ol/interaction/Modify";
+import Select from "ol/interaction/Select";
+import { click } from "ol/events/condition";
+import Snap from "ol/interaction/Snap";
 import ImageLayer from "ol/layer/Image";
 import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
@@ -90,6 +94,7 @@ export default function MapView() {
   const mapInstance = useRef<Map | null>(null);
   const [mapState, setMapState] = useState<Map | null>(null);
   const vectorSourceRef = useRef<VectorSource | null>(null);
+  const vectorLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
   const hoverSourceRef = useRef<VectorSource | null>(null);
   const pinSourceRef = useRef<VectorSource | null>(null);
 
@@ -108,10 +113,16 @@ export default function MapView() {
   const polygonBufferDistance = useMapStore((state) => state.polygonBufferDistance);
   const setMap = useSelectedAOIStore((state) => state.setMap);
   const setSelectedAOI = useSelectedAOIStore((state) => state.setSelectedAOI);
+  const selectedAOIId = useSelectedAOIStore((state) => state.selectedAOIId);
+  const selectedAOIIdRef = useRef<string | null>(null);
   const { flyToProduct, setFlyToProduct } = useMapStore();
   const layers = useLayersStore((state) => state.layers);
   const addLayer = useLayersStore((state) => state.addLayer);
   const drawInteractionRef = useRef<Draw | null>(null);
+  const selectRef = useRef<Select | null>(null);
+const modifyRef = useRef<Modify | null>(null);
+  const modifyInteractionRef = useRef<Modify | null>(null);
+  const snapInteractionRef = useRef<Snap | null>(null);
   const lastVisibleProductIdsRef = useRef<string>("");
   const { activeLayer } = useBaseMapStore();
   const fitLayerId = useMapStore((state) => state.fitLayerId);
@@ -143,6 +154,74 @@ export default function MapView() {
     }
     setFitLayerId(null);
   }, [fitLayerId, setFitLayerId, layers]);
+
+  useEffect(() => {
+  const map = mapInstance.current;
+  const vectorSource = vectorSourceRef.current;
+
+  if (!map || !vectorSource) return;
+
+  // AOI select karne ke liye
+  const select = new Select({
+    condition: click,
+  });
+
+  // Selected AOI ko edit karne ke liye
+const modify = new Modify({
+  features: select.getFeatures(),
+style: () => {
+    return undefined;
+  },
+});
+
+  // User AOI par click kare
+  select.on("select", (event) => {
+    const selectedFeature = event.selected[0];
+
+    if (!selectedFeature) {
+      return;
+    }
+
+    console.log("AOI clicked:", selectedFeature);
+
+    // AOI ID
+    const aoiId = selectedFeature.getId();
+
+    console.log("AOI ID:", aoiId);
+  });
+
+  // User AOI ka point/vertex move kare
+  modify.on("modifyend", (event) => {
+    event.features.forEach((feature) => {
+      console.log("AOI edited:", feature);
+
+      const geometry = feature.getGeometry();
+
+      if (!geometry) return;
+
+      console.log(
+        "New coordinates:",
+        geometry.getCoordinates()
+      );
+    });
+  });
+
+  // Map par interactions add karo
+  map.addInteraction(select);
+  map.addInteraction(modify);
+
+  selectRef.current = select;
+  modifyRef.current = modify;
+
+  // Cleanup
+  return () => {
+    map.removeInteraction(select);
+    map.removeInteraction(modify);
+
+    selectRef.current = null;
+    modifyRef.current = null;
+  };
+}, []);
 
   // logger.log(layers);
 
@@ -199,14 +278,29 @@ export default function MapView() {
       const geom = feature.getGeometry();
       const isOrbit = label && label.startsWith("Orbit:");
       const geomType = geom ? geom.getType() : "";
+      const featureId = feature.getId();
+      const isSelected = featureId != null && String(featureId) === selectedAOIIdRef.current;
       const styles = [
         new Style({
+          // fill: new Fill({
+          //   color: isOrbit ? "rgba(194, 139, 27, 0.15)" : "rgba(44, 102, 113, 0.15)", // Matching warm orange/brown fill for orbits
+          // }),
           fill: new Fill({
-            color: isOrbit ? "rgba(194, 139, 27, 0.15)" : "rgba(44, 102, 113, 0.15)", // Matching warm orange/brown fill for orbits
-          }),
+  color: isOrbit
+    ? "rgba(194, 139, 27, 0.15)"
+    : isSelected
+  ? "rgba(0, 56, 255, 0.10)"
+  : "rgba(44, 102, 113, 0.15)",
+}),
           stroke: new Stroke({
-            color: isOrbit ? "#c28b1b" : "#2C6671", // Gold/brown stroke for orbits
-            width: isOrbit ? (geomType === "LineString" ? 3 : 1.5) : 2.5, // Thick centerline (width 3), thin swath boundary (width 1.5)
+            color: isOrbit ? "#c28b1b" : isSelected ? "#0038ff" : "#2C6671", // Highlight selected AOI in orange
+            width: isOrbit
+              ? geomType === "LineString"
+                ? 3
+                : 1.5
+              : isSelected
+                ? 3.5
+                : 2.5, // Thicker outline when this AOI is the selected one
           }),
         }),
       ];
@@ -289,6 +383,7 @@ export default function MapView() {
       style: premiumStyleFunction,
       zIndex: 10,
     });
+    vectorLayerRef.current = vectorLayer;
     const hoverSource = new VectorSource();
     const pinSource = new VectorSource();
 
@@ -342,6 +437,7 @@ export default function MapView() {
       }
       setMapState(null);
       vectorSourceRef.current = null;
+      vectorLayerRef.current = null;
     };
   }, []);
 
@@ -560,23 +656,56 @@ export default function MapView() {
         }
       }
 
+      // if (activeTool === "Polyline") {
+      //   const geometry = feature.getGeometry();
+      //   if (geometry && geometry.getType() === "LineString") {
+      //     const bufferVal = parseFloat(polylineBufferDistance) || 0;
+      //     if (bufferVal > 0) {
+      //       const buffered = turf.buffer(rawGeoJSON as any, bufferVal, { units: "kilometers" });
+      //       const bufferedFeature = geojsonFormat.readFeature(buffered, {
+      //         dataProjection: "EPSG:4326",
+      //         featureProjection: mapProjection,
+      //       });
+      //       const bufferedGeom = (bufferedFeature as any).getGeometry();
+      //       if (bufferedGeom) {
+      //         feature.setGeometry(bufferedGeom);
+      //       }
+      //     }
+      //   }
+      // }
       if (activeTool === "Polyline") {
-        const geometry = feature.getGeometry();
-        if (geometry && geometry.getType() === "LineString") {
-          const bufferVal = parseFloat(polylineBufferDistance) || 0;
-          if (bufferVal > 0) {
-            const buffered = turf.buffer(rawGeoJSON as any, bufferVal, { units: "kilometers" });
-            const bufferedFeature = geojsonFormat.readFeature(buffered, {
-              dataProjection: "EPSG:4326",
-              featureProjection: mapProjection,
-            });
-            const bufferedGeom = (bufferedFeature as any).getGeometry();
-            if (bufferedGeom) {
-              feature.setGeometry(bufferedGeom);
-            }
-          }
-        }
+  const geometry = feature.getGeometry();
+
+  if (geometry && geometry.getType() === "LineString") {
+    const bufferVal = parseFloat(polylineBufferDistance) || 0;
+
+    if (bufferVal > 0) {
+      const buffered = turf.buffer(rawGeoJSON as any, bufferVal, {
+        units: "kilometers",
+        steps: 32, // rounded corners/caps
+      });
+
+      if (!buffered) {
+        toast.error("Unable to create polyline buffer.");
+        vectorSourceRef.current?.removeFeature(feature);
+        setActiveTool(null);
+        return;
       }
+
+      const bufferedFeature = geojsonFormat.readFeature(buffered, {
+        dataProjection: "EPSG:4326",
+        featureProjection: mapProjection,
+      });
+
+      const bufferedGeom = bufferedFeature.getGeometry();
+
+      if (bufferedGeom) {
+        feature.setGeometry(bufferedGeom);
+      }
+    }
+  }
+}
+
 
       if (activeTool === "Polygon") {
         const geometry = feature.getGeometry();
@@ -672,6 +801,108 @@ export default function MapView() {
     polylineBufferDistance,
     polygonBufferDistance,
   ]);
+
+  // Enable corner vertex editing on any existing AOI shape by clicking/dragging its corners.
+  // Active whenever no draw tool is selected, so a user can edit an AOI right after drawing it,
+  // or later by clicking a vertex on any AOI already on the map.
+  useEffect(() => {
+    const map = mapInstance.current;
+    const vectorSource = vectorSourceRef.current;
+
+    if (modifyInteractionRef.current && map) {
+      map.removeInteraction(modifyInteractionRef.current);
+      modifyInteractionRef.current = null;
+    }
+    if (snapInteractionRef.current && map) {
+      map.removeInteraction(snapInteractionRef.current);
+      snapInteractionRef.current = null;
+    }
+
+    if (!map || !vectorSource) return;
+
+    // Do not activate modify while drawing a new shape
+    if (activeTool) return;
+
+    const geojsonFormat = new GeoJSON();
+
+    // Small handle dot shown on every editable vertex
+    const handleStyle = new Style({
+      image: new CircleStyle({
+        radius: 4.5,
+        fill: new Fill({ color: "#2C6671" }),
+        stroke: new Stroke({ color: "#ffffff", width: 1.2 }),
+      }),
+    });
+
+    const modify = new Modify({
+      source: vectorSource,
+      style: handleStyle,
+    });
+    const snap = new Snap({ source: vectorSource });
+
+    modify.on("modifyend", (evt: any) => {
+      const modifiedFeatures = evt.features;
+      const mapProjection = map.getView().getProjection();
+
+      modifiedFeatures.forEach((feat: any) => {
+        const id = feat.getId();
+        if (!id) return;
+
+        const updatedGeoJSON = geojsonFormat.writeFeatureObject(feat, {
+          featureProjection: mapProjection,
+          dataProjection: "EPSG:4326",
+        });
+
+        // Validation: reject self-intersecting edits and revert to the last valid shape
+        try {
+          const kinks = turf.kinks(updatedGeoJSON as any);
+          if (kinks && kinks.features && kinks.features.length > 0) {
+            toast.error("Invalid AOI: Self-intersecting lines detected. Modification reverted.");
+            const currentStoreLayers = useLayersStore.getState().layers;
+            const originalLayer = currentStoreLayers.find((l) => l.id === id);
+            if (originalLayer) {
+              const origFeature = geojsonFormat.readFeature(originalLayer.geojson);
+              const origFeatureSingle = Array.isArray(origFeature) ? origFeature[0] : origFeature;
+              const origGeom = origFeatureSingle?.getGeometry();
+              if (origGeom) feat.setGeometry(origGeom);
+            }
+            return;
+          }
+        } catch (err) {
+          console.error("AOI modify validation error:", err);
+        }
+
+        const geom = feat.getGeometry();
+        let area: number | undefined = undefined;
+        if (geom) {
+          area = getArea(geom, { projection: "EPSG:4326" }) / 1000000;
+          feat.set("area", area);
+        }
+
+        useLayersStore.getState().updateLayerGeojson(String(id), updatedGeoJSON, area);
+      });
+
+      vectorSource.changed();
+    });
+
+    map.addInteraction(modify);
+    map.addInteraction(snap);
+    modifyInteractionRef.current = modify;
+    snapInteractionRef.current = snap;
+
+    return () => {
+      if (mapInstance.current) {
+        if (modifyInteractionRef.current) {
+          mapInstance.current.removeInteraction(modifyInteractionRef.current);
+          modifyInteractionRef.current = null;
+        }
+        if (snapInteractionRef.current) {
+          mapInstance.current.removeInteraction(snapInteractionRef.current);
+          snapInteractionRef.current = null;
+        }
+      }
+    };
+  }, [activeTool]);
 
   useEffect(() => {
     if (!drawRectangleCoords) return;
@@ -1143,7 +1374,52 @@ export default function MapView() {
     prevAoiCountRef.current = aoiLayers.length;
   }, [layers, setSelectedAOI]);
 
-  const selectedAOIId = useSelectedAOIStore((state) => state.selectedAOIId);
+  // Keep a ref of the selected AOI id in sync so the style function (which runs
+  // outside React's render cycle) can read it, and re-style the layer on change.
+  useEffect(() => {
+    selectedAOIIdRef.current = selectedAOIId;
+    vectorSourceRef.current?.changed();
+  }, [selectedAOIId]);
+
+  // Click on any AOI shape on the map to select it — this is what drives the
+  // Archive Search panel, which already reacts to selectedAOIId changing.
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const handleMapClick = (evt: any) => {
+      if (activeTool) return; // don't hijack clicks while a draw tool is active
+      if (evt.dragging) return; // ignore the click OL fires at the end of a drag
+
+      const vectorLayer = vectorLayerRef.current;
+      if (!vectorLayer) return;
+
+      let clickedId: string | null = null;
+      map.forEachFeatureAtPixel(
+        evt.pixel,
+        (feature: any) => {
+          const id = feature.getId();
+          if (id != null) {
+            clickedId = String(id);
+            return true; // stop at the first (topmost) match
+          }
+          return false;
+        },
+        {
+          layerFilter: (layer: any) => layer === vectorLayer,
+          hitTolerance: 5,
+        },
+      );
+
+      setSelectedAOI(clickedId);
+    };
+
+    map.on("click", handleMapClick);
+
+    return () => {
+      map.un("click", handleMapClick);
+    };
+  }, [activeTool, setSelectedAOI]);
 
   // Automatically zoom map to selected AOI shape when selected from list/sidebar
   useEffect(() => {
