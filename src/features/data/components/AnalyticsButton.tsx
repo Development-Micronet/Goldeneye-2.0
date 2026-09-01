@@ -1,9 +1,16 @@
 import { useState } from "react";
-import { FiActivity, FiLoader } from "react-icons/fi";
+// import { FiActivity, FiLoader } from "react-icons/fi";
+import {
+  FiActivity,
+  FiArchive,
+  FiTarget,
+  FiLoader,
+} from "react-icons/fi";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useSelectedAOIStore } from "../hooks/useSelectedAOIStore";
 import { useLayersStore } from "../../../store/useLayersStore";
+import { useMapSidebarStore } from "../hooks/useMapSidebarStore";
 
 import { exportAOIWithMapLibre, downloadFile } from "../../../utils/exportAOIGeoTIFF";
 import { useRasterStore } from "../../analytics/store/useRasterStore";
@@ -18,6 +25,24 @@ const AnalyticsButton = () => {
     const layers = useLayersStore((state) => state.layers);
 
     const addRaster = useRasterStore((state) => state.addRaster);
+
+    const { openArchive, openTasking } = useMapSidebarStore();
+
+    const handleArchive = () => {
+        if (!selectedAOIId) {
+            toast.error("Please select an AOI first.");
+            return;
+        }
+        openArchive();
+    };
+
+    const handleTasking = () => {
+        if (!selectedAOIId) {
+            toast.error("Please select an AOI first.");
+            return;
+        }
+        openTasking();
+    };
 
     const handleAnalytics = async () => {
         if (!selectedAOIId) {
@@ -115,21 +140,76 @@ const AnalyticsButton = () => {
     };
 
     return (
-        <button
-            type="button"
-            onClick={handleAnalytics}
-            disabled={loading || !selectedAOIId}
-            title={selectedAOIId ? "Generate and download AOI GeoTIFF" : "Select an AOI first"}
-            className="absolute bottom-20 left-1/2 z-50 flex h-9 -translate-x-1/2 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-4 text-xs font-semibold text-gray-700 shadow-lg transition hover:bg-cyan-50 disabled:cursor-not-allowed "
-        >
-            {loading ? (
-                <FiLoader size={14} className="animate-spin" />
-            ) : (
-                <FiActivity size={14} />
-            )}
 
-            <span>{loading ? "Generating..." : "Analytics"}</span>
-        </button>
+        
+        // <button
+        //     type="button"
+        //     onClick={handleAnalytics}
+        //     disabled={loading || !selectedAOIId}
+        //     title={selectedAOIId ? "Generate and download AOI GeoTIFF" : "Select an AOI first"}
+        //     className="absolute bottom-20 left-1/2 z-50 flex h-9 -translate-x-1/2 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-4 text-xs font-semibold text-gray-700 shadow-lg transition hover:bg-cyan-50 disabled:cursor-not-allowed "
+        // >
+        //     {loading ? (
+        //         <FiLoader size={14} className="animate-spin" />
+        //     ) : (
+        //         <FiActivity size={14} />
+        //     )}
+
+        //     <span>{loading ? "Generating..." : "Analytics"}</span>
+        // </button>
+
+        <div className="absolute bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2">
+  
+  {/* Archive */}
+  <button
+    type="button"
+    onClick={handleArchive}
+    disabled={loading || !selectedAOIId}
+    title={selectedAOIId ? "Search Archive Data" : "Select an AOI first"}
+    className="flex h-9 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-4 text-xs font-semibold text-gray-700 shadow-lg transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-50"
+  >
+    <FiArchive size={14} />
+
+    <span>Archive</span>
+  </button>
+
+
+  {/* Analytics */}
+  <button
+    type="button"
+    onClick={handleAnalytics}
+    disabled={loading || !selectedAOIId}
+    title={
+      selectedAOIId
+        ? "Generate and download AOI GeoTIFF"
+        : "Select an AOI first"
+    }
+    className="flex h-9 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-4 text-xs font-semibold text-gray-700 shadow-lg transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-50"
+  >
+    {loading ? (
+      <FiLoader size={14} className="animate-spin" />
+    ) : (
+      <FiActivity size={14} />
+    )}
+
+    <span>{loading ? "Generating..." : "Analytics"}</span>
+  </button>
+
+
+  {/* Tasking */}
+  <button
+    type="button"
+    onClick={handleTasking}
+    disabled={!selectedAOIId}
+    title={selectedAOIId ? "Create a new Tasking request" : "Select an AOI first"}
+    className="flex h-9 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-4 text-xs font-semibold text-gray-700 shadow-lg transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-50"
+  >
+    <FiTarget size={14} />
+
+    <span>Tasking</span>
+  </button>
+
+</div>
     );
 };
 

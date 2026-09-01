@@ -21,6 +21,7 @@ import { MyOrderMenu } from "./sidebar/menus/MyOrderMenu";
 import { OrbitographyMenu } from "./sidebar/menus/orbitography/OrbitographyMenu";
 import { TaskingMenu } from "./sidebar/menus/TaskingMenu";
 import { usePlanStore } from "../hooks/usePlanStore";
+import { useMapSidebarStore } from "../hooks/useMapSidebarStore";
 
 interface MapSidebarProps {
   activeIndex?: number | null;
@@ -31,10 +32,12 @@ export default function MapSidebar({
   activeIndex: propActiveIndex,
   setActiveIndex: propSetActiveIndex,
 }: MapSidebarProps) {
+  const storeActiveIndex = useMapSidebarStore((state) => state.activeIndex);
+  const storeSetActiveIndex = useMapSidebarStore((state) => state.setActiveIndex);
   const [internalActiveIndex, setInternalActiveIndex] = useState<number | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const activeIndex = propActiveIndex !== undefined ? propActiveIndex : internalActiveIndex;
-  const setActiveIndex = propSetActiveIndex || setInternalActiveIndex;
+  const activeIndex = propActiveIndex !== undefined ? propActiveIndex : storeActiveIndex ?? internalActiveIndex;
+  const setActiveIndex = propSetActiveIndex || storeSetActiveIndex || setInternalActiveIndex;
   const { user } = useAuthStore();
   const role = user?.roleName || "user";
   const plan = usePlanStore((state) => state.plan);

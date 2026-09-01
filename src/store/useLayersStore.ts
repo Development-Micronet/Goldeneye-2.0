@@ -16,6 +16,7 @@ interface LayersState {
   clearLayers: () => void;
   toggleLayerVisibility: (id: string) => void;
   updateLayerLabel: (id: string, label: string) => void;
+  updateLayerGeojson: (id: string, geojson: any, area?: number) => void;
 }
 
 export const useLayersStore = create<LayersState>()((set) => ({
@@ -72,5 +73,11 @@ export const useLayersStore = create<LayersState>()((set) => ({
   updateLayerLabel: (id, label) =>
     set((state) => ({
       layers: state.layers.map((l) => (l.id === id ? { ...l, label } : l)),
+    })),
+  updateLayerGeojson: (id, geojson, area) =>
+    set((state) => ({
+      layers: state.layers.map((l) =>
+        l.id === id ? { ...l, geojson, ...(area !== undefined ? { area } : {}) } : l
+      ),
     })),
 }));
