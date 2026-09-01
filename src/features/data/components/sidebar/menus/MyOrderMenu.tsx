@@ -16,7 +16,7 @@ import type { OrderFilter, Tasking } from "../api/Order.service";
 import { useAuthStore } from "../../../../../store/useAuthStore";
 
 
-const TASKINGS_QUERY_KEY = ["taskings"];
+export const TASKINGS_QUERY_KEY = ["taskings"];
 
 const EMPTY_MESSAGES: Record<OrderFilter, string> = {
   all: "No orders found",

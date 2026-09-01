@@ -3,7 +3,40 @@
 
 @theme {
   --color-primary: #2c6671;
-  --color-primary-100: #f0fdfd;
+  --color-primary-50: #f0f7f8;
+  --color-primary-100: #d9ebed;
+  --color-primary-200: #b5d8dc;
+  --color-primary-300: #87bfc6;
+  --color-primary-400: #549fab;
+  --color-primary-500: #37818e;
+  --color-primary-600: #2c6671;
+  --color-primary-700: #23555e;
+  --color-primary-800: #1f474f;
+  --color-primary-900: #1a3c42;
+  --color-primary-950: #10262b;
+
+  --color-light-50: #f9fafb;
+  --color-light-100: #f3f4f6;
+  --color-light-200: #e5e7eb;
+  --color-light-300: #d1d5db;
+  --color-light-400: #9ca3af;
+  --color-light-500: #6b7280;
+  --color-light-600: #4b5563;
+  --color-light-700: #374151;
+  --color-light-800: #1f2937;
+  --color-light-900: #111827;
+
+  --color-dark-50: #f9fafb;
+  --color-dark-100: #f3f4f6;
+  --color-dark-200: #e5e7eb;
+  --color-dark-300: #d1d5db;
+  --color-dark-400: #9ca3af;
+  --color-dark-500: #6b7280;
+  --color-dark-600: #4b5563;
+  --color-dark-700: #374151;
+  --color-dark-800: #1f2937;
+  --color-dark-900: #111827;
+
   --color-nav-inactive: #b8b8b8;
   --color-white: #ffffff;
   --color-text-muted: #4b5563; /* Res | IncAng */

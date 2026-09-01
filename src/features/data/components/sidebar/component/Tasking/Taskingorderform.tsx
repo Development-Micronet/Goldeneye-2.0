@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ChevronDown, Info, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
     MARKETS,
@@ -143,6 +144,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
     onSubmitted,
 }) => {
     const { accessToken, user } = useAuthStore();
+    const queryClient = useQueryClient();
 
     // Direct ordering needs both the role and a published endpoint for this pass.
     const orderEndpoint = orderEndpointFor(mission, progType);
@@ -154,13 +156,34 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
     // The order carries its own window, and it faces the same lead-time rule.
     const minStart = useMemo(() => earliestAcquisitionDate(), []);
 
+    // Construct a detailed customer reference formatted like: GE-SPOT-ONEDAY-TEST-01
+    const defaultCustomerReference = useMemo(() => {
+        const username = user?.user || user?.customerName || "";
+        const clean = (str?: string) =>
+            (str || "")
+                .trim()
+                .replace(/\s+/g, "-")
+                .replace(/[^a-zA-Z0-9-_]/g, "")
+                .toUpperCase();
+
+        const parts = [
+            "GE",
+            clean(mission),
+            clean(progType),
+            clean(username),
+            clean(aoiLabel),
+        ].filter(Boolean);
+
+        return parts.join("-");
+    }, [user?.user, user?.customerName, mission, progType, aoiLabel]);
+
     const [form, setForm] = useState<OrderFormValues>({
         ...defaultProduction(),
         acquisitionStartDate: startDate,
         acquisitionEndDate: endDate,
         maxCloudCover: cloudCover,
         maxIncidenceAngle: maxIncidence,
-        customerReference: aoiLabel,
+        customerReference: defaultCustomerReference,
         comments: "",
         emailId: user?.email ?? "",
         primaryMarket: MARKETS[0].value,
@@ -205,16 +228,17 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                 toast.success("Order placed successfully.");
             } else {
                 await submitTaskingIndent(buildIndentPayload(form, context), accessToken ?? "");
-                toast.success("Request raised successfully.");
+                toast.success("Indent created successfully.");
             }
 
+            await queryClient.invalidateQueries({ queryKey: ["taskings"] });
             onSubmitted();
         } catch (caught) {
             toast.error(
                 apiErrorMessage(caught) ||
                 (isOrder
                     ? "Failed to place order. Please try again."
-                    : "Failed to raise the request. Please try again.")
+                    : "Failed to create indent. Please try again.")
             );
         } finally {
             setIsSubmitting(false);
@@ -228,7 +252,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
             <div>
                 <h2 className="text-sm font-semibold tracking-wide text-slate-900">
-                    {isOrder ? "ORDER IMAGE" : "ORDER CRITERIA SELECTION"}
+                    {isOrder ? "ORDER IMAGE" : "CREATE TASKING INDENT"}
                 </h2>
                 <p className="text-text-secondary mt-0.5 text-[11px]">
                     {mission} · {progType} · {dateTimeFormat.format(new Date(segment.acquisitionStartDate))}
@@ -526,7 +550,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                     <p className="text-text-secondary text-[11px]">
                         {canPlaceOrder(user?.roleName)
                             ? "Direct ordering isn't published for this mission and programme, so this goes to the approval queue."
-                            : "Your role raises a request for approval. An administrator places the order."}
+                            : "Your role creates an indent for approval. An administrator places the order."}
                     </p>
                 )}
 
@@ -544,7 +568,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                         className={`${solidButton} flex items-center gap-1.5`}
                     >
                         {isSubmitting && <Loader2 size={13} className="animate-spin" />}
-                        {isOrder ? "Place order" : "Raise request"}
+                        {isOrder ? "Place order" : "Create indent"}
                     </button>
                 </div>
             </Step>

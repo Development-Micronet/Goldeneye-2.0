@@ -21,71 +21,41 @@ import {
   FiTrash2,
   FiCheckCircle,
   FiLayers,
+  FiCheck,
+  FiFilter,
 } from "react-icons/fi";
 import { useUser } from "../../auth/AuthProvider/AuthContext";
 
-const SORT_OPTIONS = [
-  { value: "", label: "Default" },
-  { value: "date", label: "Date" },
-  { value: "amount", label: "Amount" },
-  { value: "company", label: "Company" },
-];
-
-const GST_OPTIONS = [
-  { value: "", label: "Any" },
-  { value: "cgst", label: "CGST" },
-  { value: "sgst", label: "SGST" },
-  { value: "igst", label: "IGST" },
-];
-
-const DELIVERY_OPTIONS = [
-  { value: "", label: "Any" },
-  { value: "VIA FTP ONLY", label: "FTP" },
-  { value: "EMAIL", label: "Email" },
-];
-
-const INCOTERMS_OPTIONS = [
-  { value: "", label: "Any" },
-  { value: "EXW", label: "EXW" },
-  { value: "CIF", label: "CIF" },
-  { value: "FOB", label: "FOB" },
+const ORDER_OPTIONS = [
+  { value: "", label: "All / Default" },
+  { value: "desc", label: "New Quotations (Newest First)" },
+  { value: "asc", label: "Old Quotations (Oldest First)" },
 ];
 
 const EMPTY_FILTERS = {
   search: "",
-  company: "",
   from_company: "",
   date_from: "",
   date_to: "",
-  amount_min: "",
-  amount_max: "",
-  gst_type: "",
-  delivery: "",
-  incoterms: "",
-  validity: "",
-  has_images: "",
   sort_by: "",
-  sort_dir: "desc",
+  sort_dir: "",
 };
 
-const activeFilterCount = (filters) =>
-  Object.entries(filters).filter(([k, v]) => v !== "" && v !== null && k !== "sort_dir").length;
+const hasActiveFilter = (f: any) =>
+  Boolean(f?.search || f?.from_company || f?.date_from || f?.date_to || f?.sort_dir);
 
-const pillLabel = (key, val) => {
-  const labels = {
+const activeFilterCount = (filters: any) =>
+  Object.entries(filters).filter(
+    ([k, v]) => v !== "" && v !== null && k !== "search" && k !== "sort_by",
+  ).length;
+
+const pillLabel = (key: string, val: string) => {
+  const labels: Record<string, string> = {
     search: `Search: "${val}"`,
-    company: `Client: ${val}`,
     from_company: `From: ${val}`,
-    date_from: `From: ${val}`,
-    date_to: `To: ${val}`,
-    amount_min: `Min ₹${val}`,
-    amount_max: `Max ₹${val}`,
-    gst_type: `GST: ${val.toUpperCase()}`,
-    delivery: `Delivery: ${val}`,
-    incoterms: `Incoterms: ${val}`,
-    validity: `Validity: ${val}d`,
-    has_images: val === "true" ? "Has Images" : "No Images",
-    sort_by: `Sort: ${val}`,
+    date_from: `From Date: ${val}`,
+    date_to: `To Date: ${val}`,
+    sort_dir: val === "asc" ? "Old Quotations (Oldest First)" : "New Quotations (Newest First)",
   };
   return labels[key] || `${key}: ${val}`;
 };
@@ -161,10 +131,16 @@ const Quotationlayout = () => {
   }, [filters]);
 
   const applyFilters = () => {
-    const hasActive = activeFilterCount(pendingFilters) > 0;
-    setFilters({ ...pendingFilters });
-    setIsFiltered(hasActive);
+    const next = { ...pendingFilters };
+    if (next.sort_dir) {
+      next.sort_by = "date";
+    } else {
+      next.sort_by = "";
+    }
+    setFilters(next);
+    setIsFiltered(hasActiveFilter(next));
     setFilterOpen(false);
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -175,29 +151,32 @@ const Quotationlayout = () => {
     setFilterOpen(false);
   };
 
-  const removePill = (key) => {
+  const removePill = (key: string) => {
     const next = { ...filters, [key]: "" };
+    if (key === "sort_dir") {
+      next.sort_by = "";
+    }
     setFilters(next);
     setPendingFilters(next);
-    setIsFiltered(activeFilterCount(next) > 0);
+    setIsFiltered(hasActiveFilter(next));
     setCurrentPage(1);
   };
 
   const handleQuickSearch = useCallback(
-    (val) => {
-      setPendingFilters((p) => ({ ...p, search: val }));
+    (val: string) => {
+      setPendingFilters((p: any) => ({ ...p, search: val }));
       clearTimeout(searchTimer.current);
       searchTimer.current = setTimeout(() => {
         const next = { ...filters, search: val };
         setFilters(next);
-        setIsFiltered(activeFilterCount(next) > 0);
+        setIsFiltered(hasActiveFilter(next));
         setCurrentPage(1);
       }, 450);
     },
     [filters],
   );
 
-  const setPF = (key, val) => setPendingFilters((p) => ({ ...p, [key]: val }));
+  const setPF = (key: string, val: any) => setPendingFilters((p: any) => ({ ...p, [key]: val }));
 
   const deleteMutation = useMutation({
     mutationFn: (id) => DeleteQuotation(id),
@@ -372,7 +351,7 @@ const Quotationlayout = () => {
   };
 
   const activePills = Object.entries(filters).filter(
-    ([k, v]) => v !== "" && v !== null && k !== "sort_dir",
+    ([k, v]) => v !== "" && v !== null && k !== "sort_by",
   );
 
   const getDescAmount = (q) =>
@@ -410,10 +389,15 @@ const Quotationlayout = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setFilterOpen((p) => !p)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-semibold shadow-xs transition-all ${
+                  onClick={() => {
+                    if (!filterOpen) {
+                      setPendingFilters({ ...filters });
+                    }
+                    setFilterOpen((p) => !p);
+                  }}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-semibold shadow-xs transition-all cursor-pointer ${
                     filterOpen || isFiltered
-                      ? "border-[#2c6671] bg-[#2c6671] text-white"
+                      ? "border-[#2c6671] bg-[#2c6671] text-white hover:bg-[#204e57]"
                       : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-[#2c6671]"
                   }`}
                 >
@@ -509,19 +493,14 @@ const Quotationlayout = () => {
 
           {/* Filter Panel */}
           {filterOpen && (
-            <div className="bg-light-100 border-light-300 border-b p-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <label className={labelCls}>Client Company</label>
-                  <input
-                    className={inputCls}
-                    placeholder="e.g. ISRO"
-                    value={pendingFilters.company}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPF("company", e.target.value)
-                    }
-                  />
-                </div>
+            <form
+              onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
+                e.preventDefault();
+                applyFilters();
+              }}
+              className="bg-light-100 border-light-300 border-b p-4 shadow-inner"
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label className={labelCls}>From Company</label>
                   <input
@@ -556,113 +535,20 @@ const Quotationlayout = () => {
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Min Amount (₹)</label>
-                  <input
-                    type="number"
-                    className={inputCls}
-                    placeholder="0"
-                    value={pendingFilters.amount_min}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPF("amount_min", e.target.value)
-                    }
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Max Amount (₹)</label>
-                  <input
-                    type="number"
-                    className={inputCls}
-                    placeholder="No limit"
-                    value={pendingFilters.amount_max}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPF("amount_max", e.target.value)
-                    }
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>GST Type</label>
+                  <label className={labelCls}>Old & New Quotations</label>
                   <select
                     className={inputCls}
-                    value={pendingFilters.gst_type}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPF("gst_type", e.target.value)
-                    }
+                    value={pendingFilters.sort_dir}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                      const val = e.target.value;
+                      setPendingFilters((p: any) => ({
+                        ...p,
+                        sort_dir: val,
+                        sort_by: val ? "date" : "",
+                      }));
+                    }}
                   >
-                    {GST_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Delivery</label>
-                  <select
-                    className={inputCls}
-                    value={pendingFilters.delivery}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPF("delivery", e.target.value)
-                    }
-                  >
-                    {DELIVERY_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Incoterms</label>
-                  <select
-                    className={inputCls}
-                    value={pendingFilters.incoterms}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPF("incoterms", e.target.value)
-                    }
-                  >
-                    {INCOTERMS_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Validity (days)</label>
-                  <input
-                    type="number"
-                    className={inputCls}
-                    placeholder="e.g. 30"
-                    value={pendingFilters.validity}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPF("validity", e.target.value)
-                    }
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Images</label>
-                  <select
-                    className={inputCls}
-                    value={pendingFilters.has_images}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPF("has_images", e.target.value)
-                    }
-                  >
-                    <option value="">Any</option>
-                    <option value="true">Has Images</option>
-                    <option value="false">No Images</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Sort By</label>
-                  <select
-                    className={inputCls}
-                    value={pendingFilters.sort_by}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPF("sort_by", e.target.value)
-                    }
-                  >
-                    {SORT_OPTIONS.map((o) => (
+                    {ORDER_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value}>
                         {o.label}
                       </option>
@@ -670,21 +556,32 @@ const Quotationlayout = () => {
                   </select>
                 </div>
               </div>
-              <div className="mt-3 flex items-center justify-between">
+              <div className="mt-4 flex items-center justify-between border-t border-gray-200/80 pt-3">
                 <button
+                  type="button"
                   onClick={clearFilters}
-                  className="text-primary-600 hover:text-primary-700 text-xs font-semibold"
+                  className="text-xs font-semibold text-gray-500 transition-colors hover:text-red-600 cursor-pointer"
                 >
-                  Clear
+                  Clear Filters
                 </button>
-                <button
-                  onClick={applyFilters}
-                  className="bg-primary-600 hover:bg-primary-700 rounded px-3 py-1.5 text-xs font-semibold text-white transition-colors"
-                >
-                  Apply
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFilterOpen(false)}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#2c6671] px-4 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-[#204e57] cursor-pointer"
+                  >
+                    <FiCheck className="h-3.5 w-3.5 stroke-[2.5]" />
+                    <span>Submit</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            </form>
           )}
 
           {/* Active Filter Pills */}
