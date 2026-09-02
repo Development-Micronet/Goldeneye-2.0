@@ -41,25 +41,16 @@ const ForceResetPasswordRoute: React.FC<ProtectedRouteProps> = ({ children }) =>
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  // If the user already reset their password, redirect them back to the dashboard/home
+  // If the user already reset their password, redirect them back to the data page
   if (!user?.must_reset_password) {
-    const role = user?.roleName?.toLowerCase();
-    if (role === "user") {
-      return <Navigate to="/data" replace />;
-    }
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/data" replace />;
   }
 
   return <>{children}</>;
 };
 
 const HomeRedirect = () => {
-  const user = useAuthStore((state) => state.user);
-  const role = user?.roleName?.toLowerCase() || "";
-  if (role === "user") {
-    return <Navigate to="/data" replace />;
-  }
-  return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/data" replace />;
 };
 
 interface RoleRouteProps {

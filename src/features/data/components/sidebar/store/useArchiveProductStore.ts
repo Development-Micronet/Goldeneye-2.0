@@ -5,6 +5,8 @@ export interface SelectedArchiveProduct {
   id: string;
   name: string;
   imageUrl: string;
+  wmts_url?: string;
+  wms_url?: string;
   coordinates: unknown;
   geometry: unknown;
 

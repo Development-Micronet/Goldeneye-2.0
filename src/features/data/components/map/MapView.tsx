@@ -22,6 +22,7 @@ import Modify from "ol/interaction/Modify";
 import Select from "ol/interaction/Select";
 import { click } from "ol/events/condition";
 import Snap from "ol/interaction/Snap";
+import BaseLayer from "ol/layer/Base";
 import ImageLayer from "ol/layer/Image";
 import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
@@ -45,6 +46,7 @@ import { usePinnedProductStore } from "../../hooks/usePinnedProductStore";
 import { useSelectedAOIStore } from "../../hooks/useSelectedAOIStore";
 
 import { useRasterLayers } from "./core/useRasterLayers";
+import { useAuthStore } from "../../../../store/useAuthStore";
 
 const createOrbitBadgeCanvas = (text: string): HTMLCanvasElement => {
   const canvas = document.createElement("canvas");
@@ -1114,8 +1116,6 @@ export default function MapView() {
     const isNewSelection = currentIds !== lastVisibleProductIdsRef.current;
     lastVisibleProductIdsRef.current = currentIds;
 
-    const imageLayers: ImageLayer<ImageStatic>[] = [];
-
     const hasNonJpg = visibleProducts.some((product) => {
       if (!product.imageUrl) return false;
       const url = product.imageUrl.toLowerCase().split("?")[0];
@@ -1126,69 +1126,200 @@ export default function MapView() {
     const computedMaxZoom = isSpecialCategoryUser ? UNRESTRICTED_MAX_ZOOM : hasNonJpg ? 14 : 18;
     setMaxZoom(computedMaxZoom);
 
-    visibleProducts.forEach((product) => {
-      if (!product.imageUrl || !product.geometry) return;
+    let isMounted = true;
+    const addedLayers: BaseLayer[] = [];
 
-      const feature = new GeoJSON().readFeature({
-        type: "Feature",
-        geometry: product.geometry,
-      });
+    const loadProductLayers = async () => {
+      for (const product of visibleProducts) {
+        if (!product?.geometry) continue;
 
-      if (Array.isArray(feature)) return;
+        let feature: any;
+        try {
+          feature = new GeoJSON().readFeature({
+            type: "Feature",
+            geometry: product.geometry,
+          });
+        } catch {
+          continue;
+        }
 
-      const geometry = feature.getGeometry();
-      if (!geometry) return;
+        if (Array.isArray(feature) || !feature) continue;
 
-      const imageLayer = new ImageLayer({
-        source: new ImageStatic({
-          url: product.imageUrl,
-          imageExtent: geometry.getExtent(),
-          projection: "EPSG:4326",
-        }),
-        opacity: 0.85,
-        zIndex: 20,
-      });
+        const geometry = feature.getGeometry();
+        if (!geometry) continue;
 
-      map.addLayer(imageLayer);
-      imageLayers.push(imageLayer);
-    });
+        let layer: BaseLayer | null = null;
 
-    // Keep AOI/vector layers above images
-    map.getLayers().forEach((layer) => {
-      if (layer instanceof VectorLayer) {
-        layer.setZIndex(1000);
+        // 1. If wmts_url is available, inspect the endpoint
+        if (product.wmts_url) {
+          try {
+            const response = await fetch(product.wmts_url);
+            const text = await response.text();
+
+            // Check if response is JSON error or doesn't support WMTS
+            const isJsonError =
+              text.includes("This item does not support WMTS") ||
+              text.includes('"internalCode"') ||
+              !response.ok;
+
+            if (isJsonError) {
+              console.log(
+                `Product ${product.id} does not support WMTS/WMS, falling back to imageUrl`,
+              );
+            } else if (
+              text.includes("<WMS_Capabilities") ||
+              text.includes("<Name>WMS</Name>")
+            ) {
+              // Parse WMS Capabilities XML
+              const parser = new DOMParser();
+              const xmlDoc = parser.parseFromString(text, "text/xml");
+
+              // Extract layer name (prefer child layer name, or top layer name)
+              const layerNames = Array.from(xmlDoc.querySelectorAll("Layer > Name"))
+                .map((el) => el.textContent?.trim())
+                .filter(Boolean) as string[];
+
+              const selectedLayer =
+                layerNames.find((n) => n !== "IDP_DAAS_Visualization") ||
+                layerNames[0] ||
+                "IDP_DAAS_Visualization";
+
+              const onlineResource =
+                xmlDoc
+                  .querySelector("GetMap OnlineResource")
+                  ?.getAttribute("xlink:href") ||
+                product.wms_url ||
+                product.wmts_url.replace(/\/wmts\//, "/wms/");
+
+              const wmsUrl = onlineResource.split("?")[0];
+
+              layer = new TileLayer({
+                source: new TileWMS({
+                  url: wmsUrl,
+                  params: {
+                    LAYERS: selectedLayer,
+                    TILED: true,
+                    VERSION: "1.3.0",
+                  },
+                  serverType: "mapserver",
+                  transition: 0,
+                }),
+                opacity: 0.85,
+                zIndex: 20,
+              });
+            } else if (
+              text.includes("<Capabilities") ||
+              text.includes("<WMTS_Capabilities")
+            ) {
+              // Direct WMTS or tile template
+              const wmtsBase = String(product.wmts_url).trim().replace(/\/+$/, "");
+              const tileUrl = wmtsBase.includes("{z}")
+                ? wmtsBase
+                : `${wmtsBase}/{z}/{x}/{y}`;
+
+              layer = new TileLayer({
+                source: new XYZ({
+                  url: tileUrl,
+                }),
+                opacity: 0.85,
+                zIndex: 20,
+              });
+            }
+          } catch (err) {
+            console.warn(
+              `Failed to load WMTS/WMS for product ${product.id}, falling back to imageUrl:`,
+              err,
+            );
+          }
+        }
+
+        // 2. Fallback to imageUrl if WMTS/WMS is not available or failed
+        if (!layer && product.imageUrl) {
+          try {
+            layer = new ImageLayer({
+              source: new ImageStatic({
+                url: product.imageUrl,
+                imageExtent: geometry.getExtent(),
+                projection: "EPSG:4326",
+              }),
+              opacity: 0.85,
+              zIndex: 20,
+            });
+          } catch (err) {
+            console.warn("Failed to create ImageStatic layer:", err);
+          }
+        }
+
+        if (layer && isMounted && mapInstance.current) {
+          mapInstance.current.addLayer(layer);
+          addedLayers.push(layer);
+        }
       }
-    });
 
-    if (isNewSelection && imageLayers.length) {
-      const extent = imageLayers.reduce(
-        (acc, layer) => {
-          const imageExtent = layer.getSource()?.getImageExtent();
-          if (!imageExtent) return acc;
-          if (!acc) return imageExtent;
-          return [
-            Math.min(acc[0], imageExtent[0]),
-            Math.min(acc[1], imageExtent[1]),
-            Math.max(acc[2], imageExtent[2]),
-            Math.max(acc[3], imageExtent[3]),
-          ];
-        },
-        null as number[] | null,
-      );
-
-      if (extent) {
-        map.getView().fit(extent, {
-          padding: [100, 100, 100, 100],
-          duration: 500,
-          maxZoom: computedMaxZoom,
+      // Keep AOI/vector layers above images
+      if (isMounted && mapInstance.current) {
+        mapInstance.current.getLayers().forEach((layer) => {
+          if (layer instanceof VectorLayer) {
+            layer.setZIndex(1000);
+          }
         });
+      }
+    };
+
+    loadProductLayers();
+
+    if (isNewSelection) {
+      try {
+        const extents: number[][] = [];
+        visibleProducts.forEach((product) => {
+          if (!product?.geometry) return;
+          try {
+            const feature = new GeoJSON().readFeature({
+              type: "Feature",
+              geometry: product.geometry,
+            });
+            if (!Array.isArray(feature) && feature) {
+              const geom = feature.getGeometry();
+              if (geom) {
+                extents.push(geom.getExtent());
+              }
+            }
+          } catch {
+            // ignore individual invalid geometry
+          }
+        });
+
+        if (extents.length > 0 && mapInstance.current) {
+          const overallExtent =
+            extents.length === 1
+              ? extents[0]
+              : extents.reduce((acc, cur) => [
+                Math.min(acc[0], cur[0]),
+                Math.min(acc[1], cur[1]),
+                Math.max(acc[2], cur[2]),
+                Math.max(acc[3], cur[3]),
+              ]);
+
+          if (overallExtent) {
+            mapInstance.current.getView().fit(overallExtent, {
+              padding: [100, 100, 100, 100],
+              duration: 500,
+              maxZoom: computedMaxZoom,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error fitting map view extent:", err);
       }
     }
 
     return () => {
-      imageLayers.forEach((layer) => {
-        map.removeLayer(layer);
-      });
+      isMounted = false;
+      if (mapInstance.current) {
+        addedLayers.forEach((layer) => {
+          mapInstance.current?.removeLayer(layer);
+        });
+      }
     };
   }, [visibleProducts, setMaxZoom]);
 

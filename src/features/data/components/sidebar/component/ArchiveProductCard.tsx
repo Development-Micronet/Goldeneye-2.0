@@ -5,6 +5,7 @@ import type { SelectedArchiveProduct } from "../store/useArchiveProductStore";
 import { useArchiveHoverStore } from "../../../hooks/useArchiveHoverStore";
 import { usePinnedProductStore } from "../../../hooks/usePinnedProductStore";
 import { useArchiveInfoStore } from "../../../hooks/useArchiveInfoStore";
+import { useIsCartHidden } from "../../../../../utils/cartPermissions";
 import { EyeIcon } from "../../../../../assets/index";
 
 /** Shared with the toolbar so both eyes match. */
@@ -64,6 +65,8 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
   const { setHoveredProduct } = useArchiveHoverStore();
   const { addPinnedProduct, removePinnedProduct, isPinned } = usePinnedProductStore();
   const { infoProduct, setInfoProduct } = useArchiveInfoStore();
+
+  const isCartHidden = useIsCartHidden();
 
   const pinned = isPinned(product.id);
   const infoOpen = infoProduct?.id === product.id;
@@ -166,15 +169,17 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
             <VisibilityIcon dimmed={!isVisible} />
           </button>
 
-          <button
-            type="button"
-            onClick={() => onOrder(product)}
-            data-tooltip-id="archive-tooltip"
-            data-tooltip-content="Add to Cart"
-            className={`${button} ${tone(false)}`}
-          >
-            <ShoppingCart className="h-4 w-4" />
-          </button>
+          {!isCartHidden && (
+            <button
+              type="button"
+              onClick={() => onOrder(product)}
+              data-tooltip-id="archive-tooltip"
+              data-tooltip-content="Add to Cart"
+              className={`${button} ${tone(false)}`}
+            >
+              <ShoppingCart className="h-4 w-4" />
+            </button>
+          )}
 
           <button
             type="button"

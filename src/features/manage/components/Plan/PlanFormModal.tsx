@@ -28,7 +28,15 @@ const PROVIDER_SENSORS_MAP: Record<string, string[]> = {
   sentinel: ["SENTINEL-1", "SENTINEL-2"],
 };
 
-const SERVICES_OPTIONS = ["search", "api_key", "orbitography", "analytics"];
+const SERVICES_OPTIONS = [
+  "search",
+  "tasking",
+  "my_indent",
+  "my_order",
+  "orbitography",
+  "analytics",
+  "api_key",
+];
 
 const initialForm: CreatePlanDto = {
   name: "",
@@ -334,7 +342,7 @@ export const PlanFormModal = ({ open, onClose, plan }: PlanFormModalProps) => {
                     >
                       <div className="flex w-full items-center justify-between">
                         <span className="text-xs tracking-wide uppercase">
-                          {service.replace("_", " ")}
+                          {service.replace(/_/g, " ")}
                         </span>
                         <input
                           type="checkbox"

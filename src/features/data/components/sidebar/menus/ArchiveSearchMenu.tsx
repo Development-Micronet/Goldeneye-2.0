@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 
 import { useAuthStore } from "../../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../../utils/dataDecrypt";
+import { useIsCartHidden } from "../../../../../utils/cartPermissions";
 import { useParameter } from "../../../hooks/useParameter";
 import { useProductStore } from "../../../hooks/useproductStore";
 import type { ProductResponse } from "../Models/product.types";
@@ -106,12 +107,16 @@ const nameFor = (provider: string, raw: Record<string, any>) => {
  * regardless of which API answered.
  */
 const toArchiveProduct = (item: any, provider: string): SelectedArchiveProduct => {
+
+    console.log("item", item)
   const properties = item.properties ?? {};
   const raw: Record<string, any> = properties.raw ?? {};
 
   const base = {
     id: item.id,
     imageUrl: properties.image_url,
+    wmts_url: properties.wmts_url,
+    wms_url: properties.wms_url,
     coordinates: item.geometry?.coordinates,
     geometry: item.geometry,
     date: properties.date,
@@ -177,6 +182,7 @@ export const ArchiveSearchMenu: React.FC = () => {
 
   // The product whose order criteria are open. Set by the card's cart button.
   const [orderProduct, setOrderProduct] = useState<SelectedArchiveProduct | null>(null);
+  const isCartHidden = useIsCartHidden();
 
   const {
     selectedProducts,
@@ -554,15 +560,17 @@ export const ArchiveSearchMenu: React.FC = () => {
             <VisibilityIcon dimmed={!allSelectedVisible} />
           </button>
 
-          <button
-            type="button"
-            onClick={() => requireSelection() && setOrderProduct(selectedProducts[0])}
-            data-tooltip-id="archive-tooltip"
-            data-tooltip-content="Add to cart"
-            className={toolbarButton}
-          >
-            <ShoppingCart size={16} />
-          </button>
+          {!isCartHidden && (
+            <button
+              type="button"
+              onClick={() => requireSelection() && setOrderProduct(selectedProducts[0])}
+              data-tooltip-id="archive-tooltip"
+              data-tooltip-content="Add to cart"
+              className={toolbarButton}
+            >
+              <ShoppingCart size={16} />
+            </button>
+          )}
 
           {/* Loaded range, with a button to pull the next page */}
           <div className="ml-1 flex items-center gap-1 rounded-full border border-gray-200 py-0.5 pr-0.5 pl-2.5">
