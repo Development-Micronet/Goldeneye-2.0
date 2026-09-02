@@ -486,7 +486,7 @@ export const OrbitographyMenu: React.FC = () => {
         return;
       }
 
-      console.log("Orbitography API parsed data:", data);
+      // console.log("Orbitography API parsed data:", data);
 
       // =====================================================
       // FORMATTERS
