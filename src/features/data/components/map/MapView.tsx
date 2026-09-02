@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useLayersStore } from "../../../../store/useLayersStore";
 import useBaseMapStore from "../../hooks/useBaseMapStore";
 import { useMapOptions } from "../../hooks/useMapOptions";
-import useZoomStore from "../../hooks/useZoomStore";
+import useZoomStore, { UNRESTRICTED_MAX_ZOOM } from "../../hooks/useZoomStore";
+import { useIsSpecialZoomCategory } from "../../../../utils/zoomPermissions";
 import { useMapStore } from "../../store/useMapStore";
 import { useArchiveProductStore } from "../sidebar/store/useArchiveProductStore";
 import Feature from "ol/Feature";
@@ -128,6 +129,7 @@ export default function MapView() {
   const fitLayerId = useMapStore((state) => state.fitLayerId);
   const setFitLayerId = useMapStore((state) => state.setFitLayerId);
   const { zoom, setZoom, setMaxZoom, maxZoom } = useZoomStore();
+  const isSpecialCategoryUser = useIsSpecialZoomCategory();
   const { visibleProducts } = useArchiveProductStore();
   const hoveredProduct = useArchiveHoverStore((state) => state.hoveredProduct);
   const { pinnedProducts } = usePinnedProductStore();
@@ -763,8 +765,13 @@ export default function MapView() {
       // Smoothly zoom map to fit the newly drawn shape UI extent
       if (geometry) {
         const currentZoom = map.getView().getZoom() || 5;
-        const targetMaxZoom =
-          currentZoom <= 6 ? 7 : currentZoom > 10 ? Math.max(Math.ceil(currentZoom), 18) : 10;
+        const targetMaxZoom = isSpecialCategoryUser
+          ? UNRESTRICTED_MAX_ZOOM
+          : currentZoom <= 6
+            ? 7
+            : currentZoom > 10
+              ? Math.max(Math.ceil(currentZoom), 18)
+              : 10;
         map.getView().fit(geometry, {
           padding: [120, 120, 120, 120],
           duration: 800,
@@ -773,7 +780,11 @@ export default function MapView() {
       }
 
       toast.success(`${newLayer.label} plotted successfully`);
-      setMaxZoom(18);
+      if (!isSpecialCategoryUser) {
+        setMaxZoom(18);
+      } else {
+        setMaxZoom(UNRESTRICTED_MAX_ZOOM);
+      }
 
       // Deactivate tool once drawing completes with a small timeout to prevent race condition
       setTimeout(() => {
@@ -1112,7 +1123,7 @@ export default function MapView() {
       return !isJpg;
     });
 
-    const computedMaxZoom = hasNonJpg ? 14 : 18;
+    const computedMaxZoom = isSpecialCategoryUser ? UNRESTRICTED_MAX_ZOOM : hasNonJpg ? 14 : 18;
     setMaxZoom(computedMaxZoom);
 
     visibleProducts.forEach((product) => {
@@ -1200,7 +1211,7 @@ export default function MapView() {
     map.getView().fit(geometry.getExtent(), {
       padding: [40, 40, 40, 40],
       duration: 800,
-      maxZoom: 18,
+      maxZoom: isSpecialCategoryUser ? UNRESTRICTED_MAX_ZOOM : 18,
       callback: () => {
         setFlyToProduct(null);
       },
@@ -1374,8 +1385,18 @@ export default function MapView() {
 
     const view = map.getView();
 
-    view.setMaxZoom(maxZoom);
-  }, [maxZoom]);
+    view.setMaxZoom(isSpecialCategoryUser ? UNRESTRICTED_MAX_ZOOM : maxZoom);
+  }, [maxZoom, isSpecialCategoryUser]);
+
+  useEffect(() => {
+    if (isSpecialCategoryUser) {
+      setMaxZoom(UNRESTRICTED_MAX_ZOOM);
+      const map = mapInstance.current;
+      if (map) {
+        map.getView().setMaxZoom(UNRESTRICTED_MAX_ZOOM);
+      }
+    }
+  }, [isSpecialCategoryUser, setMaxZoom]);
 
   const prevAoiCountRef = useRef(0);
 
@@ -1453,8 +1474,13 @@ export default function MapView() {
         if (geometry) {
           const map = mapInstance.current;
           const currentZoom = map.getView().getZoom() || 5;
-          const targetMaxZoom =
-            currentZoom <= 6 ? 7 : currentZoom > 10 ? Math.max(Math.ceil(currentZoom), 18) : 10;
+          const targetMaxZoom = isSpecialCategoryUser
+            ? UNRESTRICTED_MAX_ZOOM
+            : currentZoom <= 6
+              ? 7
+              : currentZoom > 10
+                ? Math.max(Math.ceil(currentZoom), 18)
+                : 10;
           map.getView().fit(geometry, {
             padding: [120, 120, 120, 120],
             duration: 800,
