@@ -1,12 +1,46 @@
 import React from "react";
-import { Check, Crosshair, Eye, ImageOff, Info, Pin, ShoppingCart } from "lucide-react";
+import { Crosshair, ImageOff, Info, Pin, ShoppingCart } from "lucide-react";
+
 import type { SelectedArchiveProduct } from "../store/useArchiveProductStore";
 import { useArchiveHoverStore } from "../../../hooks/useArchiveHoverStore";
 import { usePinnedProductStore } from "../../../hooks/usePinnedProductStore";
 import { useArchiveInfoStore } from "../../../hooks/useArchiveInfoStore";
-import { useAuthStore } from "../../../../../store/useAuthStore";
-import { canPlaceOrder } from "../api/product.service";
+import { EyeIcon } from "../../../../../assets/index";
 
+/** Shared with the toolbar so both eyes match. */
+export const VisibilityIcon: React.FC<{ dimmed?: boolean }> = ({ dimmed }) => (
+  <img
+    src={EyeIcon}
+    alt=""
+    aria-hidden="true"
+    className={`h-4 w-4 object-contain transition-all duration-300 ${dimmed ? "opacity-30 grayscale" : ""
+      }`}
+  />
+);
+
+const dateFormat = new Intl.DateTimeFormat("en-GB", {
+  weekday: "short",
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+  timeZone: "UTC",
+});
+
+/** Angles and cloud cover read better as whole numbers. */
+const rounded = (value?: number | null) =>
+  typeof value === "number" && !Number.isNaN(value) ? Math.round(value) : "-";
+
+/** "Tue, 01 Sep 2026 05:42:12 UTC" */
+const formatAcquired = (iso?: string) => {
+  if (!iso) return "—";
+
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "—" : `${dateFormat.format(date)} UTC`;
+};
 
 interface ArchiveProductCardProps {
   product: SelectedArchiveProduct;
@@ -30,120 +64,127 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
   const { setHoveredProduct } = useArchiveHoverStore();
   const { addPinnedProduct, removePinnedProduct, isPinned } = usePinnedProductStore();
   const { infoProduct, setInfoProduct } = useArchiveInfoStore();
-  const { user } = useAuthStore();
 
-  // A plain user raises a request; only a superadmin orders outright.
-  const orderLabel = canPlaceOrder(user?.roleName) ? "Add to Cart" : "Raise a request";
+  const pinned = isPinned(product.id);
+  const infoOpen = infoProduct?.id === product.id;
+
+  const button = "rounded p-0.5 transition-all duration-300";
+  /** Inactive controls sit back; the active one takes the primary colour. */
+  const tone = (active: boolean) =>
+    active ? "text-primary opacity-100" : "text-gray-600 opacity-30 hover:opacity-70";
 
   return (
     <div
       onMouseEnter={() => setHoveredProduct(product)}
       onMouseLeave={() => setHoveredProduct(null)}
-      className={`group transition ${checked ? "bg-primary/5" : "bg-white hover:bg-gray-50"}`}
+      className={`flex gap-2 border-b border-gray-100 px-3 py-2 transition ${checked ? "bg-[#F0FDFD]" : "bg-white hover:bg-gray-50"
+        }`}
     >
-      <div className="flex gap-2 p-2.5">
-        {/* Thumbnail */}
-        <div className="relative h-20 w-20 shrink-0 overflow-hidden bg-gray-100">
-          <button
-            onClick={() => onToggleSelect(product)}
-            className={`absolute top-1 left-1 z-10 flex h-4 w-4 items-center justify-center border transition ${checked ? "border-primary bg-primary text-white" : "border-white bg-white"
-              }`}
-          >
-            {checked && <Check size={10} strokeWidth={3} />}
-          </button>
+      {/* Checkbox, aligned to the top of the row */}
+      <div className="shrink-0 pt-0.5">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={() => onToggleSelect(product)}
+          aria-label={`Select ${product.name}`}
+          className="accent-primary h-3.5 w-3.5 cursor-pointer rounded border-gray-100"
+        />
+      </div>
 
+      {/* Thumbnail */}
+      {/* Thumbnail */}
+      <div className="mr-2 w-[4rem] shrink-0 sm:w-[5rem] md:w-[6rem]">
+        <div className="relative box-border flex items-center justify-center bg-black">
           {product.imageUrl ? (
-            <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              loading="lazy"
+              className="h-[100px] w-full object-cover"
+            />
           ) : (
             <div className="flex h-full items-center justify-center">
-              <ImageOff size={16} className="text-gray-400" />
+              <ImageOff className="h-3.5 w-3.5 text-gray-500" />
             </div>
           )}
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="flex min-w-0 flex-1 flex-col justify-between">
-          <div>
-            <h3 className="text-primary truncate text-sm font-semibold">{product.name}</h3>
 
-            <p className="text-[11px] text-gray-500">
-              {product.acquisitionDate ? new Date(product.acquisitionDate).toUTCString() : "-"}
-            </p>
+      {/* Content */}
+      <div className="min-w-0 flex-1 gap-2">
+        <div className="mb-1 w-full">
+          <p className="text-primary mb-2 truncate text-[0.8rem] leading-tight font-medium">
+            {product.name}
+          </p>
 
-            <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-gray-600">
-              <span>
-                <span className="font-medium">Res:</span> {product.resolution}m
-              </span>
+          <p className="text-primary mb-2 truncate text-[0.75rem] leading-tight font-medium">
+            {formatAcquired(product.acquisitionDate ?? product.date)}
+          </p>
 
-              <span>
-                <span className="font-medium">Inc:</span> {product.incidenceAngle ?? "-"}°
-              </span>
+          <p className="mb-1 truncate text-[0.75rem] leading-tight font-medium text-gray-600">
+            Res: <span className="text-primary">{product.resolution ?? "-"}m</span>
+            <span className="mx-1 text-gray-300">|</span>
+            IncAng (°): <span className="text-primary">{rounded(product.incidenceAngle)}</span>
+            <span className="mx-1 text-gray-300">|</span>
+            Cloud (%): <span className="text-primary">{rounded(product.cloud_cover)}</span>
+          </p>
+        </div>
 
-              <span>
-                <span className="font-medium">Cloud:</span> {product.cloud_cover ?? "-"}%
-              </span>
-            </div>
-          </div>
+        {/* Action buttons */}
+        <div className="flex gap-2.5">
+          <button
+            type="button"
+            onClick={() => onFlyToProduct(product)}
+            data-tooltip-id="archive-tooltip"
+            data-tooltip-content="Zoom to target"
+            className={`${button} ${tone(false)}`}
+          >
+            <Crosshair className="h-4 w-4" />
+          </button>
 
-          {/* Actions */}
-          <div className="mt-2 flex items-center gap-1 text-gray-500">
-            <button
-              onClick={() => onFlyToProduct(product)}
-              className="hover:text-primary p-1 transition hover:bg-gray-100"
-              title="Zoom to product"
-            >
-              <Crosshair size={14} />
-            </button>
+          <button
+            type="button"
+            onClick={() => (pinned ? removePinnedProduct(product.id) : addPinnedProduct(product))}
+            data-tooltip-id="archive-tooltip"
+            data-tooltip-content={pinned ? "Remove pin" : "Select"}
+            className={`${button} ${tone(pinned)}`}
+          >
+            <Pin className="h-4 w-4" />
+          </button>
 
-            <button
-              onClick={() => {
-                if (isPinned(product.id)) {
-                  removePinnedProduct(product.id);
-                } else {
-                  addPinnedProduct(product);
-                }
-              }}
-              className="hover:text-primary p-1 transition hover:bg-gray-100"
-              title={isPinned(product.id) ? "Remove Pin" : "Pin Product"}
-            >
-              <Pin size={14} className={isPinned(product.id) ? "text-primary" : "text-gray-400"} />
-            </button>
+          <button
+            type="button"
+            disabled={!checked}
+            onClick={() => onToggleVisibility(product)}
+            data-tooltip-id="archive-tooltip"
+            data-tooltip-content={
+              !checked ? "Select product first" : isVisible ? "Hide image" : "Visibility"
+            }
+            className={`${button} ${!checked ? "cursor-not-allowed" : ""}`}
+          >
+            <VisibilityIcon dimmed={!isVisible} />
+          </button>
 
-            <button
-              disabled={!checked}
-              onClick={() => onToggleVisibility(product)}
-              className={`p-1 transition ${!checked
-                ? "cursor-not-allowed text-gray-300"
-                : isVisible
-                  ? "text-primary"
-                  : "hover:text-primary hover:bg-gray-100"
-                }`}
-              title={!checked ? "Select product first" : isVisible ? "Hide Image" : "Show Image"}
-            >
-              <Eye size={14} />
-            </button>
+          <button
+            type="button"
+            onClick={() => onOrder(product)}
+            data-tooltip-id="archive-tooltip"
+            data-tooltip-content="Add to Cart"
+            className={`${button} ${tone(false)}`}
+          >
+            <ShoppingCart className="h-4 w-4" />
+          </button>
 
-            <button
-              onClick={() =>
-                infoProduct?.id === product.id ? setInfoProduct(null) : setInfoProduct(product)
-              }
-              className={`flex h-6 w-6 items-center justify-center rounded-md transition-all duration-200 ${infoProduct?.id === product.id
-                ? "bg-primary shadow-primary/30 text-white shadow-sm"
-                : "hover:text-primary text-gray-500 hover:bg-gray-100"
-                } `}
-              title={infoProduct?.id === product.id ? "Close Information" : "Show Information"}
-            >
-              <Info size={14} />
-            </button>
-
-            <button
-              onClick={() => onOrder(product)}
-              className="hover:text-primary p-1 transition hover:bg-gray-100"
-              title={orderLabel}
-            >
-              <ShoppingCart size={14} />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setInfoProduct(infoOpen ? null : product)}
+            data-tooltip-id="archive-tooltip"
+            data-tooltip-content="More information"
+            className={`${button} ${tone(infoOpen)}`}
+          >
+            <Info className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>

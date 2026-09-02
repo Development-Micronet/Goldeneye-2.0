@@ -116,12 +116,20 @@ export const supportsProgType = (mission: MissionKey, progType: ProgTypeKey) =>
 export const supportsMode = (mission: MissionKey, mode: AcquisitionMode) =>
   MODES_BY_MISSION[mission].includes(mode);
 
-/** Order endpoint for a segment. SPOT One Now has none published yet. */
+/** Order endpoint per mission and programme. */
 export const ORDER_ENDPOINTS: Record<string, string> = {
   PLEIADES_ONEDAY: "/tasking/pleiades-one-day/order/",
-  PLEIADES_ONENOW: "/tasking/pleiades-one-now-attempts/order/",
   SPOT_ONEDAY: "/tasking/spot-one-day/order/",
   PLEIADESNEO_ONEDAY: "/tasking/pleiades-neo/order/",
+  PLEIADES_ONENOW: "/tasking/pleiades-one-now-attempts/order/",
+  SPOT_ONENOW: "/tasking/spot-one-now-attempts/order/",
+  PLEIADESNEO_ONENOW: "/tasking/pleiades-neo-one-now-attempts/order/",
+};
+
+/** One Now orders are placed as attempts, so the name differs from the search. */
+const ORDER_PROG_TYPE_NAMES: Record<ProgTypeKey, string> = {
+  ONEDAY: "ONEDAY",
+  ONENOW: "ONENOWATTEMPTS",
 };
 
 /* ------------------------------------------------------------------ */
@@ -295,11 +303,8 @@ export const defaultProduction = (): Record<OrderFieldKey, string> =>
 /* Roles                                                               */
 /* ------------------------------------------------------------------ */
 
-/** Admin and superadmin place an order directly. Users and other roles create an indent. */
-export const canPlaceOrder = (roleName?: string) => {
-  const normalized = roleName?.toLowerCase().trim();
-  return normalized === "admin" || normalized === "superadmin";
-};
+/** Only a superadmin places an order. Everyone else raises an indent. */
+export const canPlaceOrder = (roleName?: string) => roleName === "superadmin";
 
 /** Direct ordering exists only where Airbus publishes an endpoint. */
 export const orderEndpointFor = (mission: MissionKey, progType: ProgTypeKey) =>
@@ -328,45 +333,82 @@ export interface TaskingOrderContext {
   mission: MissionKey;
   progType: ProgTypeKey;
   acquisitionMode: AcquisitionMode;
-  segmentKey: string;
+  segment: TaskingSegment;
 }
 
+/**
+ * A segmentKey carries its acquisition periods after the "::" marker. An
+ * attempts order books all of them, so the window spans the first start to the
+ * last end rather than the dates the user searched with.
+ */
+const attemptWindow = (segment: TaskingSegment) => {
+  const fallback = {
+    start: segment.acquisitionStartDate,
+    end: segment.acquisitionEndDate,
+  };
+
+  try {
+    const meta = JSON.parse(segment.segmentKey.split("::")[1] ?? "[]") as Array<{
+      key: string;
+      value: string;
+    }>;
+
+    const periods = meta.find((entry) => entry.key === "acqPeriods")?.value;
+    if (!periods) return fallback;
+
+    // "start end,start end,..." — take the first start and the last end.
+    const pairs = periods.split(",").map((pair) => pair.trim().split(/\s+/));
+    const start = pairs[0]?.[0];
+    const end = pairs[pairs.length - 1]?.[1];
+
+    return start && end ? { start, end } : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 /** Direct order payload — mirrors the documented Pleiades/SPOT OneDay body. */
-export const buildOrderPayload = (form: TaskingOrderForm, context: TaskingOrderContext) => ({
-  aoi: context.aoi,
-  progTypeNames: context.progType,
-  acquisitionMode: context.acquisitionMode,
-  acquisitionStartDate: `${form.acquisitionStartDate}T00:00:00Z`,
-  acquisitionEndDate: `${form.acquisitionEndDate}T23:59:59Z`,
-  segmentKey: context.segmentKey,
-  maxCloudCover: String(form.maxCloudCover),
-  maxIncidenceAngle: String(form.maxIncidenceAngle),
-  customerReference: form.customerReference.trim(),
-  comments: form.comments.trim(),
-  emailId: form.emailId.trim(),
-  primaryMarket: form.primaryMarket,
-  secondaryMarket: form.secondaryMarket,
-  spectral_processing: form.spectral_processing,
-  radiometric_processing: form.radiometric_processing,
-  image_format: form.image_format,
-  pixel_coding: form.pixel_coding,
-  processing_level: form.processing_level,
-  projection_1: form.projection_1,
-  licence: form.licence,
-  dem: form.dem,
-  cost: form.cost,
-});
+export const buildOrderPayload = (form: TaskingOrderForm, context: TaskingOrderContext) => {
+  const isAttempts = context.progType === "ONENOW";
+  const window = attemptWindow(context.segment);
+
+  return {
+    aoi: context.aoi,
+    progTypeNames: ORDER_PROG_TYPE_NAMES[context.progType],
+    acquisitionMode: context.acquisitionMode,
+    // Attempts are booked against the segment's own periods.
+    acquisitionStartDate: isAttempts ? window.start : `${form.acquisitionStartDate}T00:00:00Z`,
+    acquisitionEndDate: isAttempts ? window.end : `${form.acquisitionEndDate}T23:59:59Z`,
+    segmentKey: context.segment.segmentKey,
+    maxCloudCover: String(form.maxCloudCover),
+    maxIncidenceAngle: String(form.maxIncidenceAngle),
+    customerReference: form.customerReference.trim(),
+    comments: form.comments.trim(),
+    emailId: form.emailId.trim(),
+    primaryMarket: form.primaryMarket,
+    secondaryMarket: form.secondaryMarket,
+    spectral_processing: form.spectral_processing,
+    radiometric_processing: form.radiometric_processing,
+    image_format: form.image_format,
+    pixel_coding: form.pixel_coding,
+    processing_level: form.processing_level,
+    projection_1: form.projection_1,
+    licence: form.licence,
+    dem: form.dem,
+    cost: form.cost,
+  };
+};
 
 /** Indent payload — the same choices, spelled out for the approval queue. */
 export const buildIndentPayload = (form: TaskingOrderForm, context: TaskingOrderContext) => ({
   indentType: "Tasking" as const,
   aoi: context.aoi,
   missions: context.mission,
-  progTypeNames: context.progType,
+  progTypeNames: ORDER_PROG_TYPE_NAMES[context.progType],
   acquisitionMode: context.acquisitionMode,
   acquisitionStartDate: `${form.acquisitionStartDate}T00:00:00Z`,
   acquisitionEndDate: `${form.acquisitionEndDate}T23:59:59Z`,
-  segmentKey: context.segmentKey,
+  segmentKey: context.segment.segmentKey,
   maxCloudCover: form.maxCloudCover,
   maxIncidenceAngle: form.maxIncidenceAngle,
   geometric_processing: labelFor("processing_level", form.processing_level),

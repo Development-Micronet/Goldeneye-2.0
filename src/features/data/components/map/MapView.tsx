@@ -120,7 +120,7 @@ export default function MapView() {
   const addLayer = useLayersStore((state) => state.addLayer);
   const drawInteractionRef = useRef<Draw | null>(null);
   const selectRef = useRef<Select | null>(null);
-const modifyRef = useRef<Modify | null>(null);
+  const modifyRef = useRef<Modify | null>(null);
   const modifyInteractionRef = useRef<Modify | null>(null);
   const snapInteractionRef = useRef<Snap | null>(null);
   const lastVisibleProductIdsRef = useRef<string>("");
@@ -156,72 +156,72 @@ const modifyRef = useRef<Modify | null>(null);
   }, [fitLayerId, setFitLayerId, layers]);
 
   useEffect(() => {
-  const map = mapInstance.current;
-  const vectorSource = vectorSourceRef.current;
+    const map = mapInstance.current;
+    const vectorSource = vectorSourceRef.current;
 
-  if (!map || !vectorSource) return;
+    if (!map || !vectorSource) return;
 
-  // AOI select karne ke liye
-  const select = new Select({
-    condition: click,
-  });
-
-  // Selected AOI ko edit karne ke liye
-const modify = new Modify({
-  features: select.getFeatures(),
-style: () => {
-    return undefined;
-  },
-});
-
-  // User AOI par click kare
-  select.on("select", (event) => {
-    const selectedFeature = event.selected[0];
-
-    if (!selectedFeature) {
-      return;
-    }
-
-    console.log("AOI clicked:", selectedFeature);
-
-    // AOI ID
-    const aoiId = selectedFeature.getId();
-
-    console.log("AOI ID:", aoiId);
-  });
-
-  // User AOI ka point/vertex move kare
-  modify.on("modifyend", (event) => {
-    event.features.forEach((feature) => {
-      console.log("AOI edited:", feature);
-
-      const geometry = feature.getGeometry();
-
-      if (!geometry) return;
-
-      console.log(
-        "New coordinates:",
-        geometry.getCoordinates()
-      );
+    // AOI select karne ke liye
+    const select = new Select({
+      condition: click,
     });
-  });
 
-  // Map par interactions add karo
-  map.addInteraction(select);
-  map.addInteraction(modify);
+    // Selected AOI ko edit karne ke liye
+    const modify = new Modify({
+      features: select.getFeatures(),
+      style: () => {
+        return undefined;
+      },
+    });
 
-  selectRef.current = select;
-  modifyRef.current = modify;
+    // User AOI par click kare
+    select.on("select", (event) => {
+      const selectedFeature = event.selected[0];
 
-  // Cleanup
-  return () => {
-    map.removeInteraction(select);
-    map.removeInteraction(modify);
+      if (!selectedFeature) {
+        return;
+      }
 
-    selectRef.current = null;
-    modifyRef.current = null;
-  };
-}, []);
+      console.log("AOI clicked:", selectedFeature);
+
+      // AOI ID
+      const aoiId = selectedFeature.getId();
+
+      console.log("AOI ID:", aoiId);
+    });
+
+    // User AOI ka point/vertex move kare
+    modify.on("modifyend", (event) => {
+      event.features.forEach((feature) => {
+        console.log("AOI edited:", feature);
+
+        const geometry = feature.getGeometry();
+
+        if (!geometry) return;
+
+        console.log(
+          "New coordinates:",
+          geometry.getCoordinates()
+        );
+      });
+    });
+
+    // Map par interactions add karo
+    map.addInteraction(select);
+    map.addInteraction(modify);
+
+    selectRef.current = select;
+    modifyRef.current = modify;
+
+    // Cleanup
+    return () => {
+      map.removeInteraction(select);
+      map.removeInteraction(modify);
+
+      selectRef.current = null;
+      modifyRef.current = null;
+    };
+  }, []);
 
   // logger.log(layers);
 
@@ -286,12 +286,12 @@ style: () => {
           //   color: isOrbit ? "rgba(194, 139, 27, 0.15)" : "rgba(44, 102, 113, 0.15)", // Matching warm orange/brown fill for orbits
           // }),
           fill: new Fill({
-  color: isOrbit
-    ? "rgba(194, 139, 27, 0.15)"
-    : isSelected
-  ? "rgba(0, 56, 255, 0.10)"
-  : "rgba(44, 102, 113, 0.15)",
-}),
+            color: isOrbit
+              ? "rgba(194, 139, 27, 0.15)"
+              : isSelected
+                ? "rgba(0, 56, 255, 0.10)"
+                : "rgba(44, 102, 113, 0.15)",
+          }),
           stroke: new Stroke({
             color: isOrbit ? "#c28b1b" : isSelected ? "#0038ff" : "#2C6671", // Highlight selected AOI in orange
             width: isOrbit
@@ -674,37 +674,37 @@ style: () => {
       //   }
       // }
       if (activeTool === "Polyline") {
-  const geometry = feature.getGeometry();
+        const geometry = feature.getGeometry();
 
-  if (geometry && geometry.getType() === "LineString") {
-    const bufferVal = parseFloat(polylineBufferDistance) || 0;
+        if (geometry && geometry.getType() === "LineString") {
+          const bufferVal = parseFloat(polylineBufferDistance) || 0;
 
-    if (bufferVal > 0) {
-      const buffered = turf.buffer(rawGeoJSON as any, bufferVal, {
-        units: "kilometers",
-        steps: 32, // rounded corners/caps
-      });
+          if (bufferVal > 0) {
+            const buffered = turf.buffer(rawGeoJSON as any, bufferVal, {
+              units: "kilometers",
+              steps: 32, // rounded corners/caps
+            });
 
-      if (!buffered) {
-        toast.error("Unable to create polyline buffer.");
-        vectorSourceRef.current?.removeFeature(feature);
-        setActiveTool(null);
-        return;
+            if (!buffered) {
+              toast.error("Unable to create polyline buffer.");
+              vectorSourceRef.current?.removeFeature(feature);
+              setActiveTool(null);
+              return;
+            }
+
+            const bufferedFeature = geojsonFormat.readFeature(buffered, {
+              dataProjection: "EPSG:4326",
+              featureProjection: mapProjection,
+            });
+
+            const bufferedGeom = bufferedFeature.getGeometry();
+
+            if (bufferedGeom) {
+              feature.setGeometry(bufferedGeom);
+            }
+          }
+        }
       }
-
-      const bufferedFeature = geojsonFormat.readFeature(buffered, {
-        dataProjection: "EPSG:4326",
-        featureProjection: mapProjection,
-      });
-
-      const bufferedGeom = bufferedFeature.getGeometry();
-
-      if (bufferedGeom) {
-        feature.setGeometry(bufferedGeom);
-      }
-    }
-  }
-}
 
 
       if (activeTool === "Polygon") {
@@ -1079,22 +1079,30 @@ style: () => {
   }, [activeLayer]);
 
   useEffect(() => {
-    if (!mapInstance.current || !visibleProducts.length) return;
+    const map = mapInstance.current;
+    if (!map) return;
 
     const currentIds = visibleProducts
       .map((p) => p.id)
       .sort()
       .join(",");
 
-    // Skip rebuild if the underlying product set hasn't actually changed
-    // (avoids re-fetching/re-flickering images on unrelated re-renders,
-    // e.g. zoom changes that produce a new array reference).
-    if (currentIds === lastVisibleProductIdsRef.current) {
+    // Nothing visible: React has already run the previous cleanup, so the
+    // layers are gone. Clear the ref, otherwise it keeps the last id list and
+    // the next show is mistaken for "no change" and skipped.
+    if (!visibleProducts.length) {
+      lastVisibleProductIdsRef.current = "";
       return;
     }
+
+    // The layers are rebuilt on every run — the cleanup removed them before
+    // this ran, so skipping the rebuild would leave the map blank. The id
+    // comparison only decides whether to move the view, which is what the old
+    // guard was really protecting against (zoom changes producing a new array
+    // reference with the same products).
+    const isNewSelection = currentIds !== lastVisibleProductIdsRef.current;
     lastVisibleProductIdsRef.current = currentIds;
 
-    const map = mapInstance.current;
     const imageLayers: ImageLayer<ImageStatic>[] = [];
 
     const hasNonJpg = visibleProducts.some((product) => {
@@ -1141,7 +1149,7 @@ style: () => {
       }
     });
 
-    if (imageLayers.length) {
+    if (isNewSelection && imageLayers.length) {
       const extent = imageLayers.reduce(
         (acc, layer) => {
           const imageExtent = layer.getSource()?.getImageExtent();
@@ -1273,14 +1281,17 @@ style: () => {
 
       // AOI ∩ Image footprint
       const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo] as any));
-
       if (intersection) {
         const commonFeature = format.readFeature(intersection);
 
         (commonFeature as any).setStyle(
           new Style({
             fill: new Fill({
-              color: "rgba(255,152,0,0.45)",
+              color: "rgba(218, 198, 130, 0.50)",
+            }),
+            stroke: new Stroke({
+              color: "rgba(115, 72, 30, 0.9)",
+              width: 1.5,
             }),
           }),
         );
@@ -1298,7 +1309,7 @@ style: () => {
     const source = pinSourceRef.current;
 
     if (!source) return;
-    // remove old pins
+
     source.clear();
 
     if (pinnedProducts.length === 0) return;
@@ -1306,13 +1317,14 @@ style: () => {
     const format = new GeoJSON();
 
     const aoiLayers = layers.filter((layer) =>
-      ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(layer.type),
+      ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(
+        layer.type,
+      ),
     );
 
     pinnedProducts.forEach((product) => {
       const productFeature = format.readFeature({
         type: "Feature",
-
         geometry: product.geometry,
       });
 
@@ -1320,10 +1332,11 @@ style: () => {
 
       aoiLayers.forEach((aoiLayer) => {
         const aoiFeature = format.readFeature(aoiLayer.geojson);
-
         const aoiGeo = format.writeFeatureObject(aoiFeature as any);
 
-        const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo] as any));
+        const intersection = turf.intersect(
+          turf.featureCollection([aoiGeo, productGeo] as any),
+        );
 
         if (intersection) {
           const feature = format.readFeature(intersection);
@@ -1333,7 +1346,13 @@ style: () => {
           (feature as any).setStyle(
             new Style({
               fill: new Fill({
-                color: "rgba(255,204,128,0.50)",
+                // Very subtle fill like the uploaded image
+                color: "rgba(255, 204, 128, 0.12)",
+              }),
+              stroke: new Stroke({
+                // Thin orange/red product boundary
+                color: "#ff6f00",
+                width: 1,
               }),
             }),
           );
@@ -1347,6 +1366,7 @@ style: () => {
       source.clear();
     };
   }, [pinnedProducts, layers]);
+
 
   useEffect(() => {
     const map = mapInstance.current;

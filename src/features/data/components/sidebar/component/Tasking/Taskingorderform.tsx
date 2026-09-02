@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { ChevronDown, Info, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
-import { useQueryClient } from "@tanstack/react-query";
 
 import {
     MARKETS,
@@ -144,7 +143,6 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
     onSubmitted,
 }) => {
     const { accessToken, user } = useAuthStore();
-    const queryClient = useQueryClient();
 
     // Direct ordering needs both the role and a published endpoint for this pass.
     const orderEndpoint = orderEndpointFor(mission, progType);
@@ -153,29 +151,12 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // One Now is ordered as an attempt against the segment's own periods, so its
+    // window comes from the pass rather than from the fields below.
+    const usesSegmentWindow = progType === "ONENOW";
+
     // The order carries its own window, and it faces the same lead-time rule.
     const minStart = useMemo(() => earliestAcquisitionDate(), []);
-
-    // Construct a detailed customer reference formatted like: GE-SPOT-ONEDAY-TEST-01
-    const defaultCustomerReference = useMemo(() => {
-        const username = user?.user || user?.customerName || "";
-        const clean = (str?: string) =>
-            (str || "")
-                .trim()
-                .replace(/\s+/g, "-")
-                .replace(/[^a-zA-Z0-9-_]/g, "")
-                .toUpperCase();
-
-        const parts = [
-            "GE",
-            clean(mission),
-            clean(progType),
-            clean(username),
-            clean(aoiLabel),
-        ].filter(Boolean);
-
-        return parts.join("-");
-    }, [user?.user, user?.customerName, mission, progType, aoiLabel]);
 
     const [form, setForm] = useState<OrderFormValues>({
         ...defaultProduction(),
@@ -183,7 +164,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
         acquisitionEndDate: endDate,
         maxCloudCover: cloudCover,
         maxIncidenceAngle: maxIncidence,
-        customerReference: defaultCustomerReference,
+        customerReference: aoiLabel,
         comments: "",
         emailId: user?.email ?? "",
         primaryMarket: MARKETS[0].value,
@@ -200,11 +181,11 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
     const area = useMemo(() => areaKm2(rings), [rings]);
 
     const detailsReady =
-        form.acquisitionStartDate >= minStart &&
+        (usesSegmentWindow || form.acquisitionStartDate >= minStart) &&
         form.customerReference.trim() !== "" &&
         form.primaryMarket !== "" &&
         isEmail(form.emailId.trim()) &&
-        form.acquisitionEndDate >= form.acquisitionStartDate &&
+        (usesSegmentWindow || form.acquisitionEndDate >= form.acquisitionStartDate) &&
         form.maxCloudCover >= 0 &&
         form.maxCloudCover <= 100 &&
         form.maxIncidenceAngle >= 0 &&
@@ -219,7 +200,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
             mission,
             progType,
             acquisitionMode,
-            segmentKey: segment.segmentKey,
+            segment,
         };
 
         try {
@@ -228,17 +209,16 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                 toast.success("Order placed successfully.");
             } else {
                 await submitTaskingIndent(buildIndentPayload(form, context), accessToken ?? "");
-                toast.success("Indent created successfully.");
+                toast.success("Request raised successfully.");
             }
 
-            await queryClient.invalidateQueries({ queryKey: ["taskings"] });
             onSubmitted();
         } catch (caught) {
             toast.error(
                 apiErrorMessage(caught) ||
                 (isOrder
                     ? "Failed to place order. Please try again."
-                    : "Failed to create indent. Please try again.")
+                    : "Failed to raise the request. Please try again.")
             );
         } finally {
             setIsSubmitting(false);
@@ -252,7 +232,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
             <div>
                 <h2 className="text-sm font-semibold tracking-wide text-slate-900">
-                    {isOrder ? "ORDER IMAGE" : "CREATE TASKING INDENT"}
+                    {isOrder ? "ORDER IMAGE" : "ORDER CRITERIA SELECTION"}
                 </h2>
                 <p className="text-text-secondary mt-0.5 text-[11px]">
                     {mission} · {progType} · {dateTimeFormat.format(new Date(segment.acquisitionStartDate))}
@@ -306,39 +286,52 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                 onToggle={() => setStep(step === 2 ? 0 : 2)}
             >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div>
-                        <label className={labelStyle} htmlFor="order-start">
-                            Acquisition start <span className="text-red-600">*</span>
-                        </label>
-                        <input
-                            id="order-start"
-                            type="date"
-                            min={minStart}
-                            value={form.acquisitionStartDate}
-                            onChange={(event) => set("acquisitionStartDate", event.target.value)}
-                            className={field}
-                        />
-                    </div>
+                    {!usesSegmentWindow && (
+                        <>
+                            <div>
+                                <label className={labelStyle} htmlFor="order-start">
+                                    Acquisition start <span className="text-red-600">*</span>
+                                </label>
+                                <input
+                                    id="order-start"
+                                    type="date"
+                                    min={minStart}
+                                    value={form.acquisitionStartDate}
+                                    onChange={(event) => set("acquisitionStartDate", event.target.value)}
+                                    className={field}
+                                />
+                            </div>
 
-                    <div>
-                        <label className={labelStyle} htmlFor="order-end">
-                            Acquisition end <span className="text-red-600">*</span>
-                        </label>
-                        <input
-                            id="order-end"
-                            type="date"
-                            min={form.acquisitionStartDate}
-                            value={form.acquisitionEndDate}
-                            onChange={(event) => set("acquisitionEndDate", event.target.value)}
-                            className={field}
-                        />
-                    </div>
+                            <div>
+                                <label className={labelStyle} htmlFor="order-end">
+                                    Acquisition end <span className="text-red-600">*</span>
+                                </label>
+                                <input
+                                    id="order-end"
+                                    type="date"
+                                    min={form.acquisitionStartDate}
+                                    value={form.acquisitionEndDate}
+                                    onChange={(event) => set("acquisitionEndDate", event.target.value)}
+                                    className={field}
+                                />
+                            </div>
 
-                    <div className="sm:col-span-2">
-                        <p className="text-text-secondary text-[11px]">
-                            The window has to start on or after {minStart} — Airbus needs a month of lead time.
-                        </p>
-                    </div>
+                            <div className="sm:col-span-2">
+                                <p className="text-text-secondary text-[11px]">
+                                    The window has to start on or after {minStart} — Airbus needs a month of lead time.
+                                </p>
+                            </div>
+                        </>
+                    )}
+
+                    {usesSegmentWindow && (
+                        <div className="sm:col-span-2">
+                            <p className="text-text-secondary text-[11px]">
+                                This books the attempt periods on the selected pass, so the acquisition window is
+                                fixed.
+                            </p>
+                        </div>
+                    )}
 
                     <div>
                         <label className={labelStyle} htmlFor="order-cloud">
@@ -550,7 +543,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                     <p className="text-text-secondary text-[11px]">
                         {canPlaceOrder(user?.roleName)
                             ? "Direct ordering isn't published for this mission and programme, so this goes to the approval queue."
-                            : "Your role creates an indent for approval. An administrator places the order."}
+                            : "Your role raises a request for approval. An administrator places the order."}
                     </p>
                 )}
 
@@ -568,7 +561,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                         className={`${solidButton} flex items-center gap-1.5`}
                     >
                         {isSubmitting && <Loader2 size={13} className="animate-spin" />}
-                        {isOrder ? "Place order" : "Create indent"}
+                        {isOrder ? "Place order" : "Raise request"}
                     </button>
                 </div>
             </Step>

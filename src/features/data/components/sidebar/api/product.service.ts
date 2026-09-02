@@ -200,11 +200,17 @@ export const submitArchiveOrder = async (payload: ArchiveIndentPayload, token: s
  * Single entry point for the form: the role decides the endpoint, so a plain
  * user can never reach the order route.
  */
+// export const submitArchiveRequest = (
+//   payload: ArchiveIndentPayload,
+//   token: string,
+//   roleName?: string
+// ) =>
+//   canPlaceOrder(roleName)
+//     ? submitArchiveOrder(payload, token)
+//     : submitArchiveIndent(payload, token);
+  
 export const submitArchiveRequest = (
   payload: ArchiveIndentPayload,
   token: string,
   roleName?: string
-) =>
-  canPlaceOrder(roleName)
-    ? submitArchiveOrder(payload, token)
-    : submitArchiveIndent(payload, token);
+) => submitArchiveIndent(payload, token);

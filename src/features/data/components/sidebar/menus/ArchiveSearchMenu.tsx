@@ -1,18 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import {
-  Eye,
-  Square,
-  Trash2,
-  Upload,
-  CheckSquare,
-  PinOff,
-  ListChecks,
-  AlertCircle,
-} from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertCircle, ChevronDown, Crosshair, Loader2, Pin, Plus, ShoppingCart, Upload } from "lucide-react";
+import { Tooltip } from "react-tooltip";
+import { toast } from "react-toastify";
+
 import { useAuthStore } from "../../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../../utils/dataDecrypt";
-import { useQueryClient } from "@tanstack/react-query";
 import { useParameter } from "../../../hooks/useParameter";
 import { useProductStore } from "../../../hooks/useproductStore";
 import type { ProductResponse } from "../Models/product.types";
@@ -26,13 +19,10 @@ import {
   type SelectedArchiveProduct,
   useArchiveProductStore,
 } from "../store/useArchiveProductStore";
-import { toast } from "react-toastify";
 import { useMapStore } from "../../../store/useMapStore";
 import { usePinnedProductStore } from "../../../hooks/usePinnedProductStore";
 import { useSelectedAOIStore } from "../../../hooks/useSelectedAOIStore";
 import { useLayersStore } from "../../../../../store/useLayersStore";
-// import { ArchiveProductCardSkeleton } from "../component/ArchiveProductCardSkeleton";
-import { ChevronRight, Loader2 } from "lucide-react";
 import {
   exportCSV,
   exportHTML,
@@ -41,9 +31,8 @@ import {
   exportShape,
 } from "../../../../../utils/Exportfunction";
 import Spinners from "../assets/Archive-search/Spinner.gif";
-import { ArchiveProductCard } from "../component/ArchiveProductCard";
+import { ArchiveProductCard, VisibilityIcon } from "../component/ArchiveProductCard";
 import { ArchiveOrderForm } from "../component/Archiveorderform";
-
 
 type SortOption =
   | "date"
@@ -56,6 +45,118 @@ type SortOption =
   | "-cloud_cover"
   | "-incident_angle";
 
+const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
+  { value: "-date", label: "Default (Date & Cloud)" },
+  { value: "date", label: "Date (Ascending)" },
+  { value: "+date", label: "Date (Descending)" },
+  { value: "-cloud_cover", label: "Cloud Cover (Ascending)" },
+  { value: "+cloud_cover", label: "Cloud Cover (Descending)" },
+  { value: "-incident_angle", label: "Incidence Angle (Ascending)" },
+  { value: "+incident_angle", label: "Incidence Angle (Descending)" },
+];
+
+const PAGE_SIZE = 50;
+
+const EXPORTS = ["HTML", "CSV", "KML", "KMZ", "Shape"] as const;
+
+/** First value that is actually present, so a missing field falls through. */
+const first = <T,>(...values: Array<T | undefined | null>): T | undefined =>
+  values.find((value) => value !== undefined && value !== null && (value as unknown) !== "");
+
+const AIRBUS_NAMES: Record<string, string> = {
+  PNEO: "Pléiades Neo",
+  PLEIADES: "Pléiades",
+  SPOT: "SPOT",
+  PHR: "Pléiades",
+  ELEVATION: "Elevation",
+  DMC: "DMC",
+};
+
+const PLANET_NAMES: Record<string, string> = {
+  PSScene: "PlanetScope",
+  PSOrthoTile: "PlanetScope",
+  SkySatCollect: "SkySat",
+  SkySatScene: "SkySat",
+  REOrthoTile: "RapidEye",
+};
+
+const nameFor = (provider: string, raw: Record<string, any>) => {
+  if (provider === "sentinel") {
+    // STAC gives "sentinel-2a" on platform, "sentinel-2" on constellation.
+    const platform = first<string>(raw.platform, raw["eo:platform"], raw.constellation);
+    if (!platform) return "Sentinel";
+
+    return platform
+      .split("-")
+      .map((part) => (part.length > 1 ? part[0].toUpperCase() + part.slice(1) : part.toUpperCase()))
+      .join("-");
+  }
+
+  if (provider === "planet") {
+    const itemType = first<string>(raw.item_type, raw.itemType);
+    return (itemType && PLANET_NAMES[itemType]) ?? itemType ?? "Planet";
+  }
+
+  const constellation = raw.constellation as string | undefined;
+  return AIRBUS_NAMES[constellation ?? ""] ?? constellation ?? "Satellite";
+};
+
+/**
+ * Each provider names the same reading differently, so the card gets one shape
+ * regardless of which API answered.
+ */
+const toArchiveProduct = (item: any, provider: string): SelectedArchiveProduct => {
+  const properties = item.properties ?? {};
+  const raw: Record<string, any> = properties.raw ?? {};
+
+  const base = {
+    id: item.id,
+    imageUrl: properties.image_url,
+    coordinates: item.geometry?.coordinates,
+    geometry: item.geometry,
+    date: properties.date,
+    sensor: properties.sensor,
+    raw,
+  };
+
+  if (provider === "sentinel") {
+    return {
+      ...base,
+      name: nameFor(provider, raw),
+      acquisitionDate: first(raw.datetime, raw.acquisitionDate, properties.date),
+      // Sentinel-2 is 10m; the STAC item carries it as gsd when present.
+      resolution: first(raw.gsd, raw.resolution, 10),
+      cloud_cover: first(properties.cloud_cover, raw["eo:cloud_cover"], raw.cloudCover),
+      incidenceAngle: first(
+        properties.incidence_angle,
+        raw["view:incidence_angle"],
+        raw["view:off_nadir"]
+      ),
+    } as SelectedArchiveProduct;
+  }
+
+  if (provider === "planet") {
+    return {
+      ...base,
+      name: nameFor(provider, raw),
+      acquisitionDate: first(raw.acquired, raw.datetime, properties.date),
+      resolution: first(raw.gsd, raw.pixel_resolution, raw.resolution),
+      cloud_cover: first(properties.cloud_cover, raw.cloud_cover, raw.cloud_percent),
+      incidenceAngle: first(properties.incidence_angle, raw.view_angle, raw.satellite_azimuth),
+    } as SelectedArchiveProduct;
+  }
+
+  // Airbus
+  return {
+    ...base,
+    name: nameFor(provider, raw),
+    acquisitionDate: first(raw.acquisitionDate, properties.date),
+    resolution: first(raw.resolution, raw.gsd),
+    cloud_cover: first(properties.cloud_cover, raw.cloudCover),
+    incidenceAngle: first(properties.incidence_angle, raw.incidenceAngle),
+  } as SelectedArchiveProduct;
+};
+
 export const ArchiveSearchMenu: React.FC = () => {
   const { pinnedProducts, clearPinnedProducts, selectAllPinned } = usePinnedProductStore();
   const { cloudcover, startDate, endDate, incidentAngle } = useParameter();
@@ -65,9 +166,11 @@ export const ArchiveSearchMenu: React.FC = () => {
   const { setFlyToProduct } = useMapStore();
   const { providers, selectedProvider, selectedSensors, selectedProductTypes } = useProductStore();
   const { accessToken } = useAuthStore();
+
   const provider = selectedProvider as SatelliteProvider;
   const token = accessToken?.replace("Bearer ", "").trim() || "";
   const isAirbus = selectedProvider === "airbus";
+
   const [currentpage, setcurrentpage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>("-date");
   const [open, setOpen] = useState(false);
@@ -87,79 +190,32 @@ export const ArchiveSearchMenu: React.FC = () => {
     isVisible,
   } = useArchiveProductStore();
 
-  const sortOptions = [
-    {
-      value: "date",
-      label: "Oldest Acquisition (Default)",
-    },
-    {
-      value: "+date",
-      label: "Newest Acquisition",
-    },
-    {
-      value: "+cloud_cover",
-      label: "Highest Cloud Cover (Descending) (Default)",
-    },
-    {
-      value: "-cloud_cover",
-      label: "Lowest Cloud Cover (Ascending)",
-    },
-    {
-      value: "+incident_angle",
-      label: "Highest Incidence Angle (Default) (Descending)",
-    },
-    {
-      value: "-incident_angle",
-      label: "Lowest Incidence Angle (Ascending)",
-    },
-  ];
   const normalizeProductType = (productType: string): string => {
     if (!productType) return "";
 
     const value = productType.toLowerCase().replace(/\s+/g, " ").trim();
 
     // Most specific first
-    if (value.includes("quality layers + ortho")) {
-      return "quality layers + ortho";
-    }
-
-    if (value.includes("quality layers")) {
-      return "quality layers";
-    }
-
-    if (value.includes("tristereo")) {
-      return "tristereo";
-    }
-
-    if (value.includes("stereo")) {
-      return "stereo";
-    }
-
-    if (value.includes("mono")) {
-      return "mono";
-    }
-
-    if (value.includes("dsm")) {
-      return "dsm";
-    }
-
-    if (value.includes("dem")) {
-      return "dem";
-    }
+    if (value.includes("quality layers + ortho")) return "quality layers + ortho";
+    if (value.includes("quality layers")) return "quality layers";
+    if (value.includes("tristereo")) return "tristereo";
+    if (value.includes("stereo")) return "stereo";
+    if (value.includes("mono")) return "mono";
+    if (value.includes("dsm")) return "dsm";
+    if (value.includes("dem")) return "dem";
 
     // 32m, 22m, 1.5m etc.
     const resolutionMatch = value.match(/(?:^|[-_\s])(\d+(?:\.\d+)?)\s*-?\s*m(?![a-z])/);
-
-    if (resolutionMatch) {
-      return `${resolutionMatch[1]}m`;
-    }
+    if (resolutionMatch) return `${resolutionMatch[1]}m`;
 
     return "";
   };
 
-  const productType = useMemo(() => {
-    return [...new Set(selectedProductTypes.map(normalizeProductType).filter(Boolean))].join(",");
-  }, [selectedProductTypes]);
+  const productType = useMemo(
+    () => [...new Set(selectedProductTypes.map(normalizeProductType).filter(Boolean))].join(","),
+    [selectedProductTypes]
+  );
+
   const sensors = useMemo(() => {
     const currentProviderObj = providers.find((p) => p.name === selectedProvider);
     if (!currentProviderObj) return selectedSensors;
@@ -192,16 +248,15 @@ export const ArchiveSearchMenu: React.FC = () => {
 
   const aoiKey = useMemo(() => JSON.stringify(aoi), [aoi]);
 
-  const allSelectedVisible =
-    selectedProducts.length > 0 && selectedProducts.every((product) => isVisible(product.id));
+  const cloudCoverRange = useMemo(
+    () => (Array.isArray(cloudcover) ? cloudcover : JSON.parse(cloudcover || "[0,100]")),
+    [cloudcover]
+  );
 
-  const cloudCoverRange = useMemo(() => {
-    return Array.isArray(cloudcover) ? cloudcover : JSON.parse(cloudcover || "[0,100]");
-  }, [cloudcover]);
-
-  const incidenceAngleRange = useMemo(() => {
-    return Array.isArray(incidentAngle) ? incidentAngle : JSON.parse(incidentAngle || "[0,60]");
-  }, [incidentAngle]);
+  const incidenceAngleRange = useMemo(
+    () => (Array.isArray(incidentAngle) ? incidentAngle : JSON.parse(incidentAngle || "[0,60]")),
+    [incidentAngle]
+  );
 
   const [products, setproducts] = useState<ProductResponse | null>(null);
 
@@ -229,7 +284,7 @@ export const ArchiveSearchMenu: React.FC = () => {
       sortBy,
       isAirbus,
       productType,
-    ],
+    ]
   );
 
   const { isLoading, isError, isPending, refetch } = useQuery({
@@ -246,8 +301,8 @@ export const ArchiveSearchMenu: React.FC = () => {
         intersects: aoi!,
         sensors,
         start_page: currentpage,
-        items_per_page: 100,
-        limit: 100,
+        items_per_page: PAGE_SIZE,
+        limit: PAGE_SIZE,
         ...(provider === "airbus" && {
           productType:
             productType ||
@@ -256,7 +311,6 @@ export const ArchiveSearchMenu: React.FC = () => {
       };
 
       const response = await searchProducts(payload);
-
       const decrypted = (await decryptAESGCM(response.data, token)) as ProductResponse;
 
       setproducts((prev) =>
@@ -265,7 +319,7 @@ export const ArchiveSearchMenu: React.FC = () => {
           : {
             ...decrypted,
             features: [...(prev?.features ?? []), ...decrypted.features],
-          },
+          }
       );
 
       return decrypted;
@@ -275,66 +329,68 @@ export const ArchiveSearchMenu: React.FC = () => {
     staleTime: 0,
     refetchOnMount: true,
   });
-  const getSatelliteName = (constellation?: string) => {
-    const satellites: Record<string, string> = {
-      PNEO: "Pléiades Neo",
-      PLEIADES: "Pléiades",
-      SPOT: "SPOT",
-      PHR: "Pléiades",
-      ELEVATION: "Elevation",
-      DMC: "DMC",
-    };
-
-    return satellites[constellation ?? ""] || constellation || "Satellite";
-  };
 
   const mappedProducts: SelectedArchiveProduct[] =
-    products?.features.map((item) => ({
-      id: item.id,
+    products?.features.map((item) => toArchiveProduct(item, provider)) ?? [];
 
-      name: getSatelliteName(item.properties.raw.constellation),
+  const allSelected =
+    mappedProducts.length > 0 && mappedProducts.every((product) => isSelected(product.id));
 
-      imageUrl: item.properties.image_url,
-
-      coordinates: item.geometry.coordinates,
-
-      geometry: item.geometry,
-
-      date: item.properties.date,
-
-      acquisitionDate: item.properties.raw.acquisitionDate,
-
-      sensor: item.properties.sensor,
-
-      resolution: item.properties.raw.resolution,
-
-      cloud_cover: item.properties.cloud_cover,
-
-      incidenceAngle: item.properties.incidence_angle,
-
-      raw: item.properties.raw,
-    })) ?? [];
+  const allSelectedVisible =
+    selectedProducts.length > 0 && selectedProducts.every((product) => isVisible(product.id));
 
   const handleSelectAll = () => {
-    const allSelected =
-      mappedProducts.length > 0 && mappedProducts.every((product) => isSelected(product.id));
-    if (allSelected) {
-      clearProducts();
-    } else {
-      selectAllProducts(mappedProducts);
-    }
+    if (allSelected) clearProducts();
+    else selectAllProducts(mappedProducts);
   };
 
-  const incrementPage = () => {
-    setcurrentpage((currentpage) => currentpage + 1);
+  const requireSelection = () => {
+    if (selectedProducts.length) return true;
+    toast.info("Please select products first");
+    return false;
+  };
+
+  const handleExport = async (format: (typeof EXPORTS)[number]) => {
+    if (!selectedProducts.length) {
+      toast.error("Please select at least one product to export.");
+      return;
+    }
+
+    const items = selectedProducts;
+    const base = `${aoiLabel} - Archive`;
+
+    try {
+      if (format === "HTML") await exportHTML({ items, filename: `${base}.html` });
+      if (format === "CSV") await exportCSV({ items, filename: `${base}.csv` });
+      if (format === "KML")
+        await exportKML({
+          format: "kml",
+          items,
+          aoi: aoi!,
+          filename: `${base}.kml`,
+          lang: "en",
+          extraInfos: { exportedBy: "Archive System", provider: "Airbus" },
+        });
+      if (format === "KMZ")
+        await exportKMZ({
+          format: "kmz",
+          items,
+          aoi: aoi!,
+          filename: `${base}.kmz`,
+          lang: "en",
+          extraInfos: { exportedBy: "Archive System", provider: "Airbus" },
+        });
+      if (format === "Shape") await exportShape({ items, aoi: aoi!, filename: `${base}.zip` });
+
+      setOpen(false);
+    } catch {
+      toast.error(`Failed to export ${format}.`);
+    }
   };
 
   useEffect(() => {
     return () => {
-      queryClient.removeQueries({
-        queryKey: ["archive-products"],
-      });
-
+      queryClient.removeQueries({ queryKey: ["archive-products"] });
       setproducts(null);
       setcurrentpage(1);
       clearProducts();
@@ -368,357 +424,224 @@ export const ArchiveSearchMenu: React.FC = () => {
     );
   }
 
+  const toolbarButton = "rounded p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-primary";
+  const loadedCount = mappedProducts.length;
+
   return (
-    <div className="relative h-full">
-      <div className="flex h-full flex-col bg-gray-50">
-        {/* HEADER */}
-        <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-          {/* Left */}
-          <div>
-            <h2 className="text-sm font-semibold text-gray-900">
-              {products?.pagination.total_count ?? 0} Results
-            </h2>
-            <p className="mt-0.5 text-xs text-gray-500">Archive Products</p>
-          </div>
+    <div className="flex h-full min-h-0 flex-col bg-white">
+      {/* Results count, sort and export */}
+      <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-2.5">
+        <span className="text-sm font-semibold text-gray-900">
+          {products?.pagination.total_count ?? 0} results
+        </span>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
-              Sort
-            </span>
-
-            <div className="relative inline-block">
-              <select
-                id="sort"
-                value={sortBy}
-                onChange={(e) => {
-                  setSortBy(e.target.value as SortOption);
-                  setcurrentpage(1);
-                }}
-                className="focus:border-primary focus:ring-primary/20 h-8 w-44 appearance-none rounded-md border border-gray-300 bg-white pr-8 pl-3 text-sm text-gray-700 shadow-sm transition outline-none hover:border-gray-400 focus:ring-2"
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-
-              <svg
-                className="pointer-events-none absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-gray-500"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-          </div>
-
-          {/* Right */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              title="Clear Selected Products"
-              onClick={clearProducts}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+        <div className="flex items-center gap-1.5">
+          <label htmlFor="sort" className="text-xs text-gray-600">
+            Sort By:
+          </label>
+          <div className="relative">
+            <select
+              id="sort"
+              value={sortBy}
+              onChange={(event) => {
+                setSortBy(event.target.value as SortOption);
+                setcurrentpage(1);
+              }}
+              className="text-primary focus:border-primary cursor-pointer appearance-none rounded border border-transparent bg-transparent py-0.5 pr-5 pl-1 text-xs outline-none hover:border-gray-200"
             >
-              <Trash2 size={16} />
-            </button>
-
-            <div className="relative">
-              <button
-                type="button"
-                title="Export Products"
-                onClick={() => setOpen((prev) => !prev)}
-                className="hover:border-primary/20 hover:bg-primary/5 hover:text-primary inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition"
-              >
-                <Upload size={16} />
-              </button>
-
-              {open && (
-                <div className="absolute top-full right-0 z-50 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg">
-                  <button
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
-                    onClick={async () => {
-                      if (!selectedProducts.length) {
-                        toast.error("Please select at least one product to export.");
-                        return;
-                      }
-
-                      try {
-                        await exportHTML({
-                          items: selectedProducts,
-                          filename: "Pleiades_Report.html",
-                        });
-
-                        setOpen(false);
-                      } catch (error) {
-
-                        toast.error("Failed to export HTML.");
-                      }
-                    }}
-                  >
-                    Export HTML
-                  </button>
-
-                  <button
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
-                    onClick={async () => {
-                      if (!selectedProducts.length) {
-                        toast.error("Please select at least one product to export.");
-                        return;
-                      }
-
-                      try {
-                        await exportCSV({
-                          items: selectedProducts,
-                          filename: "Pleiades_Report.csv",
-                        });
-
-                        setOpen(false);
-                      } catch (error) {
-
-                        toast.error("Failed to export HTML.");
-                      }
-                    }}
-                  >
-                    Export CSV
-                  </button>
-
-                  <button
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
-                    onClick={async () => {
-                      try {
-                        if (!selectedProducts.length) {
-                          toast.error("Please select at least one product to export.");
-                          return;
-                        }
-                        await exportKML({
-                          format: "kml",
-                          items: selectedProducts,
-                          aoi: aoi,
-                          filename: "Rectangle 1 - Pleiades 50cm.kml",
-                          lang: "en",
-                          extraInfos: {
-                            exportedBy: "Archive System",
-                            provider: "Airbus",
-                          },
-                        });
-
-                        setOpen(false);
-                      } catch (error) {
-
-
-                        toast.error("Failed to export KML.");
-                      }
-                    }}
-                  >
-                    Export KML
-                  </button>
-                  <button
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
-                    onClick={async () => {
-                      if (!selectedProducts.length) {
-                        toast.error("Please select at least one product to export.");
-                        return;
-                      }
-
-                      try {
-                        await exportKMZ({
-                          format: "kmz",
-                          items: selectedProducts,
-                          aoi: aoi,
-                          filename: "Rectangle 1 - Pleiades 50cm.kmz",
-                          lang: "en",
-                          extraInfos: {
-                            exportedBy: "Archive System",
-                            provider: "Airbus",
-                          },
-                        });
-
-                        setOpen(false);
-                      } catch (error) {
-
-
-                        toast.error("Failed to export KMZ.");
-                      }
-                    }}
-                  >
-                    Export KMZ
-                  </button>
-                  <button
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
-                    onClick={async () => {
-                      if (!selectedProducts.length) {
-                        toast.error("Please select at least one product to export.");
-                        return;
-                      }
-
-                      await exportShape({
-                        items: selectedProducts,
-                        aoi: aoi,
-                        filename: "Rectangle 1 - Pleiades 50cm (1).zip",
-                      });
-
-                      setOpen(false);
-                    }}
-                  >
-                    Export Shape
-                  </button>
-                </div>
-              )}
-            </div>
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={13}
+              className="text-primary pointer-events-none absolute top-1/2 right-0.5 -translate-y-1/2"
+            />
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-6 bg-white px-4 py-3 shadow-sm">
-          <div className="flex items-center gap-1">
-            {/* Pin All / Clear All Pins */}
-            <button
-              type="button"
-              onClick={() => {
-                if (pinnedProducts.length > 0) {
-                  clearPinnedProducts();
-                  toast.success("All pinned products removed");
-                } else {
-                  selectAllPinned(mappedProducts);
-                  toast.success(`${mappedProducts.length} products pinned`);
-                }
-              }}
-              title={pinnedProducts.length > 0 ? "Clear All Pins" : "Select All Pins"}
-              className="rounded-md p-2 transition hover:bg-gray-100"
-            >
-              {pinnedProducts.length > 0 ? (
-                <PinOff size={17} className="text-primary" />
-              ) : (
-                <ListChecks size={17} className="text-gray-600" />
-              )}
-            </button>
-            {/* Select / Deselect All */}
-            <button
-              type="button"
-              onClick={handleSelectAll}
-              title={
-                mappedProducts.length > 0 &&
-                  mappedProducts.every((product) => isSelected(product.id))
-                  ? "Deselect All"
-                  : "Select All"
-              }
-              className="rounded-md p-2 transition hover:bg-gray-100"
-            >
-              {mappedProducts.length > 0 &&
-                mappedProducts.every((product) => isSelected(product.id)) ? (
-                <CheckSquare size={17} className="text-primary" />
-              ) : (
-                <Square size={17} className="text-gray-600" />
-              )}
-            </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            data-tooltip-id="archive-tooltip"
+            data-tooltip-content="Export"
+            className={toolbarButton}
+          >
+            <Upload size={16} />
+          </button>
 
-            {/* Show / Hide All Selected on Map */}
-            <button
-              type="button"
-              onClick={() => {
-                if (selectedProducts.length === 0) {
-                  toast.info("Please select products first");
-                  return;
-                }
-                if (allSelectedVisible) {
-                  hideAllProducts();
-                  toast.success("All selected products hidden from map");
-                } else {
-                  showSelectedProducts();
-                  toast.success(`${selectedProducts.length} products displayed on map`);
-                }
-              }}
-              title={
-                selectedProducts.length > 0 && allSelectedVisible
-                  ? "Hide All From Map"
-                  : "Show All On Map"
-              }
-              className="rounded-md p-2 transition hover:bg-gray-100"
-            >
-              {selectedProducts.length > 0 && allSelectedVisible ? (
-                <Eye size={17} className="text-primary" />
-              ) : (
-                <Eye size={17} className="text-gray-600" />
-              )}
-            </button>
-
-            {/* fetch more products */}
-            <button
-              type="button"
-              onClick={incrementPage}
-              disabled={isPending}
-              className="border-border text-primary hover:bg-primary flex h-9 items-center gap-2 rounded-lg border bg-white px-4 text-sm font-medium transition-all duration-200 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  <span>1–{products?.features.length ?? 0}</span>
-                  <ChevronRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-3">
-          {isError && (
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-100">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold">Unable to load products</p>
-                  <p className="text-xs text-red-600">Something went wrong. Please try again.</p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => refetch?.()}
-                className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-          <div className="space-y-2">
-            {mappedProducts.map((product) => (
-              <ArchiveProductCard
-                key={product.id}
-                product={product}
-                checked={isSelected(product.id)}
-                isVisible={isVisible(product.id)}
-                onToggleSelect={toggleProduct}
-                onToggleVisibility={toggleVisibility}
-                onFlyToProduct={setFlyToProduct}
-                onOrder={setOrderProduct}
-              />
-            ))}
-          </div>
-          {isLoading && (
-            <div className="w-[32rem]">
-              {" "}
-              <div className="flex h-[calc(100vh-173px)] flex-col items-center justify-start py-4">
-                <div>
-                  <img src={Spinners} alt="Loading..." className="mt-[16rem] h-30 w-30" />
-                </div>
-              </div>
+          {open && (
+            <div className="absolute top-full right-0 z-50 mt-1 w-36 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+              {EXPORTS.map((format) => (
+                <button
+                  key={format}
+                  type="button"
+                  onClick={() => handleExport(format)}
+                  className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Export {format}
+                </button>
+              ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Bulk actions */}
+      <div className="flex shrink-0 items-center justify-between gap-2 border-y border-gray-200 px-3 py-2">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            onChange={handleSelectAll}
+            aria-label={allSelected ? "Deselect all" : "Select all"}
+            className="accent-primary h-3.5 w-3.5 cursor-pointer"
+          />
+          {selectedProducts.length > 0 && (
+            <span className="text-primary text-xs">({selectedProducts.length} Selected)</span>
+          )}
+        </label>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => requireSelection() && setFlyToProduct(selectedProducts[0])}
+            data-tooltip-id="archive-tooltip"
+            data-tooltip-content="Zoom to target"
+            className={toolbarButton}
+          >
+            <Crosshair size={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (pinnedProducts.length) {
+                clearPinnedProducts();
+                toast.success("All pinned products removed");
+              } else {
+                selectAllPinned(mappedProducts);
+                toast.success(`${mappedProducts.length} products pinned`);
+              }
+            }}
+            data-tooltip-id="archive-tooltip"
+            data-tooltip-content={pinnedProducts.length ? "Clear all pins" : "Select"}
+            className={`${toolbarButton} ${pinnedProducts.length ? "text-primary" : ""}`}
+          >
+            <Pin size={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!requireSelection()) return;
+
+              if (allSelectedVisible) {
+                hideAllProducts();
+                toast.success("All selected products hidden from map");
+              } else {
+                showSelectedProducts();
+                toast.success(`${selectedProducts.length} products displayed on map`);
+              }
+            }}
+            data-tooltip-id="archive-tooltip"
+            data-tooltip-content={allSelectedVisible ? "Hide from map" : "Visibility"}
+            className={`${toolbarButton} ${allSelectedVisible ? "text-primary" : ""}`}
+          >
+            <VisibilityIcon dimmed={!allSelectedVisible} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => requireSelection() && setOrderProduct(selectedProducts[0])}
+            data-tooltip-id="archive-tooltip"
+            data-tooltip-content="Add to cart"
+            className={toolbarButton}
+          >
+            <ShoppingCart size={16} />
+          </button>
+
+          {/* Loaded range, with a button to pull the next page */}
+          <div className="ml-1 flex items-center gap-1 rounded-full border border-gray-200 py-0.5 pr-0.5 pl-2.5">
+            <span className="text-xs text-gray-700">1–{loadedCount}</span>
+            <button
+              type="button"
+              onClick={() => setcurrentpage((page) => page + 1)}
+              disabled={isPending || loadedCount >= (products?.pagination.total_count ?? 0)}
+              data-tooltip-id="archive-tooltip"
+              data-tooltip-content="Load more"
+              className="bg-primary hover:bg-primary/90 flex h-6 w-6 items-center justify-center rounded-full text-white transition disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              {isPending ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Plus size={14} />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Results */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {isError && (
+          <div className="m-3 flex items-center justify-between gap-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-red-100">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Unable to load products</p>
+                <p className="text-xs text-red-600">Something went wrong. Please try again.</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => refetch?.()}
+              className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {mappedProducts.map((product) => (
+          <ArchiveProductCard
+            key={product.id}
+            product={product}
+            checked={isSelected(product.id)}
+            isVisible={isVisible(product.id)}
+            onToggleSelect={toggleProduct}
+            onToggleVisibility={toggleVisibility}
+            onFlyToProduct={setFlyToProduct}
+            onOrder={setOrderProduct}
+          />
+        ))}
+
+        {/* First page fills the panel; later pages append below the list. */}
+        {isLoading && !mappedProducts.length && (
+          <div className="flex h-full items-center justify-center">
+            <img src={Spinners} alt="Loading" className="h-24 w-24" />
+          </div>
+        )}
+
+        {isPending && mappedProducts.length > 0 && (
+          <div className="flex items-center justify-center gap-2 py-4 text-sm text-gray-500">
+            <img src={Spinners} alt="" className="h-5 w-5" />
+            Loading more...
+          </div>
+        )}
+      </div>
+
+      <Tooltip
+        id="archive-tooltip"
+        place="top"
+        className="z-50 !rounded !bg-gray-900 !px-2 !py-1 !text-xs !text-white !opacity-100"
+      />
     </div>
   );
 };

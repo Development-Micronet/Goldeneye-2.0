@@ -27,6 +27,8 @@ import loginpagevideo from "./video/loginpagevideo.mp4";
 import viteLogo from "./vite.svg";
 import OrderIcon from "./LeftBar/Order.svg";
 import Baselayer from "./LeftBar/Baselayer.svg";
+import EyeIcon from "./LeftBar/eye.png"
+
 export {
   heroImg,
   reactLogo,
@@ -46,7 +48,7 @@ export {
   orbitIcon,
   orderIcon,
   taskingIcon,
-
+  EyeIcon,
   // LeftSidebar export
   selectIcon,
   importIcon,

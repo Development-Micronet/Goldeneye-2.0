@@ -497,7 +497,7 @@ export const ArchiveOrderForm: React.FC<ArchiveOrderFormProps> = ({
                             className={`${solidButton} flex items-center gap-1.5`}
                         >
                             {isSubmitting && <Loader2 size={14} className="animate-spin" />}
-                            {isSuperadmin ? "Add to Cart" : "Raise Request"}
+                            {isSuperadmin ? "Order place" : "Raise Request"}
                         </button>
                     </div>
                 </Step>
