@@ -35,12 +35,7 @@ export const LoginPage: React.FC = () => {
       if (user?.must_reset_password) {
         navigate("/force-reset-password");
       } else {
-        const role = user?.roleName?.toLowerCase();
-        if (role === "user") {
-          navigate("/data");
-        } else {
-          navigate("/dashboard");
-        }
+        navigate("/data");
       }
     }
   }, [token, user, navigate]);

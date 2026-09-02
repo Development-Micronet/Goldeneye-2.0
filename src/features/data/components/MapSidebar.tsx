@@ -51,7 +51,24 @@ export default function MapSidebar({
   const hasSearch =
     roleIsSuperadmin || allowedServices.some((service) => service.toLowerCase() === "search");
 
-  const hasTasking = true; // Enabled by default, can be linked to api subscription check later
+  const hasTasking =
+    roleIsSuperadmin ||
+    allowedServices.length === 0 ||
+    allowedServices.some((service) => service.toLowerCase() === "tasking");
+
+  const hasMyIndent =
+    roleIsSuperadmin ||
+    allowedServices.length === 0 ||
+    allowedServices.some((service) =>
+      ["my_indent", "my indent", "indent"].includes(service.toLowerCase()),
+    );
+
+  const hasMyOrder =
+    roleIsSuperadmin ||
+    allowedServices.length === 0 ||
+    allowedServices.some((service) =>
+      ["my_order", "my order", "order"].includes(service.toLowerCase()),
+    );
 
   const sidebarItems = [
     ...(hasSearch
@@ -86,18 +103,16 @@ export default function MapSidebar({
       tooltip: "My Data",
       status: false,
     },
-    {
-      id: 5,
-      icon: indentIcon,
-      tooltip: "My Indent",
-      status: true,
-    },
-    // {
-    //   id: 6,
-    //   icon: orderIcon,
-    //   tooltip: "My Order",
-    //   status: true,
-    // },
+    ...(hasMyIndent
+      ? [
+        {
+          id: 5,
+          icon: indentIcon,
+          tooltip: "My Indent",
+          status: true,
+        },
+      ]
+      : []),
     ...(hasOrbitography
       ? [
         {
@@ -108,13 +123,16 @@ export default function MapSidebar({
         },
       ]
       : []),
-    {
-      id: 8,
-      icon: orderIcon,
-      tooltip: "My Order",
-      status: true,
-    },
-
+    ...(hasMyOrder
+      ? [
+        {
+          id: 8,
+          icon: orderIcon,
+          tooltip: "My Order",
+          status: true,
+        },
+      ]
+      : []),
   ];
   // Filter out ID 6 (My Indent) for superadmin role (business rule from Phase 2)
   const filteredItems = sidebarItems.filter((item) =>

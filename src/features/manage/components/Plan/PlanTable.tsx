@@ -222,7 +222,7 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                         key={svc}
                         className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-slate-700 uppercase"
                       >
-                        {svc.replace("_", " ")}
+                        {svc.replace(/_/g, " ")}
                       </span>
                     ))}
                   </div>
