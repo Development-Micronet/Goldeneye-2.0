@@ -1,4 +1,4 @@
-const isConsoleEnabled = import.meta.env.VITE_ENABLE_CONSOLE === "true  ";
+const isConsoleEnabled = import.meta.env.VITE_ENABLE_CONSOLE === "false";
 
 export const logger = {
   // Call the native console object instead of logger to avoid recursion
