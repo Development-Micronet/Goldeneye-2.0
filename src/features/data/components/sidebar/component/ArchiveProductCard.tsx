@@ -158,13 +158,10 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
 
           <button
             type="button"
-            disabled={!checked}
             onClick={() => onToggleVisibility(product)}
             data-tooltip-id="archive-tooltip"
-            data-tooltip-content={
-              !checked ? "Select product first" : isVisible ? "Hide image" : "Visibility"
-            }
-            className={`${button} ${!checked ? "cursor-not-allowed" : ""}`}
+            data-tooltip-content={isVisible ? "Hide image" : "Visibility"}
+            className={button}
           >
             <VisibilityIcon dimmed={!isVisible} />
           </button>
