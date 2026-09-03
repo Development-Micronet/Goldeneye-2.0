@@ -1145,8 +1145,8 @@ export default function MapView() {
     let isMounted = true;
     const addedLayers: BaseLayer[] = [];
     const abortController = new AbortController();
-    // 4-second timeout so slow/unreachable endpoints fallback immediately to imageUrl
-    const timeoutId = setTimeout(() => abortController.abort(), 4000);
+    // 20-second timeout to allow adequate time for remote WMTS capabilities to load without premature cancellation
+    const timeoutId = setTimeout(() => abortController.abort(), 10000);
 
     // Helper to create ImageStatic layer for a product
     const createImageStaticLayer = (imageUrl: string, geom: any) => {
@@ -1309,15 +1309,15 @@ export default function MapView() {
           const aoiLayers = selectedAOIId
             ? layers.filter((l) => l.id === selectedAOIId)
             : layers.filter((l) =>
-                ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(l.type)
-              );
+              ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(l.type)
+            );
 
           const candidateAoiLayers =
             aoiLayers.length > 0
               ? aoiLayers
               : layers.filter((l) =>
-                  ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(l.type)
-                );
+                ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(l.type)
+              );
 
           const productGeo = new GeoJSON().writeFeatureObject(feature as any);
 
