@@ -35,6 +35,7 @@ import ImageLayer from "ol/layer/Image";
 import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
 import "ol/ol.css";
+import { getVectorContext } from "ol/render";
 import ImageStatic from "ol/source/ImageStatic";
 import ImageWMS from "ol/source/ImageWMS";
 import OSM from "ol/source/OSM";
@@ -1162,10 +1163,12 @@ export default function MapView() {
 
     const resolveProductLayer = async (
       product: SelectedArchiveProduct,
+      feature: any,
       geometry: any,
       signal: AbortSignal
     ): Promise<BaseLayer | null> => {
       let layer: BaseLayer | null = null;
+      let isWmtsOrWms = false;
 
       if (product.wmts_url) {
         try {
@@ -1250,6 +1253,7 @@ export default function MapView() {
               opacity: 1,
               zIndex: 20,
             });
+            isWmtsOrWms = true;
           } else if (config.type === "wms") {
             const currentProduct = product;
             const currentGeom = geometry;
@@ -1289,6 +1293,7 @@ export default function MapView() {
               opacity: 0.85,
               zIndex: 20,
             });
+            isWmtsOrWms = true;
           }
         } catch (err: any) {
           if (err?.name !== "AbortError") {
@@ -1297,7 +1302,67 @@ export default function MapView() {
         }
       }
 
-      // Fallback to ImageStatic if WMTS/WMS was not created or failed
+      // If WMTS/WMS layer is created, extract & render only common area with AOI
+      if (layer && isWmtsOrWms) {
+        let commonGeom: any = null;
+        try {
+          const aoiLayers = selectedAOIId
+            ? layers.filter((l) => l.id === selectedAOIId)
+            : layers.filter((l) =>
+                ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(l.type)
+              );
+
+          const candidateAoiLayers =
+            aoiLayers.length > 0
+              ? aoiLayers
+              : layers.filter((l) =>
+                  ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(l.type)
+                );
+
+          const productGeo = new GeoJSON().writeFeatureObject(feature as any);
+
+          for (const aoiLayer of candidateAoiLayers) {
+            if (!aoiLayer?.geojson) continue;
+            const aoiFeature = new GeoJSON().readFeature(aoiLayer.geojson);
+            const aoiGeo = new GeoJSON().writeFeatureObject(aoiFeature as any);
+            const intersection = turf.intersect(
+              turf.featureCollection([aoiGeo, productGeo] as any)
+            );
+            if (intersection && intersection.geometry) {
+              commonGeom = new GeoJSON().readGeometry(intersection.geometry);
+              break;
+            }
+          }
+        } catch (e) {
+          console.warn("Could not compute intersection with AOI:", e);
+        }
+
+        if (commonGeom) {
+          const clipStyle = new Style({
+            fill: new Fill({
+              color: "rgba(0, 0, 0, 0)",
+            }),
+          });
+
+          layer.on("prerender", (event: any) => {
+            const ctx = event.context as CanvasRenderingContext2D;
+            if (!ctx) return;
+            const vectorContext = getVectorContext(event);
+            ctx.save();
+            vectorContext.setStyle(clipStyle);
+            vectorContext.drawGeometry(commonGeom);
+            ctx.clip();
+          });
+
+          layer.on("postrender", (event: any) => {
+            const ctx = event.context as CanvasRenderingContext2D;
+            if (!ctx) return;
+            ctx.restore();
+          });
+        }
+      }
+
+      // Fallback to ImageStatic if WMTS/WMS was not created or failed (JPG remains untouched)
       if (!layer && product.imageUrl) {
         try {
           layer = createImageStaticLayer(product.imageUrl, geometry);
@@ -1332,6 +1397,7 @@ export default function MapView() {
 
           const layer = await resolveProductLayer(
             product,
+            feature,
             geometry,
             abortController.signal
           );
@@ -1410,7 +1476,7 @@ export default function MapView() {
         });
       }
     };
-  }, [visibleProducts, setMaxZoom]);
+  }, [visibleProducts, setMaxZoom, layers, selectedAOIId]);
 
   useEffect(() => {
     if (!mapInstance.current || !flyToProduct?.geometry) return;
