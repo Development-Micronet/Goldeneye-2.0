@@ -28,8 +28,11 @@ import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
 import "ol/ol.css";
 import ImageStatic from "ol/source/ImageStatic";
+import ImageWMS from "ol/source/ImageWMS";
 import OSM from "ol/source/OSM";
 import TileWMS from "ol/source/TileWMS";
+import WMTS, { optionsFromCapabilities } from "ol/source/WMTS";
+import WMTSCapabilities from "ol/format/WMTSCapabilities";
 import VectorSource from "ol/source/Vector";
 import XYZ from "ol/source/XYZ";
 import { getArea } from "ol/sphere";
@@ -1150,6 +1153,19 @@ export default function MapView() {
 
         let layer: BaseLayer | null = null;
 
+        // Helper to create ImageStatic layer for a product
+        const createImageStaticLayer = (imageUrl: string, geom: any) => {
+          return new ImageLayer({
+            source: new ImageStatic({
+              url: imageUrl,
+              imageExtent: geom.getExtent(),
+              projection: "EPSG:4326",
+            }),
+            opacity: 0.85,
+            zIndex: 20,
+          });
+        };
+
         // 1. If wmts_url is available, inspect the endpoint
         if (product.wmts_url) {
           try {
@@ -1174,12 +1190,13 @@ export default function MapView() {
               const parser = new DOMParser();
               const xmlDoc = parser.parseFromString(text, "text/xml");
 
-              // Extract layer name (prefer child layer name, or top layer name)
+              // Extract layer name (prefer 'layer_0' or the leaf imagery layer)
               const layerNames = Array.from(xmlDoc.querySelectorAll("Layer > Name"))
                 .map((el) => el.textContent?.trim())
                 .filter(Boolean) as string[];
 
               const selectedLayer =
+                layerNames.find((n) => n === "layer_0") ||
                 layerNames.find((n) => n !== "IDP_DAAS_Visualization") ||
                 layerNames[0] ||
                 "IDP_DAAS_Visualization";
@@ -1193,16 +1210,41 @@ export default function MapView() {
 
               const wmsUrl = onlineResource.split("?")[0];
 
-              layer = new TileLayer({
-                source: new TileWMS({
+              const currentProduct = product;
+              const currentGeom = geometry;
+
+              layer = new ImageLayer({
+                source: new ImageWMS({
                   url: wmsUrl,
                   params: {
                     LAYERS: selectedLayer,
-                    TILED: true,
+                    FORMAT: "image/png",
+                    TRANSPARENT: true,
                     VERSION: "1.3.0",
                   },
                   serverType: "mapserver",
-                  transition: 0,
+                  crossOrigin: "anonymous",
+                  ratio: 1,
+                  imageLoadFunction: (image: any, src: string) => {
+                    const img = image.getImage() as HTMLImageElement;
+                    img.onerror = () => {
+                      if (currentProduct.imageUrl && isMounted && mapInstance.current) {
+                        console.warn(
+                          `WMS image load failed for ${currentProduct.id}, fallback to static imageUrl`,
+                        );
+                        if (layer) {
+                          mapInstance.current.removeLayer(layer);
+                        }
+                        const fallbackLayer = createImageStaticLayer(
+                          currentProduct.imageUrl,
+                          currentGeom,
+                        );
+                        mapInstance.current.addLayer(fallbackLayer);
+                        addedLayers.push(fallbackLayer);
+                      }
+                    };
+                    img.src = src;
+                  },
                 }),
                 opacity: 0.85,
                 zIndex: 20,
@@ -1211,19 +1253,35 @@ export default function MapView() {
               text.includes("<Capabilities") ||
               text.includes("<WMTS_Capabilities")
             ) {
-              // Direct WMTS or tile template
-              const wmtsBase = String(product.wmts_url).trim().replace(/\/+$/, "");
-              const tileUrl = wmtsBase.includes("{z}")
-                ? wmtsBase
-                : `${wmtsBase}/{z}/{x}/{y}`;
+              // Parse WMTS Capabilities XML
+              try {
+                const parser = new WMTSCapabilities();
+                const result = parser.read(text);
+                const layerId = result?.Contents?.Layer?.[0]?.Identifier;
+                const matrixSet =
+                  result?.Contents?.TileMatrixSet?.find(
+                    (ms: any) =>
+                      ms?.Identifier === "EPSG:3857" || ms?.Identifier === "EPSG:4326",
+                  )?.Identifier ||
+                  result?.Contents?.TileMatrixSet?.[0]?.Identifier ||
+                  "EPSG:3857";
 
-              layer = new TileLayer({
-                source: new XYZ({
-                  url: tileUrl,
-                }),
-                opacity: 0.85,
-                zIndex: 20,
-              });
+                if (layerId) {
+                  const options = optionsFromCapabilities(result, {
+                    layer: layerId,
+                    matrixSet: matrixSet,
+                  });
+                  if (options) {
+                    layer = new TileLayer({
+                      source: new WMTS(options),
+                      opacity: 0.85,
+                      zIndex: 20,
+                    });
+                  }
+                }
+              } catch (wmtsErr) {
+                console.warn("WMTS parse error:", wmtsErr);
+              }
             }
           } catch (err) {
             console.warn(
@@ -1236,15 +1294,7 @@ export default function MapView() {
         // 2. Fallback to imageUrl if WMTS/WMS is not available or failed
         if (!layer && product.imageUrl) {
           try {
-            layer = new ImageLayer({
-              source: new ImageStatic({
-                url: product.imageUrl,
-                imageExtent: geometry.getExtent(),
-                projection: "EPSG:4326",
-              }),
-              opacity: 0.85,
-              zIndex: 20,
-            });
+            layer = createImageStaticLayer(product.imageUrl, geometry);
           } catch (err) {
             console.warn("Failed to create ImageStatic layer:", err);
           }
