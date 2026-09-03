@@ -108,7 +108,7 @@ const nameFor = (provider: string, raw: Record<string, any>) => {
  */
 const toArchiveProduct = (item: any, provider: string): SelectedArchiveProduct => {
 
-    console.log("item", item)
+  console.log("item", item)
   const properties = item.properties ?? {};
   const raw: Record<string, any> = properties.raw ?? {};
 
@@ -177,7 +177,7 @@ export const ArchiveSearchMenu: React.FC = () => {
   const isAirbus = selectedProvider === "airbus";
 
   const [currentpage, setcurrentpage] = useState(1);
-  const [sortBy, setSortBy] = useState<SortOption>("-date");
+  const [sortBy, setSortBy] = useState<SortOption>("+date");
   const [open, setOpen] = useState(false);
 
   // The product whose order criteria are open. Set by the card's cart button.

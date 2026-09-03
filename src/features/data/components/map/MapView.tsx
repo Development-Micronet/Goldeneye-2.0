@@ -1164,12 +1164,13 @@ export default function MapView() {
             opacity: 0.85,
             zIndex: 20,
           });
-        };
-
+        };  
+        console.log("wmts_url",product)
         // 1. If wmts_url is available, inspect the endpoint
         if (product.wmts_url) {
           try {
             const response = await fetch(product.wmts_url);
+            console.log("wmts", response)
             const text = await response.text();
 
             // Check if response is JSON error or doesn't support WMTS
@@ -1295,6 +1296,7 @@ export default function MapView() {
         if (!layer && product.imageUrl) {
           try {
             layer = createImageStaticLayer(product.imageUrl, geometry);
+            console.log("WMTS/WMS is not available or failed")
           } catch (err) {
             console.warn("Failed to create ImageStatic layer:", err);
           }

@@ -5,7 +5,7 @@ import type { User } from "../store/useAuthStore";
  * Array of tenant schema names where the "Add to Cart" button/icon in Archival is hidden.
  * Add additional schema names to this array for future updates.
  */
-export const HIDE_CART_SCHEMAS: string[] = ["bsf"];
+export const HIDE_CART_SCHEMAS: string[] = ["micronet"];
 
 /**
  * Validates whether a user or schema name should have the cart button hidden.
