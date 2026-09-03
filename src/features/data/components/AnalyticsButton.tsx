@@ -50,14 +50,14 @@ const AnalyticsButton = () => {
 
     const addRaster = useRasterStore((state) => state.addRaster);
 
-    const { openArchive, openTasking } = useMapSidebarStore();
+    const { activeIndex, toggleArchive, toggleTasking } = useMapSidebarStore();
 
     const handleArchive = () => {
         if (!selectedAOIId) {
             toast.error("Please select an AOI first.");
             return;
         }
-        openArchive();
+        toggleArchive();
     };
 
     const handleTasking = () => {
@@ -65,7 +65,7 @@ const AnalyticsButton = () => {
             toast.error("Please select an AOI first.");
             return;
         }
-        openTasking();
+        toggleTasking();
     };
 
     const handleAnalytics = async () => {
@@ -98,65 +98,31 @@ const AnalyticsButton = () => {
              *
              * We only pass the AOI GeoJSON.
              */
-            const result = await exportAOIWithMapLibre({
-                geojson: selectedAOI.geojson,
+            const tifBlob = await exportAOIWithMapLibre(selectedAOI.geojson);
 
-                filename,
-            });
+            // Optional direct download
+            downloadFile(tifBlob, filename);
 
-            const { file, previewUrl, bbox } = result;
-
-            /*
-             * Download the GeoTIFF to disk.
-             */
-            downloadFile(file, filename);
-
-            /*
-             * Add generated TIFF
-             * to raster Zustand store.
-             */
-            const id = crypto.randomUUID();
+            const url = URL.createObjectURL(tifBlob);
 
             addRaster({
-                id,
-
+                id: crypto.randomUUID(),
                 name: filename,
-
-                type: "tiff",
-
-                file,
-
-                imageUrl: previewUrl,
-
-                displayImageUrl: previewUrl,
-
-                displayType: "original",
-
-                extent: bbox,
-
-                aoi: bbox,
-
-                projection: "EPSG:4326",
-
+                imageUrl: url,
+                aoi: selectedAOI.geojson,
+                opacity: 0.85,
                 visible: true,
-
-                opacity: 1,
-
-                operations: [],
+                projection: "EPSG:3857",
             });
 
-            toast.success("AOI GeoTIFF generated and downloaded.");
-
-            /*
-             * Navigate only AFTER
-             * the raster has been added.
-             */
             navigate("/analytics");
         } catch (error) {
-            console.error("Failed to generate AOI GeoTIFF:", error);
+            console.error("Failed to generate analytics raster:", error);
 
             toast.error(
-                error instanceof Error ? error.message : "Failed to generate AOI GeoTIFF.",
+                error instanceof Error
+                    ? error.message
+                    : "Failed to generate analytics raster.",
             );
         } finally {
             setLoading(false);
@@ -167,6 +133,9 @@ const AnalyticsButton = () => {
         return null;
     }
 
+    const isArchiveOpen = activeIndex === 0;
+    const isTaskingOpen = activeIndex === 1;
+
     return (
             <div className="absolute bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2">
                 {/* Archive (Search) */}
@@ -175,8 +144,18 @@ const AnalyticsButton = () => {
                         type="button"
                         onClick={handleArchive}
                         disabled={loading || !selectedAOIId}
-                        title={selectedAOIId ? "Search Archive Data" : "Select an AOI first"}
-                        className="flex h-9 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-4 text-xs font-semibold text-gray-700 shadow-lg transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        title={
+                            !selectedAOIId
+                                ? "Select an AOI first"
+                                : isArchiveOpen
+                                  ? "Close Archive Menu"
+                                  : "Search Archive Data"
+                        }
+                        className={`flex h-9 items-center gap-1.5 rounded-full border px-4 text-xs font-semibold shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                            isArchiveOpen
+                                ? "border-primary bg-primary text-white hover:bg-[#1f4e57]"
+                                : "border-gray-300 bg-white text-gray-700 hover:bg-cyan-50"
+                        }`}
                     >
                         <FiArchive size={14} />
                         <span>Archive</span>
@@ -211,8 +190,18 @@ const AnalyticsButton = () => {
                         type="button"
                         onClick={handleTasking}
                         disabled={!selectedAOIId}
-                        title={selectedAOIId ? "Create a new Tasking request" : "Select an AOI first"}
-                        className="flex h-9 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-4 text-xs font-semibold text-gray-700 shadow-lg transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        title={
+                            !selectedAOIId
+                                ? "Select an AOI first"
+                                : isTaskingOpen
+                                  ? "Close Tasking Menu"
+                                  : "Create a new Tasking request"
+                        }
+                        className={`flex h-9 items-center gap-1.5 rounded-full border px-4 text-xs font-semibold shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                            isTaskingOpen
+                                ? "border-primary bg-primary text-white hover:bg-[#1f4e57]"
+                                : "border-gray-300 bg-white text-gray-700 hover:bg-cyan-50"
+                        }`}
                     >
                         <FiTarget size={14} />
                         <span>Tasking</span>

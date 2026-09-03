@@ -5,8 +5,8 @@ export type SatelliteProvider = "airbus" | "sentinel" | "planet" | string;
 
 export interface ProductSearchPayload {
   provider: SatelliteProvider;
-  start_date: string;
-  end_date: string;
+  start_date?: string;
+  end_date?: string;
   cloud_cover: [number, number];
   intersects: {
     type: "Polygon";

@@ -11,6 +11,7 @@ const DateFilter = () => {
   const [start, setStart] = useState(startDate);
   const [end, setEnd] = useState(endDate);
   const modes: Mode[] = ["between", "after", "before"];
+  const today = new Date().toISOString().split("T")[0];
 
   const isFiltered = Boolean(startDate || endDate);
 
@@ -34,17 +35,45 @@ const DateFilter = () => {
     setTab("none");
   };
 
+  const formatDisplayDate = (dateStr?: string) => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      const months = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+      ];
+      const monthIndex = parseInt(month, 10) - 1;
+      const monthName = months[monthIndex] || month;
+      const dayPadded = day.padStart(2, "0");
+      return `${dayPadded} ${monthName} ${year}`;
+    }
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const dayNum = String(d.getDate()).padStart(2, "0");
+    const monthName = d.toLocaleString("en-US", { month: "short" });
+    const yearNum = d.getFullYear();
+    return `${dayNum} ${monthName} ${yearNum}`;
+  };
+
   const getDateDisplayText = () => {
-    if (mode === "between" && startDate && endDate) {
-      return `Date: ${startDate} → ${endDate}`;
+    const formattedStart = formatDisplayDate(startDate);
+    const formattedEnd = formatDisplayDate(endDate);
+
+    if (dateMode === "after" && startDate) {
+      return `Acquired After ${formattedStart}`;
     }
-    if (mode === "after" && startDate) {
-      return `Date > ${startDate}`;
+    if (dateMode === "before" && (startDate || endDate)) {
+      return `Acquired Before ${formattedStart || formattedEnd}`;
     }
-    if (mode === "before" && startDate) {
-      return `Date < ${startDate}`;
+    if (dateMode === "between" && startDate && endDate) {
+      return `Acquired ${formattedStart} → ${formattedEnd}`;
     }
-    return `Date: ${startDate || endDate}`;
+    if (startDate && endDate) {
+      return `Acquired ${formattedStart} → ${formattedEnd}`;
+    }
+    return `Acquired ${formattedStart || formattedEnd}`;
   };
 
   return (
@@ -55,7 +84,6 @@ const DateFilter = () => {
           onClick={() => setTab(isOpen ? "none" : "date")}
           className="border-primary bg-primary flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-semibold text-white shadow-md transition select-none hover:bg-[#1f4e57]"
         >
-          <FiCalendar size={14} />
           <span>{getDateDisplayText()}</span>
           <button
             type="button"
@@ -131,6 +159,7 @@ const DateFilter = () => {
                 <input
                   type="date"
                   value={start}
+                  max={today}
                   onChange={(e) => setStart(e.target.value)}
                   className="focus:border-primary focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs transition outline-none focus:ring-1"
                 />
@@ -143,6 +172,8 @@ const DateFilter = () => {
                   <input
                     type="date"
                     value={end}
+                    min={start || undefined}
+                    max={today}
                     onChange={(e) => setEnd(e.target.value)}
                     className="focus:border-primary focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs transition outline-none focus:ring-1"
                   />
