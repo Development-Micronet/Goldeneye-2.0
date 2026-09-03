@@ -263,7 +263,9 @@ export default function MapView() {
     const wmsLayer = new TileLayer({
       properties: { label: "India Shapefile WMS Layer" },
       source: new TileWMS({
-        url: import.meta.env.VITE_GEOSERVER_WMS_URL,
+        url:
+          import.meta.env.VITE_GEOSERVER_WMS_URL ||
+          "https://geoserver.goldeneye.net.in/geoserver/indialayer/wms",
         params: {
           LAYERS: "indialayer:india_India_Country_Boundary",
           TILED: true,
@@ -271,6 +273,8 @@ export default function MapView() {
           VERSION: "1.1.1",
           SRS: "EPSG:4326",
         },
+        crossOrigin: "anonymous",
+        serverType: "geoserver",
         attributions: "India Shapefile WMS Layer",
       }),
       zIndex: 1,
