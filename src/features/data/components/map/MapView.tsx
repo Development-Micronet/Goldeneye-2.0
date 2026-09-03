@@ -1155,7 +1155,7 @@ export default function MapView() {
           imageExtent: geom.getExtent(),
           projection: "EPSG:4326",
         }),
-        opacity: 0.85,
+        opacity: 1,
         zIndex: 20,
       });
     };
@@ -1247,7 +1247,7 @@ export default function MapView() {
           if (config.type === "wmts") {
             layer = new TileLayer({
               source: new WMTS(config.options),
-              opacity: 0.85,
+              opacity: 1,
               zIndex: 20,
             });
           } else if (config.type === "wms") {
