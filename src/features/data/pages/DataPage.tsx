@@ -1,4 +1,5 @@
 import AnalyticsButton from "../components/AnalyticsButton";
+import BottomFilterSummary from "../components/BottomFilterSummary";
 import FilterToolbar from "../components/FilterToolbar";
 import LeftSidebar from "../components/LeftSidebar";
 import MapSidebar from "../components/MapSidebar";
@@ -17,9 +18,13 @@ export const DataPage = () => {
       <ZoomSidebar />
       <AnalyticsButton />
       <FilterToolbar />
+      <BottomFilterSummary />
       {infoProduct && (
         <ArchiveProductDetails product={infoProduct} onClose={() => setInfoProduct(null)} />
       )}
     </div>
   );
 };
+
+
+
