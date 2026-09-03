@@ -108,7 +108,7 @@ const nameFor = (provider: string, raw: Record<string, any>) => {
  */
 const toArchiveProduct = (item: any, provider: string): SelectedArchiveProduct => {
 
-  console.log("item", item)
+  // console.log("item", item)
   const properties = item.properties ?? {};
   const raw: Record<string, any> = properties.raw ?? {};
 

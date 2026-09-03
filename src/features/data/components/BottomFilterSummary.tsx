@@ -118,78 +118,58 @@ export const BottomFilterSummary: React.FC = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex justify-center">
-      <div className="pointer-events-auto relative w-full bg-[#f0f9fa]/95 backdrop-blur-md border-t border-primary/20 px-4 py-1 sm:py-1.5 shadow-lg transition-all duration-300 select-none">
-        {/* Toggle Button */}
+      <div
+        className={`pointer-events-auto relative w-full bg-[#f0f9fa]/95 backdrop-blur-md border-t border-primary/20 px-4 py-1.5 shadow-lg select-none transition-transform duration-300 ease-in-out ${
+          isCollapsed ? "translate-y-full" : "translate-y-0"
+        }`}
+      >
+        {/* Toggle Button: slides with the footer while staying visible to toggle open/close */}
         <button
           type="button"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[#235863] text-white shadow-md transition hover:bg-[#1a444c]"
-          title={isCollapsed ? "Expand summary" : "Collapse summary"}
+          className={`absolute right-4 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-[#235863] text-white shadow-md transition-all duration-300 hover:bg-[#1a444c] hover:scale-110 border border-white/40 ${
+            isCollapsed ? "-top-7" : "-top-3"
+          }`}
+          title={isCollapsed ? "Show filter summary" : "Hide filter summary"}
         >
-          {isCollapsed ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          {isCollapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
         </button>
 
-        {!isCollapsed ? (
-          <div className="flex flex-col gap-0.5 pr-8 text-[10px] sm:text-[11px] text-gray-700">
-            {/* Top row: Products (Airbus only) */}
-            {isAirbus && (
-              <>
-                <div className="flex items-center gap-1.5 font-medium leading-tight">
-                  <span className="text-gray-800 font-semibold">Products:</span>
-                  <span className="text-gray-600">{getProductsText()}</span>
-                </div>
-
-                {/* Divider */}
-                <div className="w-full border-t border-primary/20 my-0.5" />
-              </>
-            )}
-
-            {/* Bottom row: Filter specs with separators */}
-            <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] leading-tight">
-              <div className="flex items-center gap-1">
-                <span className="text-gray-800 font-semibold">Cloud Cover:</span>
-                <span className="text-gray-600">{getCloudCoverText()}</span>
+        <div className="flex flex-col gap-0.5 pr-10 text-[10px] sm:text-[11px] text-gray-700">
+          {/* Top row: Products (Airbus only) */}
+          {isAirbus && (
+            <>
+              <div className="flex items-center gap-1.5 font-medium leading-tight">
+                <span className="text-gray-800 font-semibold">Products:</span>
+                <span className="text-gray-600">{getProductsText()}</span>
               </div>
-              <span className="text-gray-400 font-light">|</span>
 
-              <div className="flex items-center gap-1">
-                <span className="text-gray-800 font-semibold">Inc. Angle:</span>
-                <span className="text-gray-600">{getIncidenceAngleText()}</span>
-              </div>
-              <span className="text-gray-400 font-light">|</span>
+              {/* Divider */}
+              <div className="w-full border-t border-primary/20 my-0.5" />
+            </>
+          )}
 
-              <div className="flex items-center gap-1">
-                <span className="text-gray-800 font-semibold">Date:</span>
-                <span className="text-gray-600">{getDateText()}</span>
-              </div>
-              <span className="text-gray-400 font-light">|</span>
+          {/* Bottom row: Filter specs with separators */}
+          <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] leading-tight">
+            <div className="flex items-center gap-1">
+              <span className="text-gray-800 font-semibold">Cloud Cover:</span>
+              <span className="text-gray-600">{getCloudCoverText()}</span>
+            </div>
+            <span className="text-gray-400 font-light">|</span>
+
+            <div className="flex items-center gap-1">
+              <span className="text-gray-800 font-semibold">Inc. Angle:</span>
+              <span className="text-gray-600">{getIncidenceAngleText()}</span>
+            </div>
+            <span className="text-gray-400 font-light">|</span>
+
+            <div className="flex items-center gap-1">
+              <span className="text-gray-800 font-semibold">Date:</span>
+              <span className="text-gray-600">{getDateText()}</span>
             </div>
           </div>
-        ) : (
-          <div className="flex items-center gap-2 pr-8 text-[10px] sm:text-[11px] text-gray-600 leading-tight">
-            {isAirbus && (
-              <>
-                <span>
-                  <strong className="text-gray-800 font-semibold">Products:</strong> {getProductsText()}
-                </span>
-                <span className="text-gray-400 font-light">|</span>
-              </>
-            )}
-            <span>
-              <strong className="text-gray-800 font-semibold">Cloud:</strong> {getCloudCoverText()}
-            </span>
-            <span className="text-gray-400 font-light">|</span>
-            <span>
-              <strong className="text-gray-800 font-semibold">Angle:</strong> {getIncidenceAngleText()}
-            </span>
-            <span className="text-gray-400 font-light">|</span>
-            <span>
-              <strong className="text-gray-800 font-semibold">Date:</strong> {getDateText()}
-            </span>
-          </div>
-        )}
+        </div>
       </div>
-
     </div>
   );
 };
