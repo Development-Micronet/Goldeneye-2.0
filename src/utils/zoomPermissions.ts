@@ -5,7 +5,7 @@ import type { User } from "../store/useAuthStore";
  * Array of tenant schema names in the special category that bypass zoom limitations
  * on map and layers for temporary / special use cases.
  */
-export const SPECIAL_ZOOM_SCHEMAS: string[] = ["bsf"];
+export const SPECIAL_ZOOM_SCHEMAS: string[] = ["micronet"];
 
 /**
  * Validates whether a user or schema name belongs to the special category.
