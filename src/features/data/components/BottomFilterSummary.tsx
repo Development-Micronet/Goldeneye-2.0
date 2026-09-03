@@ -189,6 +189,7 @@ export const BottomFilterSummary: React.FC = () => {
           </div>
         )}
       </div>
+      
     </div>
   );
 };
