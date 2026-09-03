@@ -1146,7 +1146,7 @@ export default function MapView() {
     const addedLayers: BaseLayer[] = [];
     const abortController = new AbortController();
     // 20-second timeout to allow adequate time for remote WMTS capabilities to load without premature cancellation
-    const timeoutId = setTimeout(() => abortController.abort(), 10000);
+    const timeoutId = setTimeout(() => abortController.abort(), 7000);
 
     // Helper to create ImageStatic layer for a product
     const createImageStaticLayer = (imageUrl: string, geom: any) => {
