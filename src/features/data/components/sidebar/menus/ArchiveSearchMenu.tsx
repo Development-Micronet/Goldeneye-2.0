@@ -164,7 +164,7 @@ const toArchiveProduct = (item: any, provider: string): SelectedArchiveProduct =
 
 export const ArchiveSearchMenu: React.FC = () => {
   const { pinnedProducts, clearPinnedProducts, selectAllPinned } = usePinnedProductStore();
-  const { cloudcover, startDate, endDate, incidentAngle } = useParameter();
+  const { cloudcover, dateMode, startDate, endDate, incidentAngle } = useParameter();
   const selectedAOIId = useSelectedAOIStore((state) => state.selectedAOIId);
   const queryClient = useQueryClient();
   const layers = useLayersStore((state) => state.layers);
@@ -264,14 +264,42 @@ export const ArchiveSearchMenu: React.FC = () => {
     [incidentAngle]
   );
 
+  const { effectiveStartDate, effectiveEndDate } = useMemo(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    if (dateMode === "after" && startDate) {
+      return {
+        effectiveStartDate: startDate,
+        effectiveEndDate: todayStr > startDate ? todayStr : "2099-12-31",
+      };
+    }
+    if (dateMode === "before" && (startDate || endDate)) {
+      return {
+        effectiveStartDate: "1970-01-01",
+        effectiveEndDate: endDate || startDate,
+      };
+    }
+    if (dateMode === "between") {
+      return {
+        effectiveStartDate: startDate || undefined,
+        effectiveEndDate: endDate || undefined,
+      };
+    }
+    return {
+      effectiveStartDate: startDate || undefined,
+      effectiveEndDate: endDate || undefined,
+    };
+  }, [dateMode, startDate, endDate]);
+
   const [products, setproducts] = useState<ProductResponse | null>(null);
 
   const searchKey = useMemo(
     () =>
       JSON.stringify({
         provider,
-        startDate,
-        endDate,
+        dateMode,
+        effectiveStartDate,
+        effectiveEndDate,
         cloudCoverRange,
         incidenceAngleRange,
         sensors,
@@ -281,8 +309,9 @@ export const ArchiveSearchMenu: React.FC = () => {
       }),
     [
       provider,
-      startDate,
-      endDate,
+      dateMode,
+      effectiveStartDate,
+      effectiveEndDate,
       cloudCoverRange,
       incidenceAngleRange,
       sensors,
@@ -299,8 +328,8 @@ export const ArchiveSearchMenu: React.FC = () => {
     queryFn: async () => {
       const payload: ProductSearchPayload = {
         provider,
-        start_date: startDate,
-        end_date: endDate,
+        ...(effectiveStartDate ? { start_date: effectiveStartDate } : {}),
+        ...(effectiveEndDate ? { end_date: effectiveEndDate } : {}),
         cloud_cover: cloudCoverRange,
         incidence_angle: incidenceAngleRange,
         sortBy,
@@ -335,6 +364,10 @@ export const ArchiveSearchMenu: React.FC = () => {
     staleTime: 0,
     refetchOnMount: true,
   });
+
+  useEffect(() => {
+    setcurrentpage(1);
+  }, [searchKey]);
 
   const mappedProducts: SelectedArchiveProduct[] =
     products?.features.map((item) => toArchiveProduct(item, provider)) ?? [];
