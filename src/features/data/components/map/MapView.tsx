@@ -6,7 +6,15 @@ import { useMapOptions } from "../../hooks/useMapOptions";
 import useZoomStore, { UNRESTRICTED_MAX_ZOOM } from "../../hooks/useZoomStore";
 import { useIsSpecialZoomCategory } from "../../../../utils/zoomPermissions";
 import { useMapStore } from "../../store/useMapStore";
-import { useArchiveProductStore } from "../sidebar/store/useArchiveProductStore";
+import { type SelectedArchiveProduct, useArchiveProductStore } from "../sidebar/store/useArchiveProductStore";
+
+type CachedWmtsConfig =
+  | { type: "unsupported" }
+  | { type: "wms"; wmsUrl: string; selectedLayer: string }
+  | { type: "wmts"; options: any };
+
+// Module-level cache for parsed WMTS/WMS capability responses to eliminate redundant network fetches
+const wmtsConfigCache = new Map<string, CachedWmtsConfig>();
 import Feature from "ol/Feature";
 import Map from "ol/Map";
 import { unByKey } from "ol/Observable";
@@ -1135,138 +1143,83 @@ export default function MapView() {
 
     let isMounted = true;
     const addedLayers: BaseLayer[] = [];
+    const abortController = new AbortController();
+    // 4-second timeout so slow/unreachable endpoints fallback immediately to imageUrl
+    const timeoutId = setTimeout(() => abortController.abort(), 4000);
 
-    const loadProductLayers = async () => {
-      for (const product of visibleProducts) {
-        if (!product?.geometry) continue;
+    // Helper to create ImageStatic layer for a product
+    const createImageStaticLayer = (imageUrl: string, geom: any) => {
+      return new ImageLayer({
+        source: new ImageStatic({
+          url: imageUrl,
+          imageExtent: geom.getExtent(),
+          projection: "EPSG:4326",
+        }),
+        opacity: 0.85,
+        zIndex: 20,
+      });
+    };
 
-        let feature: any;
+    const resolveProductLayer = async (
+      product: SelectedArchiveProduct,
+      geometry: any,
+      signal: AbortSignal
+    ): Promise<BaseLayer | null> => {
+      let layer: BaseLayer | null = null;
+
+      if (product.wmts_url) {
         try {
-          feature = new GeoJSON().readFeature({
-            type: "Feature",
-            geometry: product.geometry,
-          });
-        } catch {
-          continue;
-        }
+          let config = wmtsConfigCache.get(product.wmts_url);
 
-        if (Array.isArray(feature) || !feature) continue;
+          if (!config) {
+            const response = await fetch(product.wmts_url, { signal });
+            if (!response.ok) {
+              config = { type: "unsupported" };
+            } else {
+              const text = await response.text();
 
-        const geometry = feature.getGeometry();
-        if (!geometry) continue;
+              if (
+                text.includes("This item does not support WMTS") ||
+                text.includes('"internalCode"')
+              ) {
+                config = { type: "unsupported" };
+              } else if (
+                text.includes("<WMS_Capabilities") ||
+                text.includes("<Name>WMS</Name>")
+              ) {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(text, "text/xml");
 
-        let layer: BaseLayer | null = null;
+                const layerNames = Array.from(xmlDoc.querySelectorAll("Layer > Name"))
+                  .map((el) => el.textContent?.trim())
+                  .filter(Boolean) as string[];
 
-        // Helper to create ImageStatic layer for a product
-        const createImageStaticLayer = (imageUrl: string, geom: any) => {
-          return new ImageLayer({
-            source: new ImageStatic({
-              url: imageUrl,
-              imageExtent: geom.getExtent(),
-              projection: "EPSG:4326",
-            }),
-            opacity: 0.85,
-            zIndex: 20,
-          });
-        };  
-        console.log("wmts_url",product)
-        // 1. If wmts_url is available, inspect the endpoint
-        if (product.wmts_url) {
-          try {
-            const response = await fetch(product.wmts_url);
-            console.log("wmts", response)
-            const text = await response.text();
+                const selectedLayer =
+                  layerNames.find((n) => n === "layer_0") ||
+                  layerNames.find((n) => n !== "IDP_DAAS_Visualization") ||
+                  layerNames[0] ||
+                  "IDP_DAAS_Visualization";
 
-            // Check if response is JSON error or doesn't support WMTS
-            const isJsonError =
-              text.includes("This item does not support WMTS") ||
-              text.includes('"internalCode"') ||
-              !response.ok;
+                const onlineResource =
+                  xmlDoc
+                    .querySelector("GetMap OnlineResource")
+                    ?.getAttribute("xlink:href") ||
+                  product.wms_url ||
+                  product.wmts_url.replace(/\/wmts\//, "/wms/");
 
-            if (isJsonError) {
-              console.log(
-                `Product ${product.id} does not support WMTS/WMS, falling back to imageUrl`,
-              );
-            } else if (
-              text.includes("<WMS_Capabilities") ||
-              text.includes("<Name>WMS</Name>")
-            ) {
-              // Parse WMS Capabilities XML
-              const parser = new DOMParser();
-              const xmlDoc = parser.parseFromString(text, "text/xml");
-
-              // Extract layer name (prefer 'layer_0' or the leaf imagery layer)
-              const layerNames = Array.from(xmlDoc.querySelectorAll("Layer > Name"))
-                .map((el) => el.textContent?.trim())
-                .filter(Boolean) as string[];
-
-              const selectedLayer =
-                layerNames.find((n) => n === "layer_0") ||
-                layerNames.find((n) => n !== "IDP_DAAS_Visualization") ||
-                layerNames[0] ||
-                "IDP_DAAS_Visualization";
-
-              const onlineResource =
-                xmlDoc
-                  .querySelector("GetMap OnlineResource")
-                  ?.getAttribute("xlink:href") ||
-                product.wms_url ||
-                product.wmts_url.replace(/\/wmts\//, "/wms/");
-
-              const wmsUrl = onlineResource.split("?")[0];
-
-              const currentProduct = product;
-              const currentGeom = geometry;
-
-              layer = new ImageLayer({
-                source: new ImageWMS({
-                  url: wmsUrl,
-                  params: {
-                    LAYERS: selectedLayer,
-                    FORMAT: "image/png",
-                    TRANSPARENT: true,
-                    VERSION: "1.3.0",
-                  },
-                  serverType: "mapserver",
-                  crossOrigin: "anonymous",
-                  ratio: 1,
-                  imageLoadFunction: (image: any, src: string) => {
-                    const img = image.getImage() as HTMLImageElement;
-                    img.onerror = () => {
-                      if (currentProduct.imageUrl && isMounted && mapInstance.current) {
-                        console.warn(
-                          `WMS image load failed for ${currentProduct.id}, fallback to static imageUrl`,
-                        );
-                        if (layer) {
-                          mapInstance.current.removeLayer(layer);
-                        }
-                        const fallbackLayer = createImageStaticLayer(
-                          currentProduct.imageUrl,
-                          currentGeom,
-                        );
-                        mapInstance.current.addLayer(fallbackLayer);
-                        addedLayers.push(fallbackLayer);
-                      }
-                    };
-                    img.src = src;
-                  },
-                }),
-                opacity: 0.85,
-                zIndex: 20,
-              });
-            } else if (
-              text.includes("<Capabilities") ||
-              text.includes("<WMTS_Capabilities")
-            ) {
-              // Parse WMTS Capabilities XML
-              try {
+                const wmsUrl = onlineResource.split("?")[0];
+                config = { type: "wms", wmsUrl, selectedLayer };
+              } else if (
+                text.includes("<Capabilities") ||
+                text.includes("<WMTS_Capabilities")
+              ) {
                 const parser = new WMTSCapabilities();
                 const result = parser.read(text);
                 const layerId = result?.Contents?.Layer?.[0]?.Identifier;
                 const matrixSet =
                   result?.Contents?.TileMatrixSet?.find(
                     (ms: any) =>
-                      ms?.Identifier === "EPSG:3857" || ms?.Identifier === "EPSG:4326",
+                      ms?.Identifier === "EPSG:3857" || ms?.Identifier === "EPSG:4326"
                   )?.Identifier ||
                   result?.Contents?.TileMatrixSet?.[0]?.Identifier ||
                   "EPSG:3857";
@@ -1277,40 +1230,118 @@ export default function MapView() {
                     matrixSet: matrixSet,
                   });
                   if (options) {
-                    layer = new TileLayer({
-                      source: new WMTS(options),
-                      opacity: 0.85,
-                      zIndex: 20,
-                    });
+                    config = { type: "wmts", options };
+                  } else {
+                    config = { type: "unsupported" };
                   }
+                } else {
+                  config = { type: "unsupported" };
                 }
-              } catch (wmtsErr) {
-                console.warn("WMTS parse error:", wmtsErr);
+              } else {
+                config = { type: "unsupported" };
               }
             }
-          } catch (err) {
-            console.warn(
-              `Failed to load WMTS/WMS for product ${product.id}, falling back to imageUrl:`,
-              err,
-            );
+            wmtsConfigCache.set(product.wmts_url, config);
           }
-        }
 
-        // 2. Fallback to imageUrl if WMTS/WMS is not available or failed
-        if (!layer && product.imageUrl) {
-          try {
-            layer = createImageStaticLayer(product.imageUrl, geometry);
-            console.log("WMTS/WMS is not available or failed")
-          } catch (err) {
-            console.warn("Failed to create ImageStatic layer:", err);
+          if (config.type === "wmts") {
+            layer = new TileLayer({
+              source: new WMTS(config.options),
+              opacity: 0.85,
+              zIndex: 20,
+            });
+          } else if (config.type === "wms") {
+            const currentProduct = product;
+            const currentGeom = geometry;
+            layer = new ImageLayer({
+              source: new ImageWMS({
+                url: config.wmsUrl,
+                params: {
+                  LAYERS: config.selectedLayer,
+                  FORMAT: "image/png",
+                  TRANSPARENT: true,
+                  VERSION: "1.3.0",
+                },
+                serverType: "mapserver",
+                crossOrigin: "anonymous",
+                ratio: 1,
+                imageLoadFunction: (image: any, src: string) => {
+                  const img = image.getImage() as HTMLImageElement;
+                  img.onerror = () => {
+                    if (currentProduct.imageUrl && isMounted && mapInstance.current) {
+                      console.warn(
+                        `WMS image load failed for ${currentProduct.id}, fallback to static imageUrl`
+                      );
+                      if (layer) {
+                        mapInstance.current.removeLayer(layer);
+                      }
+                      const fallbackLayer = createImageStaticLayer(
+                        currentProduct.imageUrl,
+                        currentGeom
+                      );
+                      mapInstance.current.addLayer(fallbackLayer);
+                      addedLayers.push(fallbackLayer);
+                    }
+                  };
+                  img.src = src;
+                },
+              }),
+              opacity: 0.85,
+              zIndex: 20,
+            });
           }
-        }
-
-        if (layer && isMounted && mapInstance.current) {
-          mapInstance.current.addLayer(layer);
-          addedLayers.push(layer);
+        } catch (err: any) {
+          if (err?.name !== "AbortError") {
+            console.warn(`Failed to resolve WMTS/WMS for product ${product.id}:`, err);
+          }
         }
       }
+
+      // Fallback to ImageStatic if WMTS/WMS was not created or failed
+      if (!layer && product.imageUrl) {
+        try {
+          layer = createImageStaticLayer(product.imageUrl, geometry);
+        } catch (err) {
+          console.warn("Failed to create ImageStatic layer:", err);
+        }
+      }
+
+      return layer;
+    };
+
+    const loadProductLayers = async () => {
+      // Parallel layer resolution for instant map rendering
+      await Promise.all(
+        visibleProducts.map(async (product) => {
+          if (!product?.geometry) return;
+
+          let feature: any;
+          try {
+            feature = new GeoJSON().readFeature({
+              type: "Feature",
+              geometry: product.geometry,
+            });
+          } catch {
+            return;
+          }
+
+          if (Array.isArray(feature) || !feature) return;
+
+          const geometry = feature.getGeometry();
+          if (!geometry) return;
+
+          const layer = await resolveProductLayer(
+            product,
+            geometry,
+            abortController.signal
+          );
+
+          if (layer && isMounted && mapInstance.current) {
+            mapInstance.current.addLayer(layer);
+            addedLayers.push(layer);
+          }
+        })
+      );
 
       // Keep AOI/vector layers above images
       if (isMounted && mapInstance.current) {
@@ -1371,6 +1402,8 @@ export default function MapView() {
 
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
+      abortController.abort();
       if (mapInstance.current) {
         addedLayers.forEach((layer) => {
           mapInstance.current?.removeLayer(layer);
