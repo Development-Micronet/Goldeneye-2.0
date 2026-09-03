@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useParameter } from "../hooks/useParameter";
-import { useProductStore } from "../hooks/useProductStore";
+import { useProductStore } from "../hooks/useproductStore";
 
 export const BottomFilterSummary: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -189,7 +189,7 @@ export const BottomFilterSummary: React.FC = () => {
           </div>
         )}
       </div>
-      
+
     </div>
   );
 };
