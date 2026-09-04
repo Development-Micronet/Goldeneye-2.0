@@ -114,6 +114,14 @@ export const OrbitographyMenu: React.FC = () => {
   // AUTO SEARCH
   // =========================================================
 
+  // The currently selected AOI layer object. `updateLayerGeojson` (fired when
+  // the user drags an AOI's vertices on the map) replaces only this one
+  // layer's object in the store, so its reference changes whenever the AOI
+  // shape itself changes — but stays the same when unrelated layers (e.g.
+  // orbit swaths) are added/removed. That makes it a safe, precise trigger
+  // for re-running the orbitography search after an AOI edit.
+  const selectedAOILayer = layers.find((layer) => layer.id === aoi);
+
   useEffect(() => {
     if (!isMountedRef.current) {
       isMountedRef.current = true;
@@ -125,7 +133,7 @@ export const OrbitographyMenu: React.FC = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [aoi, startDate, endDate, selectedSatellites, angle]);
+  }, [aoi, startDate, endDate, selectedSatellites, angle, selectedAOILayer]);
 
   // =========================================================
   // CLEAR ALL ORBIT LAYERS
