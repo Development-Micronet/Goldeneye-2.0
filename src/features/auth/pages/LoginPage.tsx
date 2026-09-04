@@ -397,7 +397,7 @@ export const LoginPage: React.FC = () => {
                 {error && <div className="mt-1 text-xs font-semibold text-red-500">⚠️ {error}</div>}
 
                 {/* Submit Button */}
-                <div>
+                <div> 
                   <button
                     type="submit"
                     disabled={isPending}
