@@ -194,6 +194,7 @@ export const ArchiveSearchMenu: React.FC = () => {
     showSelectedProducts,
     hideAllProducts,
     isVisible,
+    loadingProductIds,
   } = useArchiveProductStore();
 
   const normalizeProductType = (productType: string): string => {
@@ -573,25 +574,44 @@ export const ArchiveSearchMenu: React.FC = () => {
             <Pin size={16} />
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              if (!requireSelection()) return;
+          {(() => {
+            const isAnySelectedLoading = selectedProducts.some((p) => loadingProductIds.includes(p.id));
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!requireSelection()) return;
+                  if (isAnySelectedLoading) return;
 
-              if (allSelectedVisible) {
-                hideAllProducts();
-                toast.success("All selected products hidden from map");
-              } else {
-                showSelectedProducts();
-                toast.success(`${selectedProducts.length} products displayed on map`);
-              }
-            }}
-            data-tooltip-id="archive-tooltip"
-            data-tooltip-content={allSelectedVisible ? "Hide from map" : "Visibility"}
-            className={`${toolbarButton} ${allSelectedVisible ? "text-primary" : ""}`}
-          >
-            <VisibilityIcon dimmed={!allSelectedVisible} />
-          </button>
+                  if (allSelectedVisible) {
+                    hideAllProducts();
+                    toast.success("All selected products hidden from map");
+                  } else {
+                    showSelectedProducts();
+                    toast.success(`${selectedProducts.length} products displayed on map`);
+                  }
+                }}
+                disabled={isAnySelectedLoading}
+                data-tooltip-id="archive-tooltip"
+                data-tooltip-content={
+                  isAnySelectedLoading
+                    ? "Loading..."
+                    : allSelectedVisible
+                    ? "Hide from map"
+                    : "Visibility"
+                }
+                className={`${toolbarButton} ${allSelectedVisible ? "text-primary" : ""} ${
+                  isAnySelectedLoading ? "cursor-wait opacity-80" : ""
+                }`}
+              >
+                {isAnySelectedLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                ) : (
+                  <VisibilityIcon dimmed={!allSelectedVisible} />
+                )}
+              </button>
+            );
+          })()}
 
           {!isCartHidden && (
             <button
