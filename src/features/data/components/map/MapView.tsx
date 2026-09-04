@@ -11,7 +11,7 @@ import { type SelectedArchiveProduct, useArchiveProductStore } from "../sidebar/
 type CachedWmtsConfig =
   | { type: "unsupported" }
   | { type: "wms"; wmsUrl: string; selectedLayer: string }
-  | { type: "wmts"; options: any };
+  | { type: "wmts"; rawText: string; layerId: string; matrixSet: string };
 
 // Module-level cache for parsed WMTS/WMS capability responses to eliminate redundant network fetches
 const wmtsConfigCache = new Map<string, CachedWmtsConfig>();
@@ -1233,15 +1233,7 @@ const getAoiFitOptions = (areaKm2?: number) => {
                   "EPSG:3857";
 
                 if (layerId) {
-                  const options = optionsFromCapabilities(result, {
-                    layer: layerId,
-                    matrixSet: matrixSet,
-                  });
-                  if (options) {
-                    config = { type: "wmts", options };
-                  } else {
-                    config = { type: "unsupported" };
-                  }
+                  config = { type: "wmts", rawText: text, layerId, matrixSet };
                 } else {
                   config = { type: "unsupported" };
                 }
@@ -1253,26 +1245,37 @@ const getAoiFitOptions = (areaKm2?: number) => {
           }
 
           if (config.type === "wmts") {
-            layer = new TileLayer({
-              source: new WMTS(config.options),
-              opacity: 1,
-              zIndex: 20,
+            const parser = new WMTSCapabilities();
+            const result = parser.read(config.rawText);
+            const options = optionsFromCapabilities(result, {
+              layer: config.layerId,
+              matrixSet: config.matrixSet,
             });
-            isWmtsOrWms = true;
 
-            const wmtsSource = layer.getSource();
-            if (wmtsSource) {
-              let finished = false;
-              const finishLoading = () => {
-                if (!finished) {
-                  finished = true;
-                  useArchiveProductStore.getState().setProductLoading(product.id, false);
-                }
-              };
-              wmtsSource.once("tileloadend", finishLoading);
-              wmtsSource.once("tileloaderror", finishLoading);
-              layer.once("postrender", finishLoading);
-              setTimeout(finishLoading, 2500);
+            if (options) {
+              layer = new TileLayer({
+                source: new WMTS(options),
+                opacity: 1,
+                zIndex: 20,
+              });
+              isWmtsOrWms = true;
+
+              const wmtsSource = layer.getSource();
+              if (wmtsSource) {
+                let finished = false;
+                const finishLoading = () => {
+                  if (!finished) {
+                    finished = true;
+                    useArchiveProductStore.getState().setProductLoading(product.id, false);
+                  }
+                };
+                wmtsSource.once("tileloadend", finishLoading);
+                wmtsSource.once("tileloaderror", finishLoading);
+                layer.once("postrender", finishLoading);
+                setTimeout(finishLoading, 2500);
+              } else {
+                useArchiveProductStore.getState().setProductLoading(product.id, false);
+              }
             } else {
               useArchiveProductStore.getState().setProductLoading(product.id, false);
             }
