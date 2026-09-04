@@ -409,7 +409,7 @@ export const LoginPage: React.FC = () => {
 
                 {/* Register Company */}
                 <div className="pt-2 text-xs text-gray-500 select-none">
-                  Not Register?{" "}
+                  Don't have an account?{" "}
                   <Link
                     to="/register-company"
                     className="text-primary font-semibold hover:underline"
