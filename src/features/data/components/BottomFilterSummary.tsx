@@ -115,6 +115,7 @@ export const BottomFilterSummary: React.FC = () => {
   };
 
   const isAirbus = selectedProvider === "airbus";
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex justify-center">
@@ -135,38 +136,45 @@ export const BottomFilterSummary: React.FC = () => {
           {isCollapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
         </button>
 
-        <div className="flex flex-col gap-0.5 pr-10 text-[10px] sm:text-[11px] text-gray-700">
-          {/* Top row: Products (Airbus only) */}
-          {isAirbus && (
-            <>
-              <div className="flex items-center gap-1.5 font-medium leading-tight">
-                <span className="text-gray-800 font-semibold">Products:</span>
-                <span className="text-gray-600">{getProductsText()}</span>
+        <div className="flex items-center justify-between gap-4 pr-10 text-[10px] sm:text-[11px] text-gray-700">
+          <div className="flex flex-col gap-0.5 min-w-0">
+            {/* Top row: Products (Airbus only) */}
+            {isAirbus && (
+              <>
+                <div className="flex items-center gap-1.5 font-medium leading-tight">
+                  <span className="text-gray-800 font-semibold">Products:</span>
+                  <span className="text-gray-600">{getProductsText()}</span>
+                </div>
+
+                {/* Divider */}
+                <div className="w-full border-t border-primary/20 my-0.5" />
+              </>
+            )}
+
+            {/* Bottom row: Filter specs with separators */}
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] leading-tight">
+              <div className="flex items-center gap-1">
+                <span className="text-gray-800 font-semibold">Cloud Cover:</span>
+                <span className="text-gray-600">{getCloudCoverText()}</span>
               </div>
+              <span className="text-gray-400 font-light">|</span>
 
-              {/* Divider */}
-              <div className="w-full border-t border-primary/20 my-0.5" />
-            </>
-          )}
+              <div className="flex items-center gap-1">
+                <span className="text-gray-800 font-semibold">Inc. Angle:</span>
+                <span className="text-gray-600">{getIncidenceAngleText()}</span>
+              </div>
+              <span className="text-gray-400 font-light">|</span>
 
-          {/* Bottom row: Filter specs with separators */}
-          <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] leading-tight">
-            <div className="flex items-center gap-1">
-              <span className="text-gray-800 font-semibold">Cloud Cover:</span>
-              <span className="text-gray-600">{getCloudCoverText()}</span>
+              <div className="flex items-center gap-1">
+                <span className="text-gray-800 font-semibold">Date:</span>
+                <span className="text-gray-600">{getDateText()}</span>
+              </div>
             </div>
-            <span className="text-gray-400 font-light">|</span>
+          </div>
 
-            <div className="flex items-center gap-1">
-              <span className="text-gray-800 font-semibold">Inc. Angle:</span>
-              <span className="text-gray-600">{getIncidenceAngleText()}</span>
-            </div>
-            <span className="text-gray-400 font-light">|</span>
-
-            <div className="flex items-center gap-1">
-              <span className="text-gray-800 font-semibold">Date:</span>
-              <span className="text-gray-600">{getDateText()}</span>
-            </div>
+          {/* Right side: Copyright */}
+          <div className="shrink-0 text-gray-600 font-medium text-[10px] sm:text-[11px] select-none text-right">
+            © Micronet {currentYear}. All rights reserved.
           </div>
         </div>
       </div>

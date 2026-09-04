@@ -239,7 +239,7 @@ export const ForceResetPasswordPage: React.FC = () => {
 
         <div className="mt-10 w-full max-w-[420px] text-center select-none md:mt-0">
           <p className="text-[10px] font-semibold tracking-wide text-gray-400">
-            © Copyright 2025 Micronet Solutions. All Right Reserved
+            © Copyright {new Date().getFullYear()} Micronet Solutions. All Right Reserved
           </p>
         </div>
       </div>
