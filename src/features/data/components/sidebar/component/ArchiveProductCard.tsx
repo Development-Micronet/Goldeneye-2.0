@@ -1,7 +1,7 @@
 import React from "react";
-import { Crosshair, ImageOff, Info, Pin, ShoppingCart } from "lucide-react";
+import { Crosshair, ImageOff, Info, Loader2, Pin, ShoppingCart } from "lucide-react";
 
-import type { SelectedArchiveProduct } from "../store/useArchiveProductStore";
+import { useArchiveProductStore, type SelectedArchiveProduct } from "../store/useArchiveProductStore";
 import { useArchiveHoverStore } from "../../../hooks/useArchiveHoverStore";
 import { usePinnedProductStore } from "../../../hooks/usePinnedProductStore";
 import { useArchiveInfoStore } from "../../../hooks/useArchiveInfoStore";
@@ -65,6 +65,7 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
   const { setHoveredProduct } = useArchiveHoverStore();
   const { addPinnedProduct, removePinnedProduct, isPinned } = usePinnedProductStore();
   const { infoProduct, setInfoProduct } = useArchiveInfoStore();
+  const isLoading = useArchiveProductStore((state) => state.loadingProductIds.includes(product.id));
 
   const isCartHidden = useIsCartHidden();
 
@@ -158,12 +159,18 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
 
           <button
             type="button"
-            onClick={() => onToggleVisibility(product)}
+            onClick={() => !isLoading && onToggleVisibility(product)}
+            disabled={isLoading}
             data-tooltip-id="archive-tooltip"
-            data-tooltip-content={isVisible ? "Hide image" : "Visibility"}
-            className={button}
+            data-tooltip-content={isLoading ? "Loading..." : isVisible ? "Hide image" : "Visibility"}
+            className={`${button} ${isLoading ? "cursor-wait opacity-80" : ""}`}
+            aria-label={isLoading ? "Loading image" : isVisible ? "Hide image" : "Visibility"}
           >
-            <VisibilityIcon dimmed={!isVisible} />
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            ) : (
+              <VisibilityIcon dimmed={!isVisible} />
+            )}
           </button>
 
           {!isCartHidden && (

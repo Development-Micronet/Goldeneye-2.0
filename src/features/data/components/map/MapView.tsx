@@ -1139,8 +1139,8 @@ export default function MapView() {
       return !isJpg;
     });
 
-    const computedMaxZoom = isSpecialCategoryUser ? UNRESTRICTED_MAX_ZOOM : hasNonJpg ? 14 : 18;
-    setMaxZoom(computedMaxZoom);
+    // const computedMaxZoom = isSpecialCategoryUser ? UNRESTRICTED_MAX_ZOOM : hasNonJpg ? 14 : 18;
+    // setMaxZoom(computedMaxZoom);
 
     let isMounted = true;
     const addedLayers: BaseLayer[] = [];
@@ -1171,6 +1171,7 @@ export default function MapView() {
       let isWmtsOrWms = false;
 
       if (product.wmts_url) {
+        useArchiveProductStore.getState().setProductLoading(product.id, true);
         try {
           let config = wmtsConfigCache.get(product.wmts_url);
 
@@ -1254,6 +1255,23 @@ export default function MapView() {
               zIndex: 20,
             });
             isWmtsOrWms = true;
+
+            const wmtsSource = layer.getSource();
+            if (wmtsSource) {
+              let finished = false;
+              const finishLoading = () => {
+                if (!finished) {
+                  finished = true;
+                  useArchiveProductStore.getState().setProductLoading(product.id, false);
+                }
+              };
+              wmtsSource.once("tileloadend", finishLoading);
+              wmtsSource.once("tileloaderror", finishLoading);
+              layer.once("postrender", finishLoading);
+              setTimeout(finishLoading, 2500);
+            } else {
+              useArchiveProductStore.getState().setProductLoading(product.id, false);
+            }
           } else if (config.type === "wms") {
             const currentProduct = product;
             const currentGeom = geometry;
@@ -1271,7 +1289,11 @@ export default function MapView() {
                 ratio: 1,
                 imageLoadFunction: (image: any, src: string) => {
                   const img = image.getImage() as HTMLImageElement;
+                  img.onload = () => {
+                    useArchiveProductStore.getState().setProductLoading(currentProduct.id, false);
+                  };
                   img.onerror = () => {
+                    useArchiveProductStore.getState().setProductLoading(currentProduct.id, false);
                     if (currentProduct.imageUrl && isMounted && mapInstance.current) {
                       console.warn(
                         `WMS image load failed for ${currentProduct.id}, fallback to static imageUrl`
@@ -1294,8 +1316,28 @@ export default function MapView() {
               zIndex: 20,
             });
             isWmtsOrWms = true;
+
+            const wmsSource = layer.getSource();
+            if (wmsSource) {
+              let finished = false;
+              const finishLoading = () => {
+                if (!finished) {
+                  finished = true;
+                  useArchiveProductStore.getState().setProductLoading(product.id, false);
+                }
+              };
+              wmsSource.once("imageloadend", finishLoading);
+              wmsSource.once("imageloaderror", finishLoading);
+              layer.once("postrender", finishLoading);
+              setTimeout(finishLoading, 2500);
+            } else {
+              useArchiveProductStore.getState().setProductLoading(product.id, false);
+            }
+          } else {
+            useArchiveProductStore.getState().setProductLoading(product.id, false);
           }
         } catch (err: any) {
+          useArchiveProductStore.getState().setProductLoading(product.id, false);
           if (err?.name !== "AbortError") {
             console.warn(`Failed to resolve WMTS/WMS for product ${product.id}:`, err);
           }
@@ -1442,25 +1484,25 @@ export default function MapView() {
           }
         });
 
-        if (extents.length > 0 && mapInstance.current) {
-          const overallExtent =
-            extents.length === 1
-              ? extents[0]
-              : extents.reduce((acc, cur) => [
-                Math.min(acc[0], cur[0]),
-                Math.min(acc[1], cur[1]),
-                Math.max(acc[2], cur[2]),
-                Math.max(acc[3], cur[3]),
-              ]);
+        // if (extents.length > 0 && mapInstance.current) {
+        //   const overallExtent =
+        //     extents.length === 1
+        //       ? extents[0]
+        //       : extents.reduce((acc, cur) => [
+        //         Math.min(acc[0], cur[0]),
+        //         Math.min(acc[1], cur[1]),
+        //         Math.max(acc[2], cur[2]),
+        //         Math.max(acc[3], cur[3]),
+        //       ]);
 
-          if (overallExtent) {
-            mapInstance.current.getView().fit(overallExtent, {
-              padding: [100, 100, 100, 100],
-              duration: 500,
-              maxZoom: computedMaxZoom,
-            });
-          }
-        }
+        //   // if (overallExtent) {
+        //   //   mapInstance.current.getView().fit(overallExtent, {
+        //   //     padding: [100, 100, 100, 100],
+        //   //     duration: 500,
+        //   //     // maxZoom: computedMaxZoom,
+        //   //   });
+        //   // }
+        // }
       } catch (err) {
         console.error("Error fitting map view extent:", err);
       }

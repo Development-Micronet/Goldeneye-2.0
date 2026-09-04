@@ -24,6 +24,7 @@ export interface SelectedArchiveProduct {
 interface ArchiveProductStore {
   selectedProducts: SelectedArchiveProduct[];
   visibleProducts: SelectedArchiveProduct[];
+  loadingProductIds: string[];
 
   addProduct: (product: SelectedArchiveProduct) => void;
   removeProduct: (id: string) => void;
@@ -37,6 +38,9 @@ interface ArchiveProductStore {
   showSelectedProducts: () => void;
   hideAllProducts: () => void;
 
+  setProductLoading: (id: string, loading: boolean) => void;
+  isProductLoading: (id: string) => boolean;
+
   isSelected: (id: string) => boolean;
   isVisible: (id: string) => boolean;
 }
@@ -44,6 +48,7 @@ interface ArchiveProductStore {
 export const useArchiveProductStore = create<ArchiveProductStore>((set, get) => ({
   selectedProducts: [],
   visibleProducts: [],
+  loadingProductIds: [],
 
   addProduct: (product) =>
     set((state) => ({
@@ -53,8 +58,8 @@ export const useArchiveProductStore = create<ArchiveProductStore>((set, get) => 
   removeProduct: (id) =>
     set((state) => ({
       selectedProducts: state.selectedProducts.filter((product) => product.id !== id),
-
       visibleProducts: state.visibleProducts.filter((product) => product.id !== id),
+      loadingProductIds: state.loadingProductIds.filter((productId) => productId !== id),
     })),
 
   toggleProduct: (product) =>
@@ -69,6 +74,10 @@ export const useArchiveProductStore = create<ArchiveProductStore>((set, get) => 
         visibleProducts: exists
           ? state.visibleProducts.filter((x) => x.id !== product.id)
           : state.visibleProducts,
+
+        loadingProductIds: exists
+          ? state.loadingProductIds.filter((id) => id !== product.id)
+          : state.loadingProductIds,
       };
     }),
 
@@ -81,6 +90,7 @@ export const useArchiveProductStore = create<ArchiveProductStore>((set, get) => 
     set({
       selectedProducts: [],
       visibleProducts: [],
+      loadingProductIds: [],
     }),
 
   // Individual eye toggle
@@ -88,10 +98,18 @@ export const useArchiveProductStore = create<ArchiveProductStore>((set, get) => 
     set((state) => {
       const visible = state.visibleProducts.some((x) => x.id === product.id);
 
+      if (visible) {
+        return {
+          visibleProducts: state.visibleProducts.filter((x) => x.id !== product.id),
+          loadingProductIds: state.loadingProductIds.filter((id) => id !== product.id),
+        };
+      }
+
       return {
-        visibleProducts: visible
-          ? state.visibleProducts.filter((x) => x.id !== product.id)
-          : [...state.visibleProducts, product],
+        visibleProducts: [...state.visibleProducts, product],
+        loadingProductIds: product.wmts_url
+          ? [...new Set([...state.loadingProductIds, product.id])]
+          : state.loadingProductIds,
       };
     }),
 
@@ -99,13 +117,31 @@ export const useArchiveProductStore = create<ArchiveProductStore>((set, get) => 
   showSelectedProducts: () =>
     set((state) => ({
       visibleProducts: state.selectedProducts,
+      loadingProductIds: [
+        ...new Set([
+          ...state.loadingProductIds,
+          ...state.selectedProducts.filter((p) => p.wmts_url).map((p) => p.id),
+        ]),
+      ],
     })),
 
   // Hide all products from map
   hideAllProducts: () =>
     set({
       visibleProducts: [],
+      loadingProductIds: [],
     }),
+
+  setProductLoading: (id, loading) =>
+    set((state) => ({
+      loadingProductIds: loading
+        ? state.loadingProductIds.includes(id)
+          ? state.loadingProductIds
+          : [...state.loadingProductIds, id]
+        : state.loadingProductIds.filter((productId) => productId !== id),
+    })),
+
+  isProductLoading: (id) => get().loadingProductIds.includes(id),
 
   isSelected: (id) => get().selectedProducts.some((product) => product.id === id),
 
