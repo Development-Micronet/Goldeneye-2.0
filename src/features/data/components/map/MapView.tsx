@@ -148,6 +148,22 @@ export default function MapView() {
   const hoveredProduct = useArchiveHoverStore((state) => state.hoveredProduct);
   const { pinnedProducts } = usePinnedProductStore();
 
+const getAoiFitOptions = (areaKm2?: number) => {
+  let maxZoom = 12.5;
+  if (areaKm2 && !isNaN(areaKm2)) {
+    if (areaKm2 > 1000) maxZoom = 9.5;
+    else if (areaKm2 > 200) maxZoom = 12;
+    else if (areaKm2 > 50) maxZoom = 12.5;
+    else if (areaKm2 > 10) maxZoom = 13;
+    else maxZoom = 13.5;
+  }
+  return {
+    padding: [120, 150, 120, 150],
+    duration: 800,
+    maxZoom,
+  };
+};
+
   // Zoom to / fit bounds of selected layer
   useEffect(() => {
     if (!fitLayerId || !mapInstance.current) return;
@@ -159,10 +175,8 @@ export default function MapView() {
         const feature = geojsonFormat.readFeature(targetLayer.geojson) as any;
         const geometry = feature?.getGeometry();
         if (geometry) {
-          mapInstance.current.getView().fit(geometry, {
-            padding: [50, 50, 50, 50],
-            duration: 1000,
-          });
+          const area = targetLayer.area ?? (getArea(geometry, { projection: "EPSG:4326" }) / 1000000);
+          mapInstance.current.getView().fit(geometry, getAoiFitOptions(area));
         }
       } catch (err) {
         logger.error("Error fitting layer view:", err);
@@ -239,7 +253,7 @@ export default function MapView() {
     };
   }, []);
 
-  // logger.log(layers);
+
 
   useEffect(() => {
     const map = mapInstance.current;
@@ -429,7 +443,6 @@ export default function MapView() {
 
     const pinLayer = new VectorLayer({
       source: pinSource,
-
       zIndex: 2000,
     });
 
@@ -777,25 +790,25 @@ export default function MapView() {
         area: area,
       });
 
-      // Auto-select the newly drawn layer as the active AOI for Archive Search
+      // Auto-select the newly drawn layer as active AOI to center and focus with smooth zoom
       setSelectedAOI(newLayer.id);
 
       // Smoothly zoom map to fit the newly drawn shape UI extent
-      if (geometry) {
-        const currentZoom = map.getView().getZoom() || 5;
-        const targetMaxZoom = isSpecialCategoryUser
-          ? UNRESTRICTED_MAX_ZOOM
-          : currentZoom <= 6
-            ? 7
-            : currentZoom > 10
-              ? Math.max(Math.ceil(currentZoom), 18)
-              : 10;
-        map.getView().fit(geometry, {
-          padding: [120, 120, 120, 120],
-          duration: 800,
-          maxZoom: targetMaxZoom,
-        });
-      }
+      // if (geometry) {
+      //   const currentZoom = map.getView().getZoom() || 5;
+      //   const targetMaxZoom = isSpecialCategoryUser
+      //     ? UNRESTRICTED_MAX_ZOOM
+      //     : currentZoom <= 6
+      //       ? 7
+      //       : currentZoom > 10
+      //         ? Math.max(Math.ceil(currentZoom), 18)
+      //         : 10;
+      //   map.getView().fit(geometry, {
+      //     padding: [120, 120, 120, 120],
+      //     duration: 800,
+      //     maxZoom: targetMaxZoom,
+      //   });
+      // }
 
       toast.success(`${newLayer.label} plotted successfully`);
       if (!isSpecialCategoryUser) {
@@ -970,10 +983,7 @@ export default function MapView() {
     // Auto-select the newly plotted layer as the active AOI for Archive Search
     setSelectedAOI(newLayer.id);
 
-    map.getView().fit(rectGeometry, {
-      padding: [50, 50, 50, 50],
-      duration: 1000,
-    });
+    map.getView().fit(rectGeometry, getAoiFitOptions(area));
 
     toast.success(`${newLayer.label} plotted successfully from coordinates`);
 
@@ -1018,10 +1028,7 @@ export default function MapView() {
 
     toast.success(`${newLayer.label} plotted successfully`);
 
-    mapInstance.current.getView().fit(geometry, {
-      padding: [50, 50, 50, 50],
-      duration: 1000,
-    });
+    mapInstance.current.getView().fit(geometry, getAoiFitOptions(area));
 
     setPlotCoordinates(null);
   }, [plotCoordinates, addLayer, setPlotCoordinates]);
@@ -1061,10 +1068,7 @@ export default function MapView() {
 
     toast.success(`${newLayer.label} plotted successfully`);
 
-    mapInstance.current.getView().fit(geometry, {
-      padding: [50, 50, 50, 50],
-      duration: 1000,
-    });
+    mapInstance.current.getView().fit(geometry, getAoiFitOptions(area));
 
     setPlotBoundCoordinates(null);
   }, [plotBoundCoordinates, addLayer, setPlotBoundCoordinates]);
@@ -1535,11 +1539,12 @@ export default function MapView() {
     const geometry = feature.getGeometry();
 
     if (!geometry) return;
-
+    const targetZoom = 18;
     map.getView().fit(geometry.getExtent(), {
       padding: [40, 40, 40, 40],
       duration: 800,
-      maxZoom: isSpecialCategoryUser ? UNRESTRICTED_MAX_ZOOM : 18,
+      // maxZoom: isSpecialCategoryUser ? UNRESTRICTED_MAX_ZOOM : targetZoom,
+      maxZoom: targetZoom,
       callback: () => {
         setFlyToProduct(null);
       },
@@ -1790,7 +1795,7 @@ export default function MapView() {
     };
   }, [activeTool, setSelectedAOI]);
 
-  // Automatically zoom map to selected AOI shape when selected from list/sidebar
+  // Automatically zoom map to selected AOI shape when drawn, imported, or selected from list
   useEffect(() => {
     if (!selectedAOIId || !mapInstance.current) return;
     const selectedLayer = layers.find((l) => l.id === selectedAOIId);
@@ -1801,19 +1806,8 @@ export default function MapView() {
         const geometry = feature.getGeometry();
         if (geometry) {
           const map = mapInstance.current;
-          const currentZoom = map.getView().getZoom() || 5;
-          const targetMaxZoom = isSpecialCategoryUser
-            ? UNRESTRICTED_MAX_ZOOM
-            : currentZoom <= 6
-              ? 7
-              : currentZoom > 10
-                ? Math.max(Math.ceil(currentZoom), 18)
-                : 10;
-          map.getView().fit(geometry, {
-            padding: [120, 120, 120, 120],
-            duration: 800,
-            maxZoom: targetMaxZoom,
-          });
+          const area = selectedLayer.area ?? (getArea(geometry, { projection: "EPSG:4326" }) / 1000000);
+          map.getView().fit(geometry, getAoiFitOptions(area));
         }
       } catch (err) {
         console.error("Failed to zoom to selected AOI:", err);

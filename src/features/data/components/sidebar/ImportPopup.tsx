@@ -2,6 +2,7 @@ import { toast } from "react-toastify";
 import React, { useRef, useState } from "react";
 import { Paperclip, X } from "lucide-react";
 import { useLayersStore } from "../../../../store/useLayersStore";
+import { useSelectedAOIStore } from "../../hooks/useSelectedAOIStore";
 import { parseGeospatialFile } from "../../../../utils/geospatialUtils";
 import { logger } from "../../../../utils/logger";
 
@@ -29,6 +30,7 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
     onClose();
   };
   const addLayer = useLayersStore((state) => state.addLayer);
+  const setSelectedAOI = useSelectedAOIStore((state) => state.setSelectedAOI);
   const handleConfirm = async () => {
     if (selectedFiles.length === 0) {
       toast.error("Please select a file to import");
@@ -36,6 +38,7 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
     }
 
     let totalImported = 0;
+    let firstImportedLayerId: string | null = null;
     const errors: string[] = [];
 
     for (const file of selectedFiles) {
@@ -48,13 +51,20 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
         });
         const parsedLayers = parseGeospatialFile(text, file.name);
         parsedLayers.forEach((layer) => {
-          addLayer(layer);
+          const newLayer = addLayer(layer);
+          if (!firstImportedLayerId) {
+            firstImportedLayerId = newLayer.id;
+          }
           totalImported++;
         });
       } catch (err: any) {
         logger.error(`Error importing file ${file.name}:`, err);
         errors.push(`${file.name}: ${err.message || err}`);
       }
+    }
+
+    if (firstImportedLayerId) {
+      setSelectedAOI(firstImportedLayerId);
     }
 
     if (totalImported > 0) {
