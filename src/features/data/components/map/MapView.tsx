@@ -15,6 +15,7 @@ type CachedWmtsConfig =
 
 // Module-level cache for parsed WMTS/WMS capability responses to eliminate redundant network fetches
 const wmtsConfigCache = new Map<string, CachedWmtsConfig>();
+import Collection from "ol/Collection";
 import Feature from "ol/Feature";
 import Map from "ol/Map";
 import { unByKey } from "ol/Observable";
@@ -110,6 +111,9 @@ export default function MapView() {
   const [mapState, setMapState] = useState<Map | null>(null);
   const vectorSourceRef = useRef<VectorSource | null>(null);
   const vectorLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
+  // Features that Modify is allowed to touch. Orbit swath/track overlays are
+  // display-only, so they are deliberately kept out of this collection.
+  const editableFeaturesRef = useRef<Collection<Feature>>(new Collection());
   const hoverSourceRef = useRef<VectorSource | null>(null);
   const pinSourceRef = useRef<VectorSource | null>(null);
 
@@ -510,6 +514,7 @@ const getAoiFitOptions = (areaKm2?: number) => {
     if (!vectorSource) return;
 
     vectorSource.clear();
+    editableFeaturesRef.current.clear();
 
     const geojsonFormat = new GeoJSON();
     layers.forEach((layer) => {
@@ -522,6 +527,13 @@ const getAoiFitOptions = (areaKm2?: number) => {
           feature.set("area", layer.area);
         }
         vectorSource.addFeature(feature);
+
+        // Orbit swath/track overlays are read-only map annotations, not AOIs.
+        // Keep them out of the editable collection so Modify can't add
+        // draggable vertex handles to them.
+        if (!layer.label.startsWith("Orbit:")) {
+          editableFeaturesRef.current.push(feature);
+        }
       } catch (err) {
         logger.error("Error loading layer from store:", err);
       }
@@ -877,7 +889,7 @@ const getAoiFitOptions = (areaKm2?: number) => {
     });
 
     const modify = new Modify({
-      source: vectorSource,
+      features: editableFeaturesRef.current,
       style: handleStyle,
     });
     const snap = new Snap({ source: vectorSource });
@@ -1798,10 +1810,17 @@ const getAoiFitOptions = (areaKm2?: number) => {
     };
   }, [activeTool, setSelectedAOI]);
 
-  // Automatically zoom map to selected AOI shape when drawn, imported, or selected from list
+  // Automatically zoom map to selected AOI shape when drawn, imported, or selected from list.
+  // Deliberately keyed on the specific selected layer's object reference (not the whole
+  // `layers` array) — addLayer/removeLayer only replace the array, not unrelated layer
+  // objects, so toggling an orbitography checkbox (which just adds/removes swath & track
+  // layers) won't re-trigger this fit. It only re-fires when the selection changes or the
+  // selected AOI's own geometry is edited.
+  const selectedAOIMapLayer = layers.find((l) => l.id === selectedAOIId);
+
   useEffect(() => {
     if (!selectedAOIId || !mapInstance.current) return;
-    const selectedLayer = layers.find((l) => l.id === selectedAOIId);
+    const selectedLayer = selectedAOIMapLayer;
     if (selectedLayer && selectedLayer.geojson) {
       try {
         const geojsonFormat = new GeoJSON();
@@ -1816,7 +1835,7 @@ const getAoiFitOptions = (areaKm2?: number) => {
         console.error("Failed to zoom to selected AOI:", err);
       }
     }
-  }, [selectedAOIId, layers]);
+  }, [selectedAOIId, selectedAOIMapLayer]);
 
   useRasterLayers(mapState);
   return <div className="h-full w-full" ref={mapRef} id="map-container" />;
