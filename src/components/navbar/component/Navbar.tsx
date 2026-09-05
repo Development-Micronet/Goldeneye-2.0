@@ -45,6 +45,7 @@ export default function Navbar() {
   const plan = usePlanStore((state) => state.plan);
   const allowedServices = plan?.services ?? [];
 
+  const hasGeo3d = roleName === "superadmin" || allowedServices.some((service) => service?.toLowerCase() === "geo_3d");
   const hasAnalytics =
     roleName === "superadmin" ||
     allowedServices.some((service) => service?.toLowerCase() === "analytics");
@@ -154,8 +155,7 @@ export default function Navbar() {
     setIsQuotationDropdownOpen(false);
   };
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-xs lg:text-sm font-medium transition-colors ${
-      isActive ? "text-white " : "text-nav-inactive hover:text-white"
+    `text-xs lg:text-sm font-medium transition-colors ${isActive ? "text-white " : "text-nav-inactive hover:text-white"
     }`;
 
   // Close profile dropdown when clicking outside
@@ -202,7 +202,7 @@ export default function Navbar() {
       if (Array.isArray(archiveProducts) && archiveProducts.length > 0) {
         return { hasProducts: true, data: archiveProducts };
       }
-    } catch {}
+    } catch { }
 
     // 2. Check useProductStore
     try {
@@ -210,7 +210,7 @@ export default function Navbar() {
       if (Array.isArray(zustandItems) && zustandItems.length > 0) {
         return { hasProducts: true, data: zustandItems };
       }
-    } catch {}
+    } catch { }
 
     // 3. Check sessionStorage storedCheckedProductList
     const rawData = sessionStorage.getItem("storedCheckedProductList");
@@ -249,7 +249,7 @@ export default function Navbar() {
         ) {
           return { hasProducts: true, data: parsed };
         }
-      } catch {}
+      } catch { }
     }
 
     return { hasProducts: false, data: {} };
@@ -407,7 +407,61 @@ export default function Navbar() {
 
     return true;
   });
+  const naviagtetoGeo3d = () => {
+    let token = useAuthStore.getState().accessToken || "";
+    let currentUser: any = useAuthStore.getState().user || null;
 
+    if (!token) {
+      try {
+        const rawAuth = sessionStorage.getItem("auth-storage") || localStorage.getItem("auth-storage");
+        if (rawAuth) {
+          const parsed = JSON.parse(rawAuth);
+          token = parsed?.state?.accessToken || "";
+          if (!currentUser) currentUser = parsed?.state?.user || null;
+        }
+      } catch (e) {
+        console.error("Error retrieving auth-storage for Geo3d:", e);
+      }
+    }
+
+    if (!token) {
+      try {
+        const rawUser = sessionStorage.getItem("user") || localStorage.getItem("user");
+        if (rawUser) {
+          const parsedUser = JSON.parse(rawUser);
+          token = parsedUser?.access || parsedUser?.accessToken || "";
+          if (!currentUser) currentUser = parsedUser;
+        }
+      } catch (e) {
+        console.error("Error retrieving user for Geo3d:", e);
+      }
+    }
+
+    if (!token) {
+      token =
+        sessionStorage.getItem("accessToken") ||
+        sessionStorage.getItem("token") ||
+        localStorage.getItem("accessToken") ||
+        localStorage.getItem("token") ||
+        "";
+    }
+
+    const baseUrl = "http://13.202.113.121:9094/";
+    const params = new URLSearchParams();
+
+    if (token) {
+      params.set("token", token);
+      params.set("accessToken", token);
+    }
+    if (currentUser) {
+      params.set("user", JSON.stringify(currentUser));
+    }
+
+    const queryStr = params.toString();
+    const url = queryStr ? `${baseUrl}?${queryStr}` : baseUrl;
+
+    window.open(url, "_blank");
+  };
   return (
     <nav className="bg-primary relative z-50 px-4 py-2 shadow-md sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
@@ -435,24 +489,21 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setIsQuotationDropdownOpen((prev) => !prev)}
-                      className={`flex cursor-pointer items-center gap-1 text-xs font-medium transition-colors lg:text-sm ${
-                        location.pathname.includes("/quotation")
-                          ? "font-bold text-white"
-                          : "text-nav-inactive hover:text-white"
-                      }`}
+                      className={`flex cursor-pointer items-center gap-1 text-xs font-medium transition-colors lg:text-sm ${location.pathname.includes("/quotation")
+                        ? "font-bold text-white"
+                        : "text-nav-inactive hover:text-white"
+                        }`}
                     >
                       <span>Quotation</span>
                       <ChevronDown
-                        className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                          isQuotationDropdownOpen ? "rotate-180" : ""
-                        }`}
+                        className={`h-3.5 w-3.5 transition-transform duration-200 ${isQuotationDropdownOpen ? "rotate-180" : ""
+                          }`}
                       />
                     </button>
 
                     <div
-                      className={`absolute top-full left-0 z-50 mt-1.5 w-48 rounded-xl border border-gray-100 bg-white py-1.5 shadow-xl transition-all ${
-                        isQuotationDropdownOpen ? "block" : "hidden group-hover:block"
-                      }`}
+                      className={`absolute top-full left-0 z-50 mt-1.5 w-48 rounded-xl border border-gray-100 bg-white py-1.5 shadow-xl transition-all ${isQuotationDropdownOpen ? "block" : "hidden group-hover:block"
+                        }`}
                     >
                       <div className="py-1">
                         <NavLink
@@ -485,6 +536,10 @@ export default function Navbar() {
                 </NavLink>
               );
             })}
+            {hasGeo3d && <button className="text-xs lg:text-sm font-medium transition-colors text-nav-inactive hover:text-white" onClick={() => naviagtetoGeo3d()}>
+              GEO 3D
+            </button>
+            }
           </div>
         </div>
 
@@ -643,17 +698,15 @@ export default function Navbar() {
                   <div key={item.path} className="flex flex-col gap-2">
                     <div
                       onClick={() => setIsQuotationDropdownOpen((prev) => !prev)}
-                      className={`flex cursor-pointer items-center justify-between text-xs font-medium lg:text-sm ${
-                        location.pathname.includes("/quotation")
-                          ? "font-bold text-white"
-                          : "text-nav-inactive hover:text-white"
-                      }`}
+                      className={`flex cursor-pointer items-center justify-between text-xs font-medium lg:text-sm ${location.pathname.includes("/quotation")
+                        ? "font-bold text-white"
+                        : "text-nav-inactive hover:text-white"
+                        }`}
                     >
                       <span>Quotation</span>
                       <ChevronDown
-                        className={`h-4 w-4 transition-transform ${
-                          isQuotationDropdownOpen ? "rotate-180" : ""
-                        }`}
+                        className={`h-4 w-4 transition-transform ${isQuotationDropdownOpen ? "rotate-180" : ""
+                          }`}
                       />
                     </div>
                     {isQuotationDropdownOpen && (
@@ -688,6 +741,17 @@ export default function Navbar() {
               );
             })}
 
+            <button
+              type="button"
+              className={`${linkClass} text-left cursor-pointer`}
+              onClick={() => {
+                closeMenu();
+                naviagtetoGeo3d();
+              }}
+            >
+              GEO 3D
+            </button>
+
             {/* Mobile User Profile */}
             <div className="profile-menu-container mt-1 border-t border-[#1f4e57] pt-3">
               <div
@@ -701,9 +765,8 @@ export default function Navbar() {
                   </div>
                 </div>
                 <ChevronDown
-                  className={`h-4 w-4 text-white transition-transform duration-200 ${
-                    isProfileOpen ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 text-white transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""
+                    }`}
                 />
               </div>
 

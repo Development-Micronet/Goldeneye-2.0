@@ -36,6 +36,7 @@ const SERVICES_OPTIONS = [
   "orbitography",
   "analytics",
   "api_key",
+  "geo_3d"
 ];
 
 const initialForm: CreatePlanDto = {
@@ -263,11 +264,10 @@ export const PlanFormModal = ({ open, onClose, plan }: PlanFormModalProps) => {
                   return (
                     <div
                       key={provider}
-                      className={`overflow-hidden rounded-xl border transition-all duration-200 ${
-                        isProviderSelected
-                          ? "border-[#1F4E57]/30 bg-[#1F4E57]/5 shadow-sm"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
+                      className={`overflow-hidden rounded-xl border transition-all duration-200 ${isProviderSelected
+                        ? "border-[#1F4E57]/30 bg-[#1F4E57]/5 shadow-sm"
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
                     >
                       {/* Provider Header Row */}
                       <div className="flex items-center justify-between p-3.5">
@@ -298,11 +298,10 @@ export const PlanFormModal = ({ open, onClose, plan }: PlanFormModalProps) => {
                               return (
                                 <label
                                   key={sensor}
-                                  className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-xs transition-all select-none ${
-                                    isSensorSelected
-                                      ? "border-[#1F4E57]/45 bg-white font-semibold text-[#1F4E57] shadow-xs"
-                                      : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
-                                  }`}
+                                  className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-xs transition-all select-none ${isSensorSelected
+                                    ? "border-[#1F4E57]/45 bg-white font-semibold text-[#1F4E57] shadow-xs"
+                                    : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                                    }`}
                                 >
                                   <input
                                     type="checkbox"
@@ -334,11 +333,10 @@ export const PlanFormModal = ({ open, onClose, plan }: PlanFormModalProps) => {
                   return (
                     <label
                       key={service}
-                      className={`flex cursor-pointer flex-col gap-2 rounded-xl border p-3.5 text-center transition-all duration-200 select-none ${
-                        isSvcSelected
-                          ? "border-[#1F4E57] bg-[#1F4E57]/5 font-bold text-[#1F4E57] shadow-xs"
-                          : "text-slate-650 border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                      }`}
+                      className={`flex cursor-pointer flex-col gap-2 rounded-xl border p-3.5 text-center transition-all duration-200 select-none ${isSvcSelected
+                        ? "border-[#1F4E57] bg-[#1F4E57]/5 font-bold text-[#1F4E57] shadow-xs"
+                        : "text-slate-650 border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                        }`}
                     >
                       <div className="flex w-full items-center justify-between">
                         <span className="text-xs tracking-wide uppercase">
@@ -370,14 +368,12 @@ export const PlanFormModal = ({ open, onClose, plan }: PlanFormModalProps) => {
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  formData.is_active ? "bg-[#1F4E57]" : "bg-slate-200"
-                }`}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.is_active ? "bg-[#1F4E57]" : "bg-slate-200"
+                  }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    formData.is_active ? "translate-x-5" : "translate-x-0"
-                  }`}
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.is_active ? "translate-x-5" : "translate-x-0"
+                    }`}
                 />
               </button>
             </div>
