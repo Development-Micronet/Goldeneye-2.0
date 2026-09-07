@@ -51,6 +51,12 @@ export default function Navbar() {
   const hasAnalytics =
     roleName === "superadmin" ||
     allowedServices.some((service) => service?.toLowerCase() === "analytics");
+
+  const hasQuotations =
+    roleName === "superadmin" ||
+    allowedServices.some((service) =>
+      ["quotations", "quotation"].includes(service?.toLowerCase()?.trim()),
+    );
   // Search location handler using Nominatim API
   const searchPlaces = async (query: string) => {
     if (!query.trim()) {
@@ -163,7 +169,7 @@ export default function Navbar() {
     setIsQuotationDropdownOpen(false);
   };
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-xs lg:text-sm font-medium transition-colors ${isActive ? "text-white " : "text-nav-inactive hover:text-white"
+    `text-xs lg:text-sm font-medium transition-colors whitespace-nowrap ${isActive ? "text-white font-bold" : "text-nav-inactive hover:text-white"
     }`;
 
   // Close profile dropdown when clicking outside
@@ -412,6 +418,9 @@ export default function Navbar() {
     if (item.label === "Analytics") {
       return hasAnalytics;
     }
+    if (item.label === "Quotation") {
+      return hasQuotations;
+    }
 
     return true;
   });
@@ -476,35 +485,35 @@ export default function Navbar() {
     window.open(url, "_blank");
   };
   return (
-    <nav className="bg-primary relative z-[80] px-4 py-2 shadow-md sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between">
+    <nav className="bg-primary relative z-[80] px-3 py-2 shadow-md sm:px-4 lg:px-8">
+      <div className="flex items-center justify-between gap-2 lg:gap-4">
         {/* Left: Logo & Desktop links */}
-        <div className="flex items-center gap-4 sm:gap-6 lg:gap-10">
-          <div className="flex items-center">
+        <div className="flex items-center gap-3 sm:gap-4 md:gap-4 lg:gap-8 min-w-0">
+          <div className="flex items-center shrink-0">
             {/* logo */}
             <img
               src={goldeneyeLogo}
               alt="Golden Eye Logo"
-              className="h-8 w-auto object-contain sm:h-10 md:h-11 lg:h-13"
+              className="h-7 w-auto object-contain sm:h-8 md:h-9 lg:h-11"
             />
           </div>
 
           {/* Desktop Navigation Links */}
-          <div className="mt-1 hidden items-center gap-3 md:flex lg:gap-6 xl:gap-8">
+          <div className="mt-0.5 hidden items-center gap-2 sm:gap-2.5 md:flex md:gap-3 lg:gap-5 xl:gap-7 shrink-0">
             {navItems.map((item) => {
               if (item.label === "Quotation") {
                 return (
                   <div
                     key={item.path}
                     ref={quotationDropdownRef}
-                    className="group relative inline-block"
+                    className="group relative inline-block shrink-0"
                   >
                     <button
                       type="button"
                       onClick={() => setIsQuotationDropdownOpen((prev) => !prev)}
-                      className={`flex cursor-pointer items-center gap-1 text-xs font-medium transition-colors lg:text-sm ${location.pathname.includes("/quotation")
-                        ? "font-bold text-white"
-                        : "text-nav-inactive hover:text-white"
+                      className={`flex cursor-pointer items-center gap-1 text-xs font-medium transition-colors whitespace-nowrap lg:text-sm ${location.pathname.includes("/quotation")
+                          ? "font-bold text-white"
+                          : "text-nav-inactive hover:text-white"
                         }`}
                     >
                       <span>Quotation</span>
@@ -551,7 +560,7 @@ export default function Navbar() {
             })}
             {hasGeo3d && (
               <button
-                className="text-xs lg:text-sm font-medium transition-colors text-nav-inactive hover:text-white cursor-pointer"
+                className="text-xs lg:text-sm font-medium transition-colors text-nav-inactive hover:text-white cursor-pointer whitespace-nowrap shrink-0"
                 onClick={() => naviagtetoGeo3d()}
               >
                 GEO 3D
@@ -561,7 +570,7 @@ export default function Navbar() {
         </div>
 
         {/* Right: Search & User Profile */}
-        <div className="mt-1 hidden items-center gap-3 md:flex md:gap-6 lg:gap-10 xl:gap-15">
+        <div className="mt-0.5 hidden items-center gap-2 md:flex md:gap-3 lg:gap-5 xl:gap-6 shrink-0">
           {/* Search bar */}
           {!location.pathname.includes("/analytics") && (
             <div className="relative" ref={searchContainerRef}>
@@ -574,11 +583,11 @@ export default function Navbar() {
                   onFocus={() => {
                     if (searchResults.length > 0) setShowSearchDropdown(true);
                   }}
-                  className="w-32 rounded border border-transparent bg-white px-3 py-1.5 pr-8 font-sans text-xs text-gray-800 placeholder-gray-400 transition-all duration-300 focus:w-40 focus:outline-none md:w-44 md:focus:w-52 lg:w-56 lg:focus:w-64 xl:w-70 xl:focus:w-80"
+                  className="w-28 rounded border border-transparent bg-white px-2.5 py-1.5 pr-7 font-sans text-xs text-gray-800 placeholder-gray-400 transition-all duration-300 focus:w-36 md:w-32 md:focus:w-40 lg:w-44 lg:focus:w-52 xl:w-56 xl:focus:w-64 focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600"
+                  className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600"
                 >
                   <Search className="h-3.5 w-3.5" />
                 </button>
@@ -623,15 +632,15 @@ export default function Navbar() {
           )}
 
           {/* User Profile Container with Click Trigger */}
-          <div ref={profileDropdownRef} className="profile-menu-container relative">
+          <div ref={profileDropdownRef} className="profile-menu-container relative shrink-0">
             <div
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="group flex cursor-pointer items-center gap-2 select-none"
+              className="group flex cursor-pointer items-center gap-1.5 sm:gap-2 select-none"
             >
-              <span className="hidden text-xs font-semibold text-white transition-opacity group-hover:opacity-90 lg:inline lg:text-sm">
+              <span className="hidden text-xs font-semibold text-white transition-opacity group-hover:opacity-90 xl:inline lg:text-sm max-w-[100px] truncate">
                 {username}
               </span>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white transition-transform group-hover:scale-105">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white transition-transform group-hover:scale-105 shrink-0">
                 {initial}
               </div>
             </div>
@@ -761,7 +770,7 @@ export default function Navbar() {
             {hasGeo3d && (
               <button
                 type="button"
-                className={`${linkClass} text-left cursor-pointer`}
+                className={`${linkClass({ isActive: false })} text-left cursor-pointer`}
                 onClick={() => {
                   closeMenu();
                   naviagtetoGeo3d();

@@ -48,7 +48,7 @@ export default function ProviderAccordion({
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#2c6671]/30 bg-[#EFFBFD]/30 p-10 text-center select-none">
         <Building2 className="mb-2 h-10 w-10 text-[#2c6671]/40" />
-        <h4 className="text-sm font-bold text-gray-800">No Providers Found</h4>
+        <h4 className="text-sm font-bold text-gray-800">No Providers Available</h4>
         <p className="mt-1 max-w-sm text-xs text-gray-500">
           No provider details available. Click the "Add Provider" button to configure a new GIS
           satellite provider.

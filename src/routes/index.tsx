@@ -87,9 +87,15 @@ const PlanRoute: React.FC<PlanRouteProps> = ({ children, requiredService }) => {
 
   const allowedServices = plan?.services ?? [];
 
-  const hasAccess = allowedServices.some(
-    (service) => service?.toLowerCase() === requiredService.toLowerCase(),
-  );
+  const hasAccess = allowedServices.some((service) => {
+    const s = service?.toLowerCase()?.trim();
+    const req = requiredService.toLowerCase().trim();
+    return (
+      s === req ||
+      (req === "quotations" && s === "quotation") ||
+      (req === "quotation" && s === "quotations")
+    );
+  });
 
   if (!hasAccess) {
     return <Navigate to="/data" replace />;
@@ -149,9 +155,9 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="/quotation"
             element={
-              <RoleRoute allowedRoles={["superadmin"]}>
+              <PlanRoute requiredService="quotations">
                 <QuotationPage />
-              </RoleRoute>
+              </PlanRoute>
             }
           />
           <Route
