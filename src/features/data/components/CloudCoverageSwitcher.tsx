@@ -79,7 +79,12 @@ const CloudCoverageSwitcher = () => {
 
       {/* Popup Window */}
       {isOpen && (
-        <div className="animate-fadeIn absolute top-[130%] left-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
+        <>
+          <div
+            onClick={() => setTab("none")}
+            className="fixed inset-0 z-[99]"
+          />
+          <div className="animate-fadeIn absolute top-[130%] left-0 z-[100] w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
           {/* Header */}
           <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-2.5">
             <h3 className="text-sm font-bold text-gray-800">Cloud Coverage</h3>
@@ -129,8 +134,9 @@ const CloudCoverageSwitcher = () => {
             </button>
           </div>
         </div>
-      )}
-    </div>
+      </>
+    )}
+  </div>
   );
 };
 

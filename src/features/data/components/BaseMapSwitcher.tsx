@@ -15,13 +15,13 @@ const BaseMapSwitcher: React.FC = () => {
         onClick={() => setOpen((prev) => !prev)}
         data-tooltip-id="layer-tooltip"
         data-tooltip-content="Change Map Layer"
-        className={`flex h-10 w-8 items-center justify-center rounded-lg transition ${
+        className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
           open
             ? "bg-primary/10 text-primary"
             : "hover:bg-primary/10 hover:text-primary text-gray-700"
         }`}
       >
-        <FiLayers size={20} />
+        <FiLayers size={16} />
       </button>
       {/* Layer Options */}
       {open && (

@@ -79,56 +79,62 @@ const IncidentAngleSwitcher = () => {
 
       {/* Popup Window */}
       {isOpen && (
-        <div className="animate-fadeIn absolute top-[130%] left-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
-          {/* Header */}
-          <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-2.5">
-            <h3 className="text-sm font-bold text-gray-800">Incident Angle</h3>
+        <>
+          <div
+            onClick={() => setTab("none")}
+            className="fixed inset-0 z-[99]"
+          />
+          <div className="animate-fadeIn absolute top-[130%] left-0 z-[100] w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
+            {/* Header */}
+            <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-2.5">
+              <h3 className="text-sm font-bold text-gray-800">Incident Angle</h3>
 
-            <button
-              onClick={() => setTab("none")}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
-            >
-              <FiX size={16} />
-            </button>
+              <button
+                onClick={() => setTab("none")}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+
+            {/* Slider */}
+            <div className="mb-5 px-1">
+              <Slider
+                range
+                min={0}
+                max={60}
+                value={range}
+                onChange={(value) => setRange(value as [number, number])}
+                styles={{
+                  track: {
+                    backgroundColor: "#2c6671",
+                  },
+                  handle: {
+                    borderColor: "#2c6671",
+                    backgroundColor: "#ffffff",
+                  },
+                  rail: {
+                    backgroundColor: "#e5e7eb",
+                  },
+                }}
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+              <span className="text-xs font-semibold text-gray-500">
+                [{range[0]}°, {range[1]}°]
+              </span>
+
+              <button
+                onClick={handleApply}
+                className="bg-primary cursor-pointer rounded-lg px-5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#1f4e57]"
+              >
+                Apply
+              </button>
+            </div>
           </div>
-
-          {/* Slider */}
-          <div className="mb-5 px-1">
-            <Slider
-              range
-              min={0}
-              max={60}
-              value={range}
-              onChange={(value) => setRange(value as [number, number])}
-              styles={{
-                track: {
-                  backgroundColor: "#2c6671",
-                },
-                handle: {
-                  borderColor: "#2c6671",
-                  backgroundColor: "#ffffff",
-                },
-                rail: {
-                  backgroundColor: "#e5e7eb",
-                },
-              }}
-            />
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-            <span className="text-xs font-semibold text-gray-500">
-              [{range[0]}°, {range[1]}°]
-            </span>
-
-            <button
-              onClick={handleApply}
-              className="bg-primary cursor-pointer rounded-lg px-5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#1f4e57]"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

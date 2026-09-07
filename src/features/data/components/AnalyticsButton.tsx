@@ -137,7 +137,13 @@ const AnalyticsButton = () => {
     const isTaskingOpen = activeIndex === 1;
 
     return (
-            <div className="absolute bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2">
+            <div
+                className={`absolute bottom-20 z-30 flex -translate-x-1/2 items-center gap-2 transition-all duration-300 ${
+                    activeIndex !== null
+                        ? "hidden sm:flex sm:left-[calc((100%-378px)/2)] md:left-[calc((100%-425px)/2)] lg:left-[calc((100%-615px)/2)]"
+                        : "left-1/2"
+                }`}
+            >
                 {/* Archive (Search) */}
                 {hasSearch && (
                     <button
