@@ -1,11 +1,14 @@
 import { FiCalendar, FiX } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { useParameter } from "../hooks/useParameter";
+import { useMapSidebarStore } from "../hooks/useMapSidebarStore";
 
 type Mode = "between" | "after" | "before";
 
 const DateFilter = () => {
   const { dateMode, startDate, endDate, setDateFilter, tab, setTab } = useParameter();
+  const activeIndex = useMapSidebarStore((state) => state.activeIndex);
+  const isSidebarOpen = activeIndex !== null;
   const isOpen = tab === "date";
   const [mode, setMode] = useState<Mode>(dateMode);
   const [start, setStart] = useState(startDate);
@@ -115,7 +118,13 @@ const DateFilter = () => {
             onClick={() => setTab("none")}
             className="fixed inset-0 z-[99]"
           />
-          <div className="animate-fadeIn absolute top-[130%] right-0 z-[100] w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
+          <div
+            className={`animate-fadeIn fixed top-16 z-[100] w-[calc(100vw-32px)] max-w-[340px] -translate-x-1/2 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl transition-all duration-300 ${
+              isSidebarOpen
+                ? "left-1/2 lg:left-[calc((100%-615px)/2+32px)]"
+                : "left-1/2"
+            }`}
+          >
             {/* Header */}
             <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-2.5">
               <h3 className="text-sm font-bold text-gray-800">Select Date</h3>
