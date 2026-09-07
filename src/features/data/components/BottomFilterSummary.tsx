@@ -118,7 +118,7 @@ export const BottomFilterSummary: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex justify-center">
+    <div className="fixed bottom-0 left-0 right-0 z-[9999] pointer-events-none flex justify-center">
       <div
         className={`pointer-events-auto relative w-full bg-[#f0f9fa]/95 backdrop-blur-md border-t border-primary/20 px-4 py-1.5 shadow-lg select-none transition-transform duration-300 ease-in-out ${
           isCollapsed ? "translate-y-full" : "translate-y-0"
@@ -144,7 +144,7 @@ export const BottomFilterSummary: React.FC = () => {
                 <div className="flex items-center gap-1.5 font-medium leading-tight">
                   <span className="text-gray-800 font-semibold">Products:</span>
                   <span className="text-gray-600">{getProductsText()}</span>
-                </div>
+              </div>
 
                 {/* Divider */}
                 <div className="w-full border-t border-primary/20 my-0.5" />

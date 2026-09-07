@@ -5,6 +5,7 @@ import { useProductStore } from "../hooks/useproductStore";
 import { listofproviderandsensors } from "./sidebar/api/product.service";
 import { decryptAESGCM } from "../../../utils/dataDecrypt";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { useMapSidebarStore } from "../hooks/useMapSidebarStore";
 import { FaSatellite } from "react-icons/fa";
 
 /* ── Provider icon map ──────────────────────────────── */
@@ -52,6 +53,8 @@ const ProductSwitcher: React.FC = () => {
   } = useProductStore();
 
   const { tab, setTab } = useParameter();
+  const activeIndex = useMapSidebarStore((state) => state.activeIndex);
+  const isSidebarOpen = activeIndex !== null;
   const open = tab === "products";
 
   /* ── Derived: must be declared BEFORE anything that reads it ── */
@@ -215,7 +218,13 @@ const ProductSwitcher: React.FC = () => {
             onClick={() => setTab("none")}
             className="fixed inset-0 z-[9998]"
           />
-          <div className="ps-panel fixed top-16 left-1/2 -translate-x-1/2 z-[100] w-[calc(100vw-32px)] max-w-[540px] max-h-[calc(100vh-90px)] overflow-y-auto rounded-2xl border border-slate-200/80 bg-white shadow-2xl shadow-slate-900/25">
+          <div
+            className={`ps-panel fixed top-16 z-[100] w-[calc(100vw-32px)] max-w-[540px] max-h-[calc(100vh-90px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-slate-200/80 bg-white shadow-2xl shadow-slate-900/25 transition-all duration-300 ${
+              isSidebarOpen
+                ? "left-1/2 lg:left-[calc((100%-615px)/2+32px)]"
+                : "left-1/2"
+            }`}
+          >
             {/* Header gradient banner */}
             <div className="bg-primary px-4 sm:px-5 py-3.5">
               <div className="flex items-center justify-between">

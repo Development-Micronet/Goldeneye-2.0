@@ -2,9 +2,12 @@ import { Slider } from "antd";
 import { FiCompass, FiX } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { useParameter } from "../hooks/useParameter";
+import { useMapSidebarStore } from "../hooks/useMapSidebarStore";
 
 const IncidentAngleSwitcher = () => {
   const { incidentAngle, setIncidentAngle, tab, setTab } = useParameter();
+  const activeIndex = useMapSidebarStore((state) => state.activeIndex);
+  const isSidebarOpen = activeIndex !== null;
   const isOpen = tab === "incidence";
 
   let min = 0;
@@ -84,7 +87,13 @@ const IncidentAngleSwitcher = () => {
             onClick={() => setTab("none")}
             className="fixed inset-0 z-[99]"
           />
-          <div className="animate-fadeIn absolute top-[130%] left-0 z-[100] w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
+          <div
+            className={`animate-fadeIn fixed top-16 z-[100] w-[calc(100vw-32px)] max-w-[340px] -translate-x-1/2 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl transition-all duration-300 ${
+              isSidebarOpen
+                ? "left-1/2 lg:left-[calc((100%-615px)/2+32px)]"
+                : "left-1/2"
+            }`}
+          >
             {/* Header */}
             <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-2.5">
               <h3 className="text-sm font-bold text-gray-800">Incident Angle</h3>
