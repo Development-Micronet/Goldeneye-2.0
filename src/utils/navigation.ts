@@ -23,7 +23,7 @@ export const navigationItems: NavItem[] = [
   {
     label: "Quotation",
     path: "/quotation",
-    roles: ["superadmin"], // Only superadmin can see Quotation
+    roles: ["superadmin", "admin"], // Filtered by hasQuotations plan service in Navbar
   },
   {
     label: "Analytics",

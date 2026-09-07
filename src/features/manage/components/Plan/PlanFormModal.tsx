@@ -36,7 +36,8 @@ const SERVICES_OPTIONS = [
   "orbitography",
   "analytics",
   "api_key",
-  "geo_3d"
+  "geo_3d",
+  "quotations"
 ];
 
 const initialForm: CreatePlanDto = {
