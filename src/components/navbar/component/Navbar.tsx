@@ -13,6 +13,7 @@ import { useProductStore } from "../../../features/data/hooks/useproductStore";
 import { useArchiveProductStore } from "../../../features/data/components/sidebar/store/useArchiveProductStore";
 import { useMapStore } from "../../../features/data/store/useMapStore";
 import { usePlanStore } from "../../../features/data/hooks/usePlanStore";
+import { hasGeo3dAccess, isBsfUser } from "../../../utils/geo3dPermissions";
 
 const PRODUCT_NAME_MAP: Record<string, string> = {
   PNEO: "Pleiades-Neo-0.3m",
@@ -45,7 +46,7 @@ export default function Navbar() {
   const plan = usePlanStore((state) => state.plan);
   const allowedServices = plan?.services ?? [];
 
-  const hasGeo3d = roleName === "superadmin" || allowedServices.some((service) => service?.toLowerCase() === "geo_3d");
+  const hasGeo3d = hasGeo3dAccess(user, allowedServices);
   const hasAnalytics =
     roleName === "superadmin" ||
     allowedServices.some((service) => service?.toLowerCase() === "analytics");
@@ -408,6 +409,11 @@ export default function Navbar() {
     return true;
   });
   const naviagtetoGeo3d = () => {
+    if (isBsfUser(user) || !hasGeo3d) {
+      toast.error("You do not have access to GEO 3D");
+      return;
+    }
+
     let token = useAuthStore.getState().accessToken || "";
     let currentUser: any = useAuthStore.getState().user || null;
 
@@ -536,10 +542,14 @@ export default function Navbar() {
                 </NavLink>
               );
             })}
-            {hasGeo3d && <button className="text-xs lg:text-sm font-medium transition-colors text-nav-inactive hover:text-white" onClick={() => naviagtetoGeo3d()}>
-              GEO 3D
-            </button>
-            }
+            {hasGeo3d && (
+              <button
+                className="text-xs lg:text-sm font-medium transition-colors text-nav-inactive hover:text-white cursor-pointer"
+                onClick={() => naviagtetoGeo3d()}
+              >
+                GEO 3D
+              </button>
+            )}
           </div>
         </div>
 
@@ -741,16 +751,18 @@ export default function Navbar() {
               );
             })}
 
-            <button
-              type="button"
-              className={`${linkClass} text-left cursor-pointer`}
-              onClick={() => {
-                closeMenu();
-                naviagtetoGeo3d();
-              }}
-            >
-              GEO 3D
-            </button>
+            {hasGeo3d && (
+              <button
+                type="button"
+                className={`${linkClass} text-left cursor-pointer`}
+                onClick={() => {
+                  closeMenu();
+                  naviagtetoGeo3d();
+                }}
+              >
+                GEO 3D
+              </button>
+            )}
 
             {/* Mobile User Profile */}
             <div className="profile-menu-container mt-1 border-t border-[#1f4e57] pt-3">
