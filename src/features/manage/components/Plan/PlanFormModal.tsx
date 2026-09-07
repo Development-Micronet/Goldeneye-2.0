@@ -32,7 +32,7 @@ const SERVICES_OPTIONS = [
   "search",
   "tasking",
   "my_indent",
-  "my_order",
+  "my_orders",
   "orbitography",
   "analytics",
   "api_key",

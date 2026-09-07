@@ -69,7 +69,7 @@ export default function MapSidebar({
     roleIsSuperadmin ||
     allowedServices.length === 0 ||
     allowedServices.some((service) =>
-      ["my_order", "my order", "order"].includes(service.toLowerCase()),
+      ["my_orders", "my order", "order", "my_order"].includes(service.toLowerCase()),
     );
 
   const sidebarItems = [
