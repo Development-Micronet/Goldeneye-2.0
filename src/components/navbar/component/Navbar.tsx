@@ -29,6 +29,7 @@ export default function Navbar() {
   const { user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [isQuotationDropdownOpen, setIsQuotationDropdownOpen] = useState(false);
   const quotationDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -143,6 +144,12 @@ export default function Navbar() {
         !searchContainerRef.current.contains(event.target as Node)
       ) {
         setShowSearchDropdown(false);
+      }
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileOpen(false);
       }
     };
     document.addEventListener("mousedown", handleOutsideClick);
@@ -452,7 +459,7 @@ export default function Navbar() {
         "";
     }
 
-    const baseUrl = "http://13.202.113.121:9094/";
+    const baseUrl = "https://geo3d.goldeneye.ind.in/";
     const params = new URLSearchParams();
 
     if (token) {
@@ -469,7 +476,7 @@ export default function Navbar() {
     window.open(url, "_blank");
   };
   return (
-    <nav className="bg-primary relative z-50 px-4 py-2 shadow-md sm:px-6 lg:px-8">
+    <nav className="bg-primary relative z-[80] px-4 py-2 shadow-md sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
         {/* Left: Logo & Desktop links */}
         <div className="flex items-center gap-4 sm:gap-6 lg:gap-10">
@@ -616,7 +623,7 @@ export default function Navbar() {
           )}
 
           {/* User Profile Container with Click Trigger */}
-          <div className="profile-menu-container relative">
+          <div ref={profileDropdownRef} className="profile-menu-container relative">
             <div
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="group flex cursor-pointer items-center gap-2 select-none"
@@ -631,7 +638,7 @@ export default function Navbar() {
 
             {/* Profile Dropdown Popup/Modal */}
             {isProfileOpen && (
-              <div className="absolute top-[calc(100%+12px)] right-0 z-50 flex w-64 flex-col items-center rounded-xl border border-gray-100 bg-white px-3 py-5 text-gray-800 shadow-2xl transition-all">
+              <div className="absolute top-[calc(100%+12px)] right-0 z-[100] flex w-64 flex-col items-center rounded-xl border border-gray-100 bg-white px-3 py-5 text-gray-800 shadow-2xl transition-all">
                 {/* Arrow */}
                 <div className="absolute -top-1.5 right-2.5 h-3.5 w-3.5 rotate-45 border-t border-l border-gray-100 bg-white"></div>
 

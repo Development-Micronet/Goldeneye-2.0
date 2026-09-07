@@ -22,6 +22,7 @@ import { OrbitographyMenu } from "./sidebar/menus/orbitography/OrbitographyMenu"
 import { TaskingMenu } from "./sidebar/menus/TaskingMenu";
 import { usePlanStore } from "../hooks/usePlanStore";
 import { useMapSidebarStore } from "../hooks/useMapSidebarStore";
+import { useParameter } from "../hooks/useParameter";
 
 interface MapSidebarProps {
   activeIndex?: number | null;
@@ -32,6 +33,7 @@ export default function MapSidebar({
   activeIndex: propActiveIndex,
   setActiveIndex: propSetActiveIndex,
 }: MapSidebarProps) {
+  const { setTab } = useParameter();
   const storeActiveIndex = useMapSidebarStore((state) => state.activeIndex);
   const storeSetActiveIndex = useMapSidebarStore((state) => state.setActiveIndex);
   const [internalActiveIndex, setInternalActiveIndex] = useState<number | null>(null);
@@ -140,6 +142,7 @@ export default function MapSidebar({
   );
   const handleItemClick = (index: number, status: boolean) => {
     if (!status) return; // Disable clicking for coming soon items
+    setTab("none");
     if (activeIndex === index) {
       setActiveIndex(null);
     } else {
@@ -174,12 +177,12 @@ export default function MapSidebar({
 
   return (
     <div
-      className={`absolute top-0 right-0 z-40 flex h-full flex-col overflow-visible border-l border-gray-200 bg-white py-4 shadow-lg transition-all duration-300 ease-in-out sm:py-5 md:py-6 ${isExpanded ? "w-[180px] sm:w-[210px] md:w-[240px]" : "w-[50px] sm:w-[58px] md:w-[65px]"
+      className={`absolute top-0 right-0 z-50 flex h-full flex-col overflow-visible border-l border-gray-200 bg-white py-4 shadow-lg transition-all duration-300 ease-in-out sm:py-5 md:py-6 ${isExpanded ? "w-[180px] sm:w-[210px] md:w-[240px]" : "w-[50px] sm:w-[58px] md:w-[65px]"
         }`}
     >
       {/* Sliding Content Sheet */}
       <div
-        className={`absolute top-0 z-30 flex h-full flex-col border-r border-gray-200 bg-white shadow-2xl transition-all duration-300 ease-in-out ${activeIndex !== null
+        className={`absolute top-0 z-50 flex h-full flex-col border-r border-gray-200 bg-white shadow-2xl transition-all duration-300 ease-in-out ${activeIndex !== null
           ? "pointer-events-auto right-[50px] w-[calc(100vw-50px)] opacity-100 sm:right-full sm:w-[320px] md:w-[360px] lg:w-[550px]"
           : "pointer-events-none right-full w-0 overflow-hidden border-none opacity-0"
           }`}

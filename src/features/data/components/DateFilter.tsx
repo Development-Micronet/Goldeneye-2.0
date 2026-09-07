@@ -110,97 +110,103 @@ const DateFilter = () => {
 
       {/* Popup Window */}
       {isOpen && (
-        <div className="animate-fadeIn absolute top-[130%] right-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
-          {/* Header */}
-          <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-2.5">
-            <h3 className="text-sm font-bold text-gray-800">Select Date</h3>
+        <>
+          <div
+            onClick={() => setTab("none")}
+            className="fixed inset-0 z-[99]"
+          />
+          <div className="animate-fadeIn absolute top-[130%] right-0 z-[100] w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
+            {/* Header */}
+            <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-2.5">
+              <h3 className="text-sm font-bold text-gray-800">Select Date</h3>
 
-            <button
-              type="button"
-              onClick={() => setTab("none")}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
-            >
-              <FiX size={16} />
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {/* Mode Selection */}
-            <div>
-              <div className="flex gap-2">
-                {modes.map((item) => (
-                  <label
-                    key={item}
-                    className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-semibold transition ${
-                      mode === item
-                        ? "border-primary text-primary bg-[#EFFBFD]"
-                        : "hover:border-primary border-gray-200 text-gray-600"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      checked={mode === item}
-                      onChange={() => setMode(item)}
-                      className="accent-primary h-3 w-3"
-                    />
-                    <span className="capitalize">{item}</span>
-                  </label>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => setTab("none")}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+              >
+                <FiX size={16} />
+              </button>
             </div>
 
-            {/* Date Inputs */}
-            <div className="space-y-2">
+            <div className="space-y-3">
+              {/* Mode Selection */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">
-                  {mode === "between" ? "Start Date" : "Date"}
-                </label>
-
-                <input
-                  type="date"
-                  value={start}
-                  max={today}
-                  onChange={(e) => setStart(e.target.value)}
-                  className="focus:border-primary focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs transition outline-none focus:ring-1"
-                />
+                <div className="flex gap-2">
+                  {modes.map((item) => (
+                    <label
+                      key={item}
+                      className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-semibold transition ${
+                        mode === item
+                          ? "border-primary text-primary bg-[#EFFBFD]"
+                          : "hover:border-primary border-gray-200 text-gray-600"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        checked={mode === item}
+                        onChange={() => setMode(item)}
+                        className="accent-primary h-3 w-3"
+                      />
+                      <span className="capitalize">{item}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
-              {mode === "between" && (
+              {/* Date Inputs */}
+              <div className="space-y-2">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">End Date</label>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                    {mode === "between" ? "Start Date" : "Date"}
+                  </label>
 
                   <input
                     type="date"
-                    value={end}
-                    min={start || undefined}
+                    value={start}
                     max={today}
-                    onChange={(e) => setEnd(e.target.value)}
+                    onChange={(e) => setStart(e.target.value)}
                     className="focus:border-primary focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs transition outline-none focus:ring-1"
                   />
                 </div>
-              )}
-            </div>
 
-            {/* Footer Buttons */}
-            <div className="mt-4 flex gap-2 border-t border-gray-100 pt-3">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="flex-1 rounded-lg border border-gray-200 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
-              >
-                Clear
-              </button>
+                {mode === "between" && (
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">End Date</label>
 
-              <button
-                type="button"
-                onClick={handleApply}
-                className="bg-primary flex-1 rounded-lg py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#1f4e57]"
-              >
-                Apply
-              </button>
+                    <input
+                      type="date"
+                      value={end}
+                      min={start || undefined}
+                      max={today}
+                      onChange={(e) => setEnd(e.target.value)}
+                      className="focus:border-primary focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs transition outline-none focus:ring-1"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="mt-4 flex gap-2 border-t border-gray-100 pt-3">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="flex-1 rounded-lg border border-gray-200 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+                >
+                  Clear
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  className="bg-primary flex-1 rounded-lg py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#1f4e57]"
+                >
+                  Apply
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
