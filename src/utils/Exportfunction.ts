@@ -135,12 +135,20 @@ async function postExport(payload: ExportPayloadBase) {
 
   const contentDisposition =
     response.headers["content-disposition"] || response.headers["Content-Disposition"];
-  const fileName =
-    (typeof contentDisposition === "string" &&
-      contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1]) ||
-    (typeof contentDisposition === "string" &&
-      contentDisposition.match(/filename="?([^";]+)"?/i)?.[1]) ||
-    payload.filename;
+  
+  // Prioritize our dynamically generated frontend filename over the backend's default header
+  let fileName = payload.filename;
+  if (!fileName) {
+    fileName =
+      (typeof contentDisposition === "string" &&
+        contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1]) ||
+      (typeof contentDisposition === "string" &&
+        contentDisposition.match(/filename="?([^";]+)"?/i)?.[1]) ||
+      "download";
+  } else {
+    // Just in case it's URL-encoded
+    fileName = decodeURIComponent(fileName);
+  }
 
   const contentTypeHeader = response.headers["content-type"];
   const contentType =
