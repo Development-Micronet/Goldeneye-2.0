@@ -19,6 +19,7 @@ import {
   exportLayersAsCSV,
   exportLayersAsGeoJSON,
   exportLayersAsKML,
+  exportLayersAsKMZ,
 } from "../../../../utils/exportUtils";
 import { useMapStore } from "../../store/useMapStore";
 import { useSelectedAOIStore } from "../../hooks/useSelectedAOIStore";
@@ -83,34 +84,38 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
       }
     }
   };
-  const handleExportAll = (format: "geojson" | "kml" | "kmz" | "shapefile" | "csv") => {
+  const handleExportAll = async (format: "geojson" | "kml" | "kmz" | "shapefile" | "csv") => {
     if (layers.length === 0) {
       toast.error("No layers available to export");
       return;
     }
-    switch (format) {
-      case "geojson":
-        exportLayersAsGeoJSON(layers);
-        toast.success("Exported all layers as GeoJSON");
-        break;
-      case "kml":
-        exportLayersAsKML(layers);
-        toast.success("Exported all layers as KML");
-        break;
-      case "kmz":
-        toast.info("KMZ export is zipped on the server. Downloading standard KML format instead.");
-        exportLayersAsKML(layers);
-        break;
-      case "shapefile":
-        toast.info(
-          "Shapefile export requires backend compilation. Downloading standard GeoJSON format instead.",
-        );
-        exportLayersAsGeoJSON(layers);
-        break;
-      case "csv":
-        exportLayersAsCSV(layers);
-        toast.success("Exported all layers metadata as CSV");
-        break;
+    try {
+      switch (format) {
+        case "geojson":
+          exportLayersAsGeoJSON(layers);
+          toast.success("Exported all layers as GeoJSON");
+          break;
+        case "kml":
+          exportLayersAsKML(layers);
+          toast.success("Exported all layers as KML");
+          break;
+        case "kmz":
+          await exportLayersAsKMZ(layers);
+          toast.success("Exported all layers as KMZ");
+          break;
+        case "shapefile":
+          toast.info(
+            "Shapefile export requires backend compilation. Downloading standard GeoJSON format instead.",
+          );
+          exportLayersAsGeoJSON(layers);
+          break;
+        case "csv":
+          exportLayersAsCSV(layers);
+          toast.success("Exported all layers metadata as CSV");
+          break;
+      }
+    } catch (err: any) {
+      toast.error(`Export failed: ${err.message || err}`);
     }
     setIsExportDropdownOpen(false);
   };

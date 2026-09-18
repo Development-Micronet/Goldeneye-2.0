@@ -1,13 +1,18 @@
 import type { DrawnLayer } from "../store/useLayersStore";
+import JSZip from "jszip";
 
 export function downloadFile(content: string, filename: string, contentType: string) {
   const blob = new Blob([content], { type: contentType });
+  downloadBlob(blob, filename);
+}
+
+export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function exportLayersAsGeoJSON(layers: DrawnLayer[]) {
@@ -30,7 +35,7 @@ export function exportLayersAsGeoJSON(layers: DrawnLayer[]) {
   downloadFile(jsonContent, "selected_aoi.geojson", "application/json");
 }
 
-export function exportLayersAsKML(layers: DrawnLayer[]) {
+export function generateKMLString(layers: DrawnLayer[]): string {
   let kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
@@ -78,9 +83,22 @@ ${geomXml}
 
   kml += `  </Document>
 </kml>`;
+  return kml;
+}
 
+export function exportLayersAsKML(layers: DrawnLayer[]) {
+  const kml = generateKMLString(layers);
   downloadFile(kml, "selected_aoi.kml", "application/vnd.google-earth.kml+xml");
 }
+
+export async function exportLayersAsKMZ(layers: DrawnLayer[]) {
+  const kml = generateKMLString(layers);
+  const zip = new JSZip();
+  zip.file("doc.kml", kml);
+  const blob = await zip.generateAsync({ type: "blob" });
+  downloadBlob(blob, "selected_aoi.kmz");
+}
+
 
 export function exportLayersAsCSV(layers: DrawnLayer[]) {
   const headers = ["ID", "Label", "Type", "Area (sqkm)", "Coordinates"];
