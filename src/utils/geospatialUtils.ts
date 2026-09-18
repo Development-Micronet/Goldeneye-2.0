@@ -6,7 +6,7 @@ import { getArea } from "ol/sphere";
 import JSZip from "jszip";
 import { parseShp, parseDbf, combine, parseZip } from "shpjs";
 import proj4 from "proj4";
-import { logger } from "../utils/logger";
+import { logger } from "./logger";
 
 export interface ShpCompanionFiles {
   dbf?: ArrayBuffer;
