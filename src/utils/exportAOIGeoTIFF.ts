@@ -4,12 +4,12 @@ import type Feature from "ol/Feature";
 import type Geometry from "ol/geom/Geometry";
 import { writeArrayBuffer } from "geotiff";
 
-interface ExportAOIOptions {
+export interface ExportAOIOptions {
     geojson: any;
-    filename: string;
+    filename?: string;
 }
 
-interface ExportResult {
+export interface ExportResult {
     file: File;
     previewUrl: string;
     bbox: [number, number, number, number];
@@ -368,13 +368,58 @@ const canvasToGeoTIFF = (
     return writeArrayBuffer(values, metadata as any) as ArrayBuffer;
 };
 
-export const exportAOIWithMapLibre = async ({
-    geojson,
-    filename,
-}: ExportAOIOptions): Promise<ExportResult> => {
-    const format = new GeoJSON();
+export const exportAOIWithMapLibre = async (
+    optionsOrGeojson: ExportAOIOptions | any,
+    maybeFilename?: string,
+): Promise<ExportResult> => {
+    let geojsonInput: any;
+    let filename: string;
 
-    const feature = format.readFeature(geojson) as Feature<Geometry>;
+    if (
+        optionsOrGeojson &&
+        typeof optionsOrGeojson === "object" &&
+        "geojson" in optionsOrGeojson &&
+        !("type" in optionsOrGeojson)
+    ) {
+        geojsonInput = optionsOrGeojson.geojson;
+        filename = optionsOrGeojson.filename || maybeFilename || "aoi-analytics.tif";
+    } else {
+        geojsonInput = optionsOrGeojson;
+        filename = maybeFilename || "aoi-analytics.tif";
+    }
+
+    if (!geojsonInput) {
+        throw new Error("Selected AOI has no GeoJSON data.");
+    }
+
+    let parsed = typeof geojsonInput === "string" ? JSON.parse(geojsonInput) : geojsonInput;
+    if (parsed && typeof parsed === "object" && !parsed.type) {
+        if (parsed.aoi) parsed = parsed.aoi;
+        else if (parsed.geometry) parsed = parsed.geometry;
+        else if (parsed.feature) parsed = parsed.feature;
+    }
+
+    const format = new GeoJSON();
+    let feature: Feature<Geometry> | null = null;
+
+    if (parsed?.type === "FeatureCollection") {
+        const features = format.readFeatures(parsed) as Feature<Geometry>[];
+        feature = features[0] || null;
+    } else if (parsed?.type === "Feature") {
+        feature = format.readFeature(parsed) as Feature<Geometry>;
+    } else if (parsed?.type) {
+        feature = format.readFeature({
+            type: "Feature",
+            geometry: parsed,
+            properties: {},
+        }) as Feature<Geometry>;
+    } else {
+        feature = format.readFeature(parsed) as Feature<Geometry>;
+    }
+
+    if (!feature) {
+        throw new Error("Unable to parse feature from selected AOI.");
+    }
 
     const geometry = feature.getGeometry();
 

@@ -49,6 +49,7 @@ const AnalyticsButton = () => {
     const layers = useLayersStore((state) => state.layers);
 
     const addRaster = useRasterStore((state) => state.addRaster);
+    const setFitRasterId = useRasterStore((state) => state.setFitRasterId);
 
     const { activeIndex, toggleArchive, toggleTasking } = useMapSidebarStore();
 
@@ -96,24 +97,36 @@ const AnalyticsButton = () => {
              *
              * OpenLayers map is NOT passed here.
              *
-             * We only pass the AOI GeoJSON.
+             * We pass the AOI GeoJSON and target filename.
              */
-            const tifBlob = await exportAOIWithMapLibre(selectedAOI.geojson);
+            const result = await exportAOIWithMapLibre({
+                geojson: selectedAOI.geojson,
+                filename,
+            });
 
             // Optional direct download
-            downloadFile(tifBlob, filename);
+            downloadFile(result.file, filename);
 
-            const url = URL.createObjectURL(tifBlob);
+            const previewUrl = result.previewUrl || URL.createObjectURL(result.file);
+            const rasterId = crypto.randomUUID();
 
             addRaster({
-                id: crypto.randomUUID(),
+                id: rasterId,
                 name: filename,
-                imageUrl: url,
-                aoi: selectedAOI.geojson,
-                opacity: 0.85,
+                type: "tiff",
+                file: result.file,
+                imageUrl: previewUrl,
+                displayImageUrl: previewUrl,
+                displayType: "original",
+                extent: result.bbox,
+                aoi: result.bbox,
+                projection: "EPSG:4326",
                 visible: true,
-                projection: "EPSG:3857",
+                opacity: 0.85,
+                operations: [],
             });
+
+            setFitRasterId(rasterId);
 
             navigate("/analytics");
         } catch (error) {
