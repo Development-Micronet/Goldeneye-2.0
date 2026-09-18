@@ -420,27 +420,39 @@ export const ArchiveSearchMenu: React.FC = () => {
     const resolution = firstProduct?.resolution ? `${firstProduct.resolution}m` : "";
     const productStr = resolution ? `${productName} ${resolution}` : productName;
 
-    // Determine date range from selected items
-    const dates = items.map(p => new Date(p.acquisitionDate || "")).filter(d => !isNaN(d.getTime()));
-    let dateStr = "";
-    if (dates.length > 0) {
-      const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
-      const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
-      
-      const formatDate = (date: Date) => {
-        const day = String(date.getDate()).padStart(2, '0');
-        let month = date.toLocaleString('en-US', { month: 'short' });
-        if (month === 'Sep') month = 'Sept'; // Match requested format
-        const year = date.getFullYear();
-        return `${day} ${month} ${year}`;
-      };
+    // Determine date range from filter selection or fallback to selected items
+    const formatDateStr = (dateStr: string | Date) => {
+      if (!dateStr) return "";
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "";
+      const day = String(date.getDate()).padStart(2, '0');
+      let month = date.toLocaleString('en-US', { month: 'short' });
+      if (month === 'Sep') month = 'Sept'; // Match requested format
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    };
 
-      if (minDate.getTime() === maxDate.getTime()) {
-        dateStr = formatDate(minDate);
-      } else {
-        dateStr = `${formatDate(minDate)} to ${formatDate(maxDate)}`;
-      }
+    let dateStr = "";
+    // Get dates from selected items
+    const itemDates = items.map(p => new Date(p.acquisitionDate || "")).filter(d => !isNaN(d.getTime()));
+    
+    let startStr = startDate ? formatDateStr(startDate) : "";
+    let endStr = endDate ? formatDateStr(endDate) : "";
+
+    // If filter dates are missing, fallback to the actual dates of the products being exported
+    if (itemDates.length > 0) {
+      const minDate = new Date(Math.min(...itemDates.map(d => d.getTime())));
+      const maxDate = new Date(Math.max(...itemDates.map(d => d.getTime())));
+      
+      if (!startStr) startStr = formatDateStr(minDate);
+      if (!endStr) endStr = formatDateStr(maxDate);
     }
+
+    // Ultimate fallback if nothing else works (should rarely happen)
+    if (!startStr) startStr = formatDateStr(new Date());
+    if (!endStr) endStr = startStr;
+
+    dateStr = `${startStr} to ${endStr}`;
 
     const baseParts = [aoiLabel, productStr, dateStr].filter(Boolean);
     const base = baseParts.join(" - ");
