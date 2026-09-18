@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { parseGeospatialFile } from "./geospatialUtils";
 import JSZip from "jszip";
-import shpwrite from "@mapbox/shp-write";
+import { createShapefileZip } from "./shapefileWriter";
 
 describe("parseGeospatialFile", () => {
   it("parses GeoJSON string with FeatureCollection", async () => {
@@ -115,9 +115,8 @@ describe("parseGeospatialFile", () => {
       ],
     };
 
-    const zipBuffer = (await (shpwrite as any).zip(geojson, {
-      outputType: "arraybuffer",
-    })) as ArrayBuffer;
+    const zipBlob = await createShapefileZip(geojson.features as any);
+    const zipBuffer = await zipBlob.arrayBuffer();
 
     const layers = await parseGeospatialFile(zipBuffer, "export-shapefile.zip");
     expect(layers).toHaveLength(1);
@@ -148,9 +147,8 @@ describe("parseGeospatialFile", () => {
       ],
     };
 
-    const zipBuffer = (await (shpwrite as any).zip(geojson, {
-      outputType: "arraybuffer",
-    })) as ArrayBuffer;
+    const zipBlob = await createShapefileZip(geojson.features as any);
+    const zipBuffer = await zipBlob.arrayBuffer();
     const zip = await JSZip.loadAsync(zipBuffer);
     const shpFile = Object.values(zip.files).find((f) => f.name.endsWith(".shp"));
     expect(shpFile).toBeDefined();
@@ -185,9 +183,8 @@ describe("parseGeospatialFile", () => {
       ],
     };
 
-    const zipBuffer = (await (shpwrite as any).zip(geojson, {
-      outputType: "arraybuffer",
-    })) as ArrayBuffer;
+    const zipBlob = await createShapefileZip(geojson.features as any);
+    const zipBuffer = await zipBlob.arrayBuffer();
     const zip = await JSZip.loadAsync(zipBuffer);
     const shpBuffer = await Object.values(zip.files)
       .find((f) => f.name.endsWith(".shp"))!
@@ -229,9 +226,8 @@ describe("parseGeospatialFile", () => {
       ],
     };
 
-    const zipBuffer = (await (shpwrite as any).zip(geojson, {
-      outputType: "arraybuffer",
-    })) as ArrayBuffer;
+    const zipBlob = await createShapefileZip(geojson.features as any);
+    const zipBuffer = await zipBlob.arrayBuffer();
     const zip = await JSZip.loadAsync(zipBuffer);
     const shpBuffer = await Object.values(zip.files)
       .find((f) => f.name.endsWith(".shp"))!

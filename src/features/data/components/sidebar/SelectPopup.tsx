@@ -7,6 +7,7 @@ import {
   Edit2,
   Eye,
   EyeOff,
+  FileArchive,
   FileCode,
   FileJson,
   MoreVertical,
@@ -20,6 +21,7 @@ import {
   exportLayersAsGeoJSON,
   exportLayersAsKML,
   exportLayersAsKMZ,
+  exportLayersAsShapefile,
 } from "../../../../utils/exportUtils";
 import { useMapStore } from "../../store/useMapStore";
 import { useSelectedAOIStore } from "../../hooks/useSelectedAOIStore";
@@ -46,6 +48,7 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
   } | null>(null);
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  // Refs
   const exportDropdownRef = useRef<HTMLDivElement>(null);
   const layerMenuRef = useRef<HTMLDivElement>(null);
   const { setSelectedAOI } = useSelectedAOIStore();
@@ -104,10 +107,8 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
           toast.success("Exported all layers as KMZ");
           break;
         case "shapefile":
-          toast.info(
-            "Shapefile export requires backend compilation. Downloading standard GeoJSON format instead.",
-          );
-          exportLayersAsGeoJSON(layers);
+          await exportLayersAsShapefile(layers);
+          toast.success("Exported all layers as Shapefile (.zip)");
           break;
         case "csv":
           exportLayersAsCSV(layers);
@@ -115,17 +116,36 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
           break;
       }
     } catch (err: any) {
-      toast.error(`Export failed: ${err.message || err}`);
+      toast.error(`Export failed: ${err?.message || err}`);
     }
     setIsExportDropdownOpen(false);
   };
-  const handleExportSingle = (layer: DrawnLayer, format: "geojson" | "kml") => {
-    if (format === "geojson") {
-      exportLayersAsGeoJSON([layer]);
-      toast.success(`Exported ${layer.label} as GeoJSON`);
-    } else {
-      exportLayersAsKML([layer]);
-      toast.success(`Exported ${layer.label} as KML`);
+  const handleExportSingle = async (
+    layer: DrawnLayer,
+    format: "geojson" | "kml" | "kmz" | "shapefile",
+  ) => {
+    const filenameBase = (layer.label || "layer").replace(/[^a-zA-Z0-9._-]/g, "_");
+    try {
+      switch (format) {
+        case "geojson":
+          exportLayersAsGeoJSON([layer], `${filenameBase}.geojson`);
+          toast.success(`Exported ${layer.label} as GeoJSON`);
+          break;
+        case "kml":
+          exportLayersAsKML([layer], `${filenameBase}.kml`);
+          toast.success(`Exported ${layer.label} as KML`);
+          break;
+        case "kmz":
+          await exportLayersAsKMZ([layer], `${filenameBase}.kmz`);
+          toast.success(`Exported ${layer.label} as KMZ`);
+          break;
+        case "shapefile":
+          await exportLayersAsShapefile([layer], `${filenameBase}.zip`);
+          toast.success(`Exported ${layer.label} as Shapefile (.zip)`);
+          break;
+      }
+    } catch (err: any) {
+      toast.error(`Export failed: ${err?.message || err}`);
     }
     setActiveMenuLayerId(null);
   };
@@ -426,6 +446,26 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
           >
             <FileCode className="mr-2 h-3.5 w-3.5 flex-shrink-0 text-blue-500" />
             <span>Export KML</span>
+          </button>
+          <button
+            onClick={() => {
+              const layer = layers.find((l) => l.id === activeMenuLayerId);
+              if (layer) handleExportSingle(layer, "kmz");
+            }}
+            className="hover:text-primary flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            <FileArchive className="mr-2 h-3.5 w-3.5 flex-shrink-0 text-emerald-500" />
+            <span>Export KMZ</span>
+          </button>
+          <button
+            onClick={() => {
+              const layer = layers.find((l) => l.id === activeMenuLayerId);
+              if (layer) handleExportSingle(layer, "shapefile");
+            }}
+            className="hover:text-primary flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            <FileArchive className="mr-2 h-3.5 w-3.5 flex-shrink-0 text-purple-500" />
+            <span>Export Shapefile</span>
           </button>
         </div>
       )}
