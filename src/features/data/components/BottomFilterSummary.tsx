@@ -120,7 +120,7 @@ export const BottomFilterSummary: React.FC = () => {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[9999] pointer-events-none flex justify-center">
       <div
-        className={`pointer-events-auto relative w-full bg-[#f0f9fa]/95 backdrop-blur-md border-t border-primary/20 px-4 py-1.5 shadow-lg select-none transition-transform duration-300 ease-in-out ${
+        className={`pointer-events-auto relative w-full bg-[#f0f9fa]/95 backdrop-blur-md border-t border-primary/20 px-4 py-[1.5px] shadow-lg select-none transition-transform duration-300 ease-in-out ${
           isCollapsed ? "translate-y-full" : "translate-y-0"
         }`}
       >
