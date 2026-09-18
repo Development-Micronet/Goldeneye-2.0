@@ -413,7 +413,37 @@ export const ArchiveSearchMenu: React.FC = () => {
     }
 
     const items = selectedProducts;
-    const base = `${aoiLabel} - Archive`;
+    
+    // Format product name and resolution
+    const firstProduct = items[0];
+    const productName = firstProduct?.name || "Archive";
+    const resolution = firstProduct?.resolution ? `${firstProduct.resolution}m` : "";
+    const productStr = resolution ? `${productName} ${resolution}` : productName;
+
+    // Determine date range from selected items
+    const dates = items.map(p => new Date(p.acquisitionDate || "")).filter(d => !isNaN(d.getTime()));
+    let dateStr = "";
+    if (dates.length > 0) {
+      const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+      const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+      
+      const formatDate = (date: Date) => {
+        const day = String(date.getDate()).padStart(2, '0');
+        let month = date.toLocaleString('en-US', { month: 'short' });
+        if (month === 'Sep') month = 'Sept'; // Match requested format
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+      };
+
+      if (minDate.getTime() === maxDate.getTime()) {
+        dateStr = formatDate(minDate);
+      } else {
+        dateStr = `${formatDate(minDate)} to ${formatDate(maxDate)}`;
+      }
+    }
+
+    const baseParts = [aoiLabel, productStr, dateStr].filter(Boolean);
+    const base = baseParts.join(" - ");
 
     try {
       if (format === "HTML") await exportHTML({ items, filename: `${base}.html` });
