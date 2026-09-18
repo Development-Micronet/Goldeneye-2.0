@@ -345,15 +345,53 @@ const getAoiFitOptions = (areaKm2?: number) => {
 
       if (label && geom) {
         const extent = geom.getExtent();
-        const topLeftCoord = [extent[0], extent[3]]; // [minX, maxY]
+        // Fallback to top-left of bounding box
+        let labelCoord = [extent[0], extent[3]]; 
 
-        // Pin label to the point on the geometry closest to the top-left corner of the bounding box
-        // to ensure it is always attached to the shape rather than floating in empty space.
-        let labelCoord = topLeftCoord;
         try {
-          labelCoord = geom.getClosestPoint(topLeftCoord);
+          // Find the absolute highest vertex (Max Y)
+          const type = geom.getType();
+          if (type === 'Polygon' || type === 'MultiPolygon' || type === 'LineString') {
+            // Using getCoordinates() is safer than getFlatCoordinates() because it avoids stride issues
+            const getHighestFromRing = (ring) => {
+              let maxY = -Infinity;
+              let maxX = 0;
+              for (const coord of ring) {
+                if (coord[1] > maxY) {
+                  maxY = coord[1];
+                  maxX = coord[0];
+                }
+              }
+              return [maxX, maxY];
+            };
+
+            const coords = geom.getCoordinates();
+            if (type === 'Polygon') {
+              // coords is array of rings, index 0 is outer ring
+              if (coords.length > 0) labelCoord = getHighestFromRing(coords[0]);
+            } else if (type === 'MultiPolygon') {
+              // coords is array of polygons
+              let globalMaxY = -Infinity;
+              let globalMaxX = 0;
+              for (const poly of coords) {
+                if (poly.length > 0) {
+                  const [x, y] = getHighestFromRing(poly[0]);
+                  if (y > globalMaxY) {
+                    globalMaxY = y;
+                    globalMaxX = x;
+                  }
+                }
+              }
+              labelCoord = [globalMaxX, globalMaxY];
+            } else if (type === 'LineString') {
+              labelCoord = getHighestFromRing(coords);
+            }
+          } else {
+            labelCoord = geom.getClosestPoint([extent[0], extent[3]]);
+          }
         } catch (e) {
-          logger.error("Error getting closest point for label:", e);
+          console.error("Error calculating highest point for label:", e);
+          labelCoord = geom.getClosestPoint([extent[0], extent[3]]);
         }
 
         const labelGeom = new Point(labelCoord);
@@ -404,9 +442,9 @@ const getAoiFitOptions = (areaKm2?: number) => {
                 }),
                 padding: [4, 6, 4, 6], // padding for readability
                 overflow: true,
-                offsetX: 8,
-                offsetY: -10,
-                textAlign: "left",
+                offsetX: 0,
+                offsetY: -12,
+                textAlign: "center",
                 textBaseline: "bottom",
               }),
             }),
