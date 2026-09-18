@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, ChevronDown, Crosshair, Loader2, Pin, Plus, ShoppingCart, Upload } from "lucide-react";
 import { Tooltip } from "react-tooltip";
@@ -163,6 +163,7 @@ const toArchiveProduct = (item: any, provider: string): SelectedArchiveProduct =
 };
 
 export const ArchiveSearchMenu: React.FC = () => {
+  const shouldAutoSelectRef = useRef(false);
   const { pinnedProducts, clearPinnedProducts, selectAllPinned } = usePinnedProductStore();
   const { cloudcover, dateMode, startDate, endDate, incidentAngle } = useParameter();
   const selectedAOIId = useSelectedAOIStore((state) => state.selectedAOIId);
@@ -349,14 +350,28 @@ export const ArchiveSearchMenu: React.FC = () => {
       const response = await searchProducts(payload);
       const decrypted = (await decryptAESGCM(response.data, token)) as ProductResponse;
 
-      setproducts((prev) =>
-        currentpage === 1
-          ? decrypted
-          : {
-            ...decrypted,
-            features: [...(prev?.features ?? []), ...decrypted.features],
-          }
-      );
+      setproducts((prev) => {
+        if (currentpage === 1 || !prev) return decrypted;
+
+        const totalCount = prev.pagination?.total_count ?? decrypted.pagination.total_count;
+        const currentCount = prev.features.length;
+
+        if (currentCount >= totalCount) {
+          return prev;
+        }
+
+        const remainingNeeded = totalCount - currentCount;
+        const nextFeatures = decrypted.features.slice(0, remainingNeeded);
+
+        return {
+          ...prev,
+          pagination: {
+            ...decrypted.pagination,
+            total_count: totalCount,
+          },
+          features: [...prev.features, ...nextFeatures],
+        };
+      });
 
       return decrypted;
     },
@@ -368,7 +383,8 @@ export const ArchiveSearchMenu: React.FC = () => {
 
   useEffect(() => {
     setcurrentpage(1);
-  }, [searchKey]);
+    clearProducts();
+  }, [searchKey, clearProducts]);
 
   const mappedProducts: SelectedArchiveProduct[] =
     products?.features.map((item) => toArchiveProduct(item, provider)) ?? [];
@@ -437,6 +453,13 @@ export const ArchiveSearchMenu: React.FC = () => {
       clearPinnedProducts();
     };
   }, [queryClient, searchKey]);
+
+  useEffect(() => {
+    if (shouldAutoSelectRef.current && !isPending && mappedProducts.length > 0) {
+      selectAllProducts(mappedProducts);
+      shouldAutoSelectRef.current = false;
+    }
+  }, [mappedProducts, isPending, selectAllProducts]);
 
   if (!aoi) {
     return (
@@ -630,7 +653,12 @@ export const ArchiveSearchMenu: React.FC = () => {
             <span className="text-xs text-gray-700">1–{loadedCount}</span>
             <button
               type="button"
-              onClick={() => setcurrentpage((page) => page + 1)}
+              onClick={() => {
+                if (allSelected) {
+                  shouldAutoSelectRef.current = true;
+                }
+                setcurrentpage((page) => page + 1);
+              }}
               disabled={isPending || loadedCount >= (products?.pagination.total_count ?? 0)}
               data-tooltip-id="archive-tooltip"
               data-tooltip-content="Load more"
