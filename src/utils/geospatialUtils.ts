@@ -3,8 +3,6 @@ import Feature from "ol/Feature";
 import GeoJSON from "ol/format/GeoJSON";
 import KML from "ol/format/KML";
 import { getArea } from "ol/sphere";
-import JSZip from "jszip";
-import { parseShp, parseDbf, combine, parseZip } from "shpjs";
 import proj4 from "proj4";
 import { logger } from "./logger";
 
@@ -162,6 +160,7 @@ export async function parseGeospatialFile(
     try {
       const buffer =
         typeof content === "string" ? new TextEncoder().encode(content).buffer : content;
+      const { default: JSZip } = await import("jszip");
       const zip = await JSZip.loadAsync(buffer);
       const kmlEntries = Object.keys(zip.files).filter(
         (name) => !zip.files[name].dir && name.toLowerCase().endsWith(".kml"),
@@ -192,6 +191,7 @@ export async function parseGeospatialFile(
     }
 
     try {
+      const { parseShp, parseDbf, combine } = await import("shpjs");
       const buffer =
         content instanceof ArrayBuffer
           ? content
@@ -254,6 +254,7 @@ export async function parseGeospatialFile(
     try {
       const buffer =
         typeof content === "string" ? new TextEncoder().encode(content).buffer : content;
+      const { default: JSZip } = await import("jszip");
       const zip = await JSZip.loadAsync(buffer);
       const fileNames = Object.keys(zip.files).filter((n) => !zip.files[n].dir);
 
@@ -264,6 +265,7 @@ export async function parseGeospatialFile(
       );
 
       if (hasShp) {
+        const { parseZip } = await import("shpjs");
         const geojsonResult = await parseZip(buffer);
         const collections = Array.isArray(geojsonResult) ? geojsonResult : [geojsonResult];
         const geojsonFormat = new GeoJSON();
