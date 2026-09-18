@@ -172,8 +172,10 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
       errors.forEach((err) => toast.error(err));
     }
 
-    handleClearFile();
-    onClose();
+    if (totalImported > 0) {
+      handleClearFile();
+      onClose();
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {

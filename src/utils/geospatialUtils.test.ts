@@ -205,6 +205,47 @@ describe("parseGeospatialFile", () => {
     expect(layers[0].type).toBe("Polygon");
   });
 
+  it("reprojects Shapefile with Web Mercator coordinates to WGS84", async () => {
+    // 77.1 deg lon in Web Mercator is ~8582730, 28.1 deg lat is ~3261947
+    const geojson = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: { name: "Web Mercator Area" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [8582730, 3261947],
+                [8593862, 3261947],
+                [8593862, 3274643],
+                [8582730, 3274643],
+                [8582730, 3261947],
+              ],
+            ],
+          },
+        },
+      ],
+    };
+
+    const zipBuffer = (await (shpwrite as any).zip(geojson, {
+      outputType: "arraybuffer",
+    })) as ArrayBuffer;
+    const zip = await JSZip.loadAsync(zipBuffer);
+    const shpBuffer = await Object.values(zip.files)
+      .find((f) => f.name.endsWith(".shp"))!
+      .async("arraybuffer");
+
+    const layers = await parseGeospatialFile(shpBuffer, "mercator.shp");
+    expect(layers).toHaveLength(1);
+    expect(layers[0].type).toBe("Polygon");
+    // Coordinates must now be in degrees [~77, ~28]
+    const coords = layers[0].geojson.geometry.coordinates[0][0];
+    expect(coords[0]).toBeCloseTo(77.1, 1);
+    expect(coords[1]).toBeCloseTo(28.1, 1);
+  });
+
   it("throws clear error for unsupported file type", async () => {
     await expect(parseGeospatialFile("dummy", "test.pdf")).rejects.toThrow(
       /Unsupported file type: \.pdf/i,

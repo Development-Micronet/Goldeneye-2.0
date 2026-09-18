@@ -4,7 +4,8 @@ import GeoJSON from "ol/format/GeoJSON";
 import KML from "ol/format/KML";
 import { getArea } from "ol/sphere";
 import JSZip from "jszip";
-import shp from "shpjs";
+import { parseShp, parseDbf, combine, parseZip } from "shpjs";
+import proj4 from "proj4";
 import { logger } from "../utils/logger";
 
 export interface ShpCompanionFiles {
@@ -15,6 +16,114 @@ export interface ShpCompanionFiles {
 
 export interface ParseGeospatialOptions {
   shpCompanionFiles?: ShpCompanionFiles;
+}
+
+/**
+ * Normalizes geometry coordinates to standard WGS84 (EPSG:4326).
+ * Handles:
+ * 1. PRJ WKT conversion (if PRJ provided).
+ * 2. Automatic detection and conversion of Web Mercator meters (EPSG:3857).
+ * 3. Automatic detection and swap of inverted latitude/longitude coordinates.
+ */
+function normalizeCoordinatesToWGS84(geom: any, prjString?: string): void {
+  if (!geom || !geom.coordinates) return;
+
+  // 1. If PRJ WKT string is provided, try converting with proj4
+  if (prjString && typeof prjString === "string" && prjString.trim()) {
+    try {
+      const transform = proj4(prjString.trim(), "EPSG:4326");
+      const transformCoord = (coords: any): any => {
+        if (
+          Array.isArray(coords) &&
+          coords.length >= 2 &&
+          typeof coords[0] === "number" &&
+          typeof coords[1] === "number"
+        ) {
+          const [lon, lat] = transform.forward([coords[0], coords[1]]);
+          return [lon, lat, ...coords.slice(2)];
+        }
+        if (Array.isArray(coords)) {
+          return coords.map(transformCoord);
+        }
+        return coords;
+      };
+      geom.coordinates = transformCoord(geom.coordinates);
+      return;
+    } catch (err) {
+      logger.warn("Could not transform coordinates using PRJ string:", err);
+    }
+  }
+
+  // Find a sample coordinate [x, y] to inspect magnitude
+  let sampleCoord: [number, number] | null = null;
+  const findSample = (coords: any): void => {
+    if (sampleCoord) return;
+    if (
+      Array.isArray(coords) &&
+      coords.length >= 2 &&
+      typeof coords[0] === "number" &&
+      typeof coords[1] === "number"
+    ) {
+      sampleCoord = [coords[0], coords[1]];
+    } else if (Array.isArray(coords)) {
+      for (const item of coords) {
+        findSample(item);
+        if (sampleCoord) return;
+      }
+    }
+  };
+  findSample(geom.coordinates);
+
+  if (!sampleCoord) return;
+
+  const [x, y] = sampleCoord;
+
+  // 2. Check if coordinates are projected meters (e.g. Web Mercator EPSG:3857)
+  if (Math.abs(x) > 180 || Math.abs(y) > 90) {
+    if (Math.abs(x) <= 20037508.34 && Math.abs(y) <= 20048966.1) {
+      const transformCoord = (coords: any): any => {
+        if (
+          Array.isArray(coords) &&
+          coords.length >= 2 &&
+          typeof coords[0] === "number" &&
+          typeof coords[1] === "number"
+        ) {
+          try {
+            const [lon, lat] = proj4("EPSG:3857", "EPSG:4326", [coords[0], coords[1]]);
+            return [lon, lat, ...coords.slice(2)];
+          } catch {
+            return coords;
+          }
+        }
+        if (Array.isArray(coords)) {
+          return coords.map(transformCoord);
+        }
+        return coords;
+      };
+      geom.coordinates = transformCoord(geom.coordinates);
+      return;
+    }
+  }
+
+  // 3. Check if coordinates are swapped [latitude, longitude] instead of [longitude, latitude]
+  // In India: Latitude is between 5 and 38, Longitude is between 65 and 100
+  if (x >= 5 && x <= 40 && y >= 65 && y <= 100) {
+    const swapCoord = (coords: any): any => {
+      if (
+        Array.isArray(coords) &&
+        coords.length >= 2 &&
+        typeof coords[0] === "number" &&
+        typeof coords[1] === "number"
+      ) {
+        return [coords[1], coords[0], ...coords.slice(2)];
+      }
+      if (Array.isArray(coords)) {
+        return coords.map(swapCoord);
+      }
+      return coords;
+    };
+    geom.coordinates = swapCoord(geom.coordinates);
+  }
 }
 
 /**
@@ -83,30 +192,53 @@ export async function parseGeospatialFile(
     }
 
     try {
-      let geojsonResult: any;
-      if (options?.shpCompanionFiles?.dbf || options?.shpCompanionFiles?.prj) {
-        geojsonResult = await (shp as any)({
-          shp: content,
-          dbf: options.shpCompanionFiles.dbf,
-          prj: options.shpCompanionFiles.prj,
-          cpg: options.shpCompanionFiles.cpg,
-        });
-      } else {
+      const buffer =
+        content instanceof ArrayBuffer
+          ? content
+          : (content as any).buffer instanceof ArrayBuffer
+            ? (content as any).buffer
+            : content;
+
+      let geoms: any[] = [];
+      try {
+        geoms = parseShp(buffer, options?.shpCompanionFiles?.prj);
+      } catch (parseErr: any) {
+        logger.error("Error parsing SHP buffer:", parseErr);
+        throw new Error(
+          parseErr.message || "Failed to parse shapefile geometry records.",
+        );
+      }
+
+      if (!geoms || geoms.length === 0) {
+        throw new Error("No shapefile geometries found in the .shp file.");
+      }
+
+      // Filter out any null or empty geometries
+      const validGeoms = geoms.filter(
+        (g: any) => g && g.type && g.coordinates && g.coordinates.length > 0,
+      );
+      if (validGeoms.length === 0) {
+        throw new Error("No valid geometry records found in the .shp file.");
+      }
+
+      // Check and normalize coordinates to EPSG:4326 (WGS84) if projected
+      validGeoms.forEach((geom: any) => {
+        normalizeCoordinatesToWGS84(geom, options?.shpCompanionFiles?.prj);
+      });
+
+      let dbfRows: any[] = [];
+      if (options?.shpCompanionFiles?.dbf) {
         try {
-          geojsonResult = await (shp as any)({ shp: content });
-        } catch {
-          const geoms = shp.parseShp(content);
-          geojsonResult = {
-            type: "FeatureCollection",
-            features: geoms.map((geom: any) => ({
-              type: "Feature",
-              geometry: geom,
-              properties: {},
-            })),
-          };
+          dbfRows = parseDbf(
+            options.shpCompanionFiles.dbf,
+            options.shpCompanionFiles.cpg,
+          );
+        } catch (dbfErr) {
+          logger.warn("Could not parse DBF attributes:", dbfErr);
         }
       }
 
+      const geojsonResult = combine([validGeoms, dbfRows]);
       const collections = Array.isArray(geojsonResult) ? geojsonResult : [geojsonResult];
       const geojsonFormat = new GeoJSON();
       for (const col of collections) {
@@ -132,11 +264,16 @@ export async function parseGeospatialFile(
       );
 
       if (hasShp) {
-        const geojsonResult = await (shp as any)(buffer);
+        const geojsonResult = await parseZip(buffer);
         const collections = Array.isArray(geojsonResult) ? geojsonResult : [geojsonResult];
         const geojsonFormat = new GeoJSON();
         for (const col of collections) {
           if (col && col.features) {
+            col.features.forEach((feat: any) => {
+              if (feat && feat.geometry) {
+                normalizeCoordinatesToWGS84(feat.geometry);
+              }
+            });
             const feats = geojsonFormat.readFeatures(col) as Feature[];
             features.push(...feats);
           }
@@ -244,7 +381,9 @@ export async function parseGeospatialFile(
       try {
         // Calculate geodesic area in square meters, divide by 10^6 to get sqkm
         const calculatedArea = getArea(geometry, { projection: "EPSG:4326" });
-        area = calculatedArea / 1000000;
+        if (!isNaN(calculatedArea)) {
+          area = calculatedArea / 1000000;
+        }
       } catch (err) {
         logger.error("Error calculating geodesic area for imported feature:", err);
       }
@@ -294,6 +433,12 @@ export async function parseGeospatialFile(
 
     // Standardize feature properties and structure back to GeoJSON object
     const geojson = geojsonFormatForExport.writeFeatureObject(feature);
+    if (!geojson.properties) {
+      geojson.properties = {};
+    }
+    geojson.properties.name = labelVal;
+    geojson.properties.id = properties.id || properties.ID || undefined;
+    geojson.properties.label = labelVal;
 
     layers.push({
       label: String(labelVal).trim(),

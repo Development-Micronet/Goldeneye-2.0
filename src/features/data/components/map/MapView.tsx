@@ -340,6 +340,20 @@ const getAoiFitOptions = (areaKm2?: number) => {
                 ? 3.5
                 : 2.5, // Thicker outline when this AOI is the selected one
           }),
+          ...(geomType === "Point" || geomType === "MultiPoint"
+            ? {
+                image: new CircleStyle({
+                  radius: isSelected ? 8 : 6,
+                  fill: new Fill({
+                    color: isSelected ? "#0038ff" : "#2C6671",
+                  }),
+                  stroke: new Stroke({
+                    color: "#ffffff",
+                    width: 2,
+                  }),
+                }),
+              }
+            : {}),
         }),
       ];
 
