@@ -1,4 +1,4 @@
-import { FiPackage, FiChevronDown, FiLoader } from "react-icons/fi";
+import { FiPackage, FiChevronDown, FiLoader, FiX } from "react-icons/fi";
 import React, { useState, useEffect } from "react";
 import { useParameter } from "../hooks/useParameter";
 import { useProductStore } from "../hooks/useproductStore";
@@ -57,8 +57,30 @@ const ProductSwitcher: React.FC = () => {
   const isSidebarOpen = activeIndex !== null;
   const open = tab === "products";
 
+  /* ── Local draft state for selections before applying ── */
+  const [tempProvider, setTempProvider] = useState<string>(selectedProvider);
+  const [tempSensors, setTempSensors] = useState<string[]>(selectedSensors);
+  const [tempProductTypes, setTempProductTypes] = useState<string[]>(selectedProductTypes);
+
+  // Sync temp state with global store whenever the modal opens
+  useEffect(() => {
+    if (open) {
+      setTempProvider(selectedProvider);
+      setTempSensors(selectedSensors);
+      setTempProductTypes(selectedProductTypes);
+    }
+  }, [open, selectedProvider, selectedSensors, selectedProductTypes]);
+
+  // If providers load while modal is already open and tempSensors is empty
+  useEffect(() => {
+    if (open && tempSensors.length === 0 && selectedSensors.length > 0) {
+      setTempSensors(selectedSensors);
+      setTempProductTypes(selectedProductTypes);
+    }
+  }, [open, selectedSensors, selectedProductTypes, tempSensors.length]);
+
   /* ── Derived: must be declared BEFORE anything that reads it ── */
-  const currentProviderObj = providers.find((p) => p.name === selectedProvider);
+  const currentProviderObj = providers.find((p) => p.name === tempProvider);
 
   type Sensor = NonNullable<typeof currentProviderObj>["sensors"][number];
 
@@ -116,7 +138,7 @@ const ProductSwitcher: React.FC = () => {
   /* ── Sensor helpers ── */
   const allSensorsSelected =
     !!currentProviderObj?.sensors?.length &&
-    currentProviderObj.sensors.every((s) => selectedSensors.includes(s.id));
+    currentProviderObj.sensors.every((s) => tempSensors.includes(s.id));
 
   const toggleAllSensors = () => {
     if (!currentProviderObj?.sensors) return;
@@ -128,25 +150,23 @@ const ProductSwitcher: React.FC = () => {
 
     if (allSensorsSelected) {
       // Unselect all sensors + all their product types
-      setSelectedSensors(selectedSensors.filter((id) => !sensorIds.includes(id)));
-
-      setSelectedProductTypes(selectedProductTypes.filter((pt) => !allProductTypes.includes(pt)));
+      setTempSensors((prev) => prev.filter((id) => !sensorIds.includes(id)));
+      setTempProductTypes((prev) => prev.filter((pt) => !allProductTypes.includes(pt)));
     } else {
       // Select all sensors + all product types
-      setSelectedSensors([...new Set([...selectedSensors, ...sensorIds])]);
-
-      setSelectedProductTypes([...new Set([...selectedProductTypes, ...allProductTypes])]);
+      setTempSensors((prev) => [...new Set([...prev, ...sensorIds])]);
+      setTempProductTypes((prev) => [...new Set([...prev, ...allProductTypes])]);
     }
   };
 
   const handleProductTypeToggle = (sensor: Sensor, productType: string) => {
-    const isSelected = selectedProductTypes.includes(productType);
+    const isSelected = tempProductTypes.includes(productType);
 
     const nextProductTypes = isSelected
-      ? selectedProductTypes.filter((pt) => pt !== productType)
-      : [...selectedProductTypes, productType];
+      ? tempProductTypes.filter((pt) => pt !== productType)
+      : [...tempProductTypes, productType];
 
-    setSelectedProductTypes(nextProductTypes);
+    setTempProductTypes(nextProductTypes);
 
     const sensorProductTypes = sensor.productTypes ?? [];
 
@@ -154,30 +174,94 @@ const ProductSwitcher: React.FC = () => {
     const hasSelectedProductType = sensorProductTypes.some((pt) => nextProductTypes.includes(pt));
 
     if (hasSelectedProductType) {
-      if (!selectedSensors.includes(sensor.id)) {
-        setSelectedSensors([...selectedSensors, sensor.id]);
+      if (!tempSensors.includes(sensor.id)) {
+        setTempSensors((prev) => [...prev, sensor.id]);
       }
     } else {
-      setSelectedSensors(selectedSensors.filter((id) => id !== sensor.id));
+      setTempSensors((prev) => prev.filter((id) => id !== sensor.id));
     }
   };
 
   const handleSensorToggle = (sensor: Sensor) => {
-    const isSelected = selectedSensors.includes(sensor.id);
+    const isSelected = tempSensors.includes(sensor.id);
     const productTypes = sensor.productTypes ?? [];
 
     if (isSelected) {
       // Unselect sensor + remove all its product types
-      setSelectedSensors(selectedSensors.filter((id) => id !== sensor.id));
-
-      setSelectedProductTypes(selectedProductTypes.filter((pt) => !productTypes.includes(pt)));
+      setTempSensors((prev) => prev.filter((id) => id !== sensor.id));
+      setTempProductTypes((prev) => prev.filter((pt) => !productTypes.includes(pt)));
     } else {
       // Select sensor + select ALL its product types
-      setSelectedSensors([...selectedSensors, sensor.id]);
-
-      setSelectedProductTypes([...new Set([...selectedProductTypes, ...productTypes])]);
+      setTempSensors((prev) => [...prev, sensor.id]);
+      setTempProductTypes((prev) => [...new Set([...prev, ...productTypes])]);
     }
   };
+
+  const handleApply = () => {
+    setSelectedProvider(tempProvider);
+    setSelectedSensors(tempSensors);
+    setSelectedProductTypes(tempProductTypes);
+    setTab("none");
+  };
+
+  const handleReset = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedSensors([]);
+    setSelectedProductTypes([]);
+    setTempSensors([]);
+    setTempProductTypes([]);
+    setTab("none");
+  };
+
+  /* ── Sensor short name for tab button display ── */
+  const getSensorShortName = (sensor: { id: string; name?: string }) => {
+    const idUpper = (sensor.id || "").toUpperCase();
+    const nameLower = (sensor.name || "").toLowerCase();
+
+    // Airbus specific mappings:
+    // Pleiades Neo (0.3m) -> "(0.3)"
+    if (idUpper === "PNEO" || nameLower.includes("neo") || nameLower.includes("0.3")) {
+      return "(0.3)";
+    }
+    // Pleiades (0.5m) -> "(0.5)"
+    if (
+      idUpper === "PHR" ||
+      nameLower.includes("0.5") ||
+      (nameLower.includes("pleiades") && !nameLower.includes("neo"))
+    ) {
+      return "(0.5)";
+    }
+    // DMC -> "DMC"
+    if (idUpper === "DMC" || nameLower.includes("dmc")) {
+      return "DMC";
+    }
+    // Spot -> "Spot"
+    if (idUpper === "SPOT" || nameLower.includes("spot")) {
+      return "Spot";
+    }
+
+    // Fallback: Check if name has resolution in parentheses e.g. "(0.3m)"
+    const match = sensor.name?.match(/\(([\d.]+)m?\)/i);
+    if (match) {
+      return `(${match[1]})`;
+    }
+
+    return sensor.name || sensor.id;
+  };
+
+  const activeDisplayProvider = open ? tempProvider : selectedProvider;
+  const activeDisplaySensors = open ? tempSensors : selectedSensors;
+
+  const displayProviderObj = providers.find((p) => p.name === activeDisplayProvider);
+  const selectedDisplaySensorsList = (displayProviderObj?.sensors || []).filter((s) =>
+    activeDisplaySensors.includes(s.id),
+  );
+
+  const hasSelectedSensors = selectedDisplaySensorsList.length > 0;
+
+  const buttonLabel = hasSelectedSensors
+    ? selectedDisplaySensorsList.map(getSensorShortName).join(", ")
+    : "Products";
 
   return (
     <>
@@ -195,21 +279,46 @@ const ProductSwitcher: React.FC = () => {
       `}</style>
 
       {/* ── Trigger button ── */}
-      <button
-        onClick={() => setTab(open ? "none" : "products")}
-        className={`flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-semibold shadow-sm transition-all duration-200 ${
-          open
-            ? "border-primary bg-primary text-white"
-            : "hover:border-primary hover:bg-primary border-gray-300 bg-white text-gray-700 hover:text-white"
-        }`}
-      >
-        <FiPackage size={13} className="stroke-[2.5]" />
-        <span>Products</span>
-        <FiChevronDown
-          size={11}
-          className={`stroke-[2.5] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
+      {hasSelectedSensors ? (
+        <div
+          onClick={() => setTab(open ? "none" : "products")}
+          title={buttonLabel}
+          className="border-primary bg-primary flex h-8 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-semibold text-white shadow-sm transition-all duration-200 select-none hover:bg-[#1f4e57]"
+        >
+          <FiPackage size={13} className="shrink-0 stroke-[2.5]" />
+          <span className="max-w-[200px] truncate">{buttonLabel}</span>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="ml-0.5 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full text-white/80 transition hover:bg-white/20 hover:text-white"
+            title="Clear Selected Products"
+          >
+            <FiX size={12} />
+          </button>
+          <FiChevronDown
+            size={11}
+            className={`shrink-0 stroke-[2.5] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setTab(open ? "none" : "products")}
+          title={buttonLabel}
+          className={`flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-semibold shadow-sm transition-all duration-200 cursor-pointer select-none ${
+            open
+              ? "border-primary bg-primary text-white"
+              : "border-gray-300 bg-white text-gray-700 hover:border-primary hover:bg-primary hover:text-white"
+          }`}
+        >
+          <FiPackage size={13} className="shrink-0 stroke-[2.5]" />
+          <span>Products</span>
+          <FiChevronDown
+            size={11}
+            className={`shrink-0 stroke-[2.5] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+      )}
 
       {/* ── Dropdown panel ── */}
       {open && (
@@ -219,14 +328,14 @@ const ProductSwitcher: React.FC = () => {
             className="fixed inset-0 z-[9998]"
           />
           <div
-            className={`ps-panel fixed top-16 z-[100] w-[calc(100vw-32px)] max-w-[540px] max-h-[calc(100vh-90px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-slate-200/80 bg-white shadow-2xl shadow-slate-900/25 transition-all duration-300 ${
+            className={`ps-panel fixed top-16 z-[100] flex flex-col w-[calc(100vw-32px)] max-w-[540px] max-h-[calc(100vh-90px)] -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl shadow-slate-900/25 transition-all duration-300 ${
               isSidebarOpen
                 ? "left-1/2 lg:left-[calc((100%-615px)/2+32px)]"
                 : "left-1/2"
             }`}
           >
             {/* Header gradient banner */}
-            <div className="bg-primary px-4 sm:px-5 py-3.5">
+            <div className="bg-primary shrink-0 px-4 sm:px-5 py-3.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/20">
@@ -250,7 +359,7 @@ const ProductSwitcher: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-4 p-3.5 sm:p-4">
+            <div className="space-y-4 p-3.5 sm:p-4 overflow-y-auto ps-scroll flex-1">
               {/* ── Provider tabs ── */}
               <div>
                 <p className="mb-2 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
@@ -274,14 +383,14 @@ const ProductSwitcher: React.FC = () => {
                 ) : (
                   <div className="flex gap-1.5 rounded-xl bg-slate-100 p-1">
                     {(providers || []).map((p) => {
-                      const isActive = selectedProvider === p.name;
+                      const isActive = tempProvider === p.name;
                       const m = providerMeta(p.name);
                       return (
                         <button
                           key={p.name}
                           type="button"
                           onClick={() => {
-                            setSelectedProvider(p.name);
+                            setTempProvider(p.name);
                             setOpenSensors([]);
                           }}
                           className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 sm:py-2 text-xs font-semibold transition-all duration-200 ${
@@ -309,7 +418,7 @@ const ProductSwitcher: React.FC = () => {
                     {currentProviderObj && (
                       <span className="bg-primary/10 text-primary ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold">
                         {
-                          currentProviderObj.sensors.filter((s) => selectedSensors.includes(s.id))
+                          currentProviderObj.sensors.filter((s) => tempSensors.includes(s.id))
                             .length
                         }
                         /{currentProviderObj.sensors.length}
@@ -349,12 +458,16 @@ const ProductSwitcher: React.FC = () => {
                 ) : currentProviderObj?.sensors?.length ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start">
                     {currentProviderObj.sensors.map((sensor) => {
-                      const checked = selectedSensors.includes(sensor.id);
+                      const checked = tempSensors.includes(sensor.id);
                       const isOpen = openSensors.includes(sensor.id);
                       return (
                         <div
                           key={sensor.id}
-                          className="border border-slate-200/80 bg-white rounded-lg transition-all duration-150 overflow-hidden"
+                          className={`border rounded-lg transition-all duration-150 overflow-hidden ${
+                            checked
+                              ? "border-primary/50 bg-primary/[0.04] shadow-2xs"
+                              : "border-slate-200/80 bg-white"
+                          }`}
                         >
                           {/* Sensor header */}
                           <div className="flex items-start gap-2.5 p-2.5">
@@ -394,53 +507,84 @@ const ProductSwitcher: React.FC = () => {
                             </button>
                           </div>
 
-                        {/* Product type dropdown */}
-                        {isOpen && !!sensor.productTypes?.length && (
-                          <div className="border-t border-slate-200 bg-white px-2.5 py-2">
-                            <p className="mb-1.5 text-[9px] font-semibold tracking-wide text-slate-400 uppercase">
-                              Product Type
-                            </p>
+                          {/* Product type dropdown */}
+                          {isOpen && !!sensor.productTypes?.length && (
+                            <div className="border-t border-slate-200 bg-white px-2.5 py-2">
+                              <p className="mb-1.5 text-[9px] font-semibold tracking-wide text-slate-400 uppercase">
+                                Product Type
+                              </p>
 
-                            <div className="space-y-1">
-                              {sensor.productTypes.map((productType) => {
-                                const productChecked = selectedProductTypes.includes(productType);
+                              <div className="space-y-1">
+                                {sensor.productTypes.map((productType) => {
+                                  const productChecked = tempProductTypes.includes(productType);
 
-                                return (
-                                  <label
-                                    key={productType}
-                                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-50"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={productChecked}
-                                      onChange={() => handleProductTypeToggle(sensor, productType)}
-                                      className="accent-primary h-3 w-3 cursor-pointer rounded border-slate-300"
-                                    />
+                                  return (
+                                    <label
+                                      key={productType}
+                                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-50"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={productChecked}
+                                        onChange={() => handleProductTypeToggle(sensor, productType)}
+                                        className="accent-primary h-3 w-3 cursor-pointer rounded border-slate-300"
+                                      />
 
-                                    <span className="text-[10px] font-medium text-slate-600">
-                                      {productType}
-                                    </span>
-                                  </label>
-                                );
-                              })}
+                                      <span className="text-[10px] font-medium text-slate-600">
+                                        {productType}
+                                      </span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="py-6 text-center text-xs text-slate-400">
-                  {isLoading ? "Loading…" : "No sensors available"}
-                </div>
-              )}
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-xs text-slate-400">
+                    {isLoading ? "Loading…" : "No sensors available"}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Footer ── */}
+            <div className="shrink-0 flex items-center justify-between border-t border-slate-200/80 bg-slate-50/90 px-4 py-3">
+              <div className="text-xs text-slate-500 font-medium">
+                {currentProviderObj ? (
+                  <>
+                    <span className="font-bold text-slate-700">
+                      {currentProviderObj.sensors.filter((s) => tempSensors.includes(s.id)).length}
+                    </span>
+                    <span className="text-slate-400">/{currentProviderObj.sensors.length}</span> sensors selected
+                  </>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTab("none")}
+                  className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 shadow-2xs transition hover:bg-slate-100 hover:text-slate-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  className="bg-primary hover:bg-[#1f4e57] cursor-pointer rounded-lg px-5 py-1.5 text-xs font-bold text-white shadow-xs transition"
+                >
+                  Apply
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </>
-    )}
-  </>
+        </>
+      )}
+    </>
   );
 };
 
