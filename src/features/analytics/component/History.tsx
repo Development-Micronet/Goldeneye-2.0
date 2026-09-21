@@ -461,7 +461,7 @@ const History = () => {
         )}
       </div>
 
-      <div ref={listRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+      <div ref={listRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3 pb-32">
         {filtered.length ? (
           filtered.map((image) => (
             <HistoryImageCard

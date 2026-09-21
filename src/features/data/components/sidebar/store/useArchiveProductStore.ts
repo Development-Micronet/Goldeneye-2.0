@@ -107,7 +107,7 @@ export const useArchiveProductStore = create<ArchiveProductStore>((set, get) => 
 
       return {
         visibleProducts: [...state.visibleProducts, product],
-        loadingProductIds: product.wmts_url
+        loadingProductIds: (product.wmts_url || product.imageUrl || product.wms_url)
           ? [...new Set([...state.loadingProductIds, product.id])]
           : state.loadingProductIds,
       };
@@ -120,7 +120,7 @@ export const useArchiveProductStore = create<ArchiveProductStore>((set, get) => 
       loadingProductIds: [
         ...new Set([
           ...state.loadingProductIds,
-          ...state.selectedProducts.filter((p) => p.wmts_url).map((p) => p.id),
+          ...state.selectedProducts.filter((p) => p.wmts_url || p.imageUrl || p.wms_url).map((p) => p.id),
         ]),
       ],
     })),

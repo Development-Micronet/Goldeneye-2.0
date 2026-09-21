@@ -47,7 +47,9 @@ export const useLayersStore = create<LayersState>()((set) => ({
           }
         }
       });
-      const label = layerData.label || `${labelPrefix} ${maxNum + 1}`;
+      const rawLabel = layerData.label ? String(layerData.label).trim() : "";
+      const isLabelValid = rawLabel !== "" && rawLabel !== "0" && rawLabel !== "0.0";
+      const label = isLabelValid ? rawLabel : `${labelPrefix} ${maxNum + 1}`;
 
       newLayer = {
         ...layerData,

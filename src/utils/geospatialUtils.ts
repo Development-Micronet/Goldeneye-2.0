@@ -4,6 +4,7 @@ import GeoJSON from "ol/format/GeoJSON";
 import KML from "ol/format/KML";
 import { getArea } from "ol/sphere";
 import proj4 from "proj4";
+import { toast } from "react-toastify";
 import { logger } from "./logger";
 
 export interface ShpCompanionFiles {
@@ -139,6 +140,66 @@ function normalizeCoordinatesToWGS84(geom: any, prjString?: string): void {
  * @param options Optional companion files (e.g. .dbf, .prj) for shapefiles.
  * @returns Array of layer data configurations ready for insertion into layers store.
  */
+/**
+ * Helper to safely extract a document or folder name from KML XML.
+ */
+function extractKmlDocumentName(kmlText: string): string | null {
+  try {
+    const kmlFormat = new KML({ extractStyles: false });
+    const name = kmlFormat.readName(kmlText);
+    if (name && typeof name === "string") {
+      const trimmed = name.trim();
+      if (
+        trimmed !== "" &&
+        trimmed !== "0" &&
+        trimmed !== "0.0" &&
+        trimmed.toLowerCase() !== "null" &&
+        trimmed.toLowerCase() !== "undefined"
+      ) {
+        return trimmed;
+      }
+    }
+  } catch {
+    // DOMParser or environment error fallback
+  }
+
+  // Regex fallback for <Document><name> or <Folder><name> or root <kml><name>
+  try {
+    const match = kmlText.match(/<(?:Document|Folder|kml)[^>]*>[\s\S]*?<name>([^<]+)<\/name>/i);
+    if (match && match[1]) {
+      const val = match[1].trim();
+      if (
+        val !== "" &&
+        val !== "0" &&
+        val !== "0.0" &&
+        val.toLowerCase() !== "null" &&
+        val.toLowerCase() !== "undefined"
+      ) {
+        return val;
+      }
+    }
+  } catch {
+    // ignore regex error
+  }
+
+  return null;
+}
+
+/**
+ * Parses geospatial files and extracts geometric features and attributes into DrawnLayer objects.
+ * Supports:
+ * - GeoJSON (.json, .geojson): FeatureCollection, single Feature, or Geometry objects
+ * - KML (.kml): XML string
+ * - KMZ (.kmz): Zipped KML archive (extracts doc.kml or any .kml files)
+ * - Shapefile (.shp, .zip): Standalone .shp, companion .shp+.dbf+.prj, or zipped Shapefile
+ * Computes geodesic area in square kilometers for Polygons/MultiPolygons.
+ * Extends the label from feature properties if available.
+ *
+ * @param content The file content as a string (for text formats) or ArrayBuffer (for binary/compressed formats).
+ * @param fileName The name of the imported file for format detection and fallback naming.
+ * @param options Optional companion files (e.g. .dbf, .prj) for shapefiles.
+ * @returns Array of layer data configurations ready for insertion into layers store.
+ */
 export async function parseGeospatialFile(
   content: string | ArrayBuffer,
   fileName: string,
@@ -146,6 +207,7 @@ export async function parseGeospatialFile(
 ): Promise<Omit<DrawnLayer, "id">[]> {
   const ext = "." + fileName.split(".").pop()?.toLowerCase();
   let features: Feature[] = [];
+  let kmlDocumentName: string | null = null;
 
   if (ext === ".kml") {
     const textContent =
@@ -153,6 +215,7 @@ export async function parseGeospatialFile(
     try {
       const kmlFormat = new KML({ extractStyles: false });
       features = kmlFormat.readFeatures(textContent) as Feature[];
+      kmlDocumentName = extractKmlDocumentName(textContent);
     } catch (err) {
       throw new Error("Invalid KML format. Please check the file formatting.");
     }
@@ -177,6 +240,9 @@ export async function parseGeospatialFile(
           const kmlFeats = kmlFormat.readFeatures(kmlText) as Feature[];
           if (kmlFeats && kmlFeats.length > 0) {
             features.push(...kmlFeats);
+          }
+          if (!kmlDocumentName) {
+            kmlDocumentName = extractKmlDocumentName(kmlText);
           }
         } catch (entryErr) {
           logger.warn(`Failed to parse KML entry "${entry}" in KMZ:`, entryErr);
@@ -286,6 +352,9 @@ export async function parseGeospatialFile(
           const kmlText = await zip.files[name].async("text");
           const feats = kmlFormat.readFeatures(kmlText) as Feature[];
           features.push(...feats);
+          if (!kmlDocumentName) {
+            kmlDocumentName = extractKmlDocumentName(kmlText);
+          }
         }
       } else if (hasGeoJson) {
         const geojsonFormat = new GeoJSON();
@@ -360,6 +429,23 @@ export async function parseGeospatialFile(
   const layers: Omit<DrawnLayer, "id">[] = [];
   const baseName = fileName.replace(/\.[^/.]+$/, ""); // Strip file extension
   const geojsonFormatForExport = new GeoJSON();
+  const warnedGeomTypes = new Set<string>();
+
+  // Helper to validate whether a label candidate is meaningful (not empty, not "0", not "0.0", not null/undefined)
+  const isValidLabel = (val: unknown): boolean => {
+    if (val === undefined || val === null) return false;
+    const str = String(val).trim();
+    if (
+      str === "" ||
+      str === "0" ||
+      str === "0.0" ||
+      str.toLowerCase() === "null" ||
+      str.toLowerCase() === "undefined"
+    ) {
+      return false;
+    }
+    return true;
+  };
 
   features.forEach((feature, index) => {
     const geometry = feature.getGeometry();
@@ -392,7 +478,12 @@ export async function parseGeospatialFile(
     }
 
     if (!type) {
-      logger.warn(`Skipping unsupported geometry type during import: ${geomType}`);
+      const warnMsg = `Skipping unsupported geometry type during import: ${geomType}`;
+      logger.warn(warnMsg);
+      if (!warnedGeomTypes.has(geomType)) {
+        warnedGeomTypes.add(geomType);
+        toast.warn(warnMsg);
+      }
       return;
     }
 
@@ -402,26 +493,23 @@ export async function parseGeospatialFile(
     delete properties.geometry; // Clean geometry reference
 
     let labelVal: string | null = null;
-    const commonLabelKeys = [
+
+    // 1. Primary human-meaningful name keys
+    const primaryLabelKeys = [
       "name",
       "label",
       "title",
-      "id",
-      "fid",
       "layer",
+      "layer_name",
       "aoi",
-      "feature_id",
-      "objectid",
+      "aoi_name",
+      "feature_name",
+      "placemark_name",
     ];
 
-    for (const key of commonLabelKeys) {
+    for (const key of primaryLabelKeys) {
       for (const [propKey, propVal] of Object.entries(properties)) {
-        if (
-          propKey.toLowerCase() === key &&
-          propVal !== undefined &&
-          propVal !== null &&
-          String(propVal).trim() !== ""
-        ) {
+        if (propKey.toLowerCase() === key && isValidLabel(propVal)) {
           labelVal = String(propVal).trim();
           break;
         }
@@ -429,8 +517,52 @@ export async function parseGeospatialFile(
       if (labelVal) break;
     }
 
+    // 2. Check other string properties (excluding styling/db keys and pure numbers)
     if (!labelVal) {
-      labelVal = features.length === 1 ? baseName : `${baseName}_${index + 1}`;
+      const ignoredKeys = new Set([
+        "id",
+        "fid",
+        "objectid",
+        "feature_id",
+        "styleurl",
+        "stylehash",
+        "stylemaps",
+        "description",
+        "fill",
+        "stroke",
+        "stroke-width",
+        "stroke-opacity",
+        "fill-opacity",
+      ]);
+      for (const [propKey, propVal] of Object.entries(properties)) {
+        if (!ignoredKeys.has(propKey.toLowerCase()) && isValidLabel(propVal)) {
+          const str = String(propVal).trim();
+          if (isNaN(Number(str))) {
+            labelVal = str;
+            break;
+          }
+        }
+      }
+    }
+
+    // 3. Fallback to secondary keys (id, fid, etc.) only if valid and not "0"
+    if (!labelVal) {
+      const secondaryKeys = ["id", "fid", "feature_id", "objectid"];
+      for (const key of secondaryKeys) {
+        for (const [propKey, propVal] of Object.entries(properties)) {
+          if (propKey.toLowerCase() === key && isValidLabel(propVal)) {
+            labelVal = String(propVal).trim();
+            break;
+          }
+        }
+        if (labelVal) break;
+      }
+    }
+
+    // 4. Fallback to KML Document/Folder name or file baseName (never "0")
+    if (!labelVal || !isValidLabel(labelVal)) {
+      const fallbackName = kmlDocumentName || baseName;
+      labelVal = features.length === 1 ? fallbackName : `${fallbackName}_${index + 1}`;
     }
 
     // Standardize feature properties and structure back to GeoJSON object
@@ -450,6 +582,19 @@ export async function parseGeospatialFile(
       visible: true,
     });
   });
+
+  // If exactly 1 layer was successfully imported, normalize its name if it received an index suffix
+  if (layers.length === 1) {
+    const single = layers[0];
+    const fallbackName = kmlDocumentName || baseName;
+    if (single.label.startsWith(`${fallbackName}_`)) {
+      single.label = fallbackName;
+      if (single.geojson?.properties) {
+        single.geojson.properties.name = fallbackName;
+        single.geojson.properties.label = fallbackName;
+      }
+    }
+  }
 
   return layers;
 }

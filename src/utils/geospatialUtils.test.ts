@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { parseGeospatialFile } from "./geospatialUtils";
 import JSZip from "jszip";
 import { createShapefileZip } from "./shapefileWriter";
+import { toast } from "react-toastify";
 
 describe("parseGeospatialFile", () => {
   it("parses GeoJSON string with FeatureCollection", async () => {
@@ -57,6 +58,93 @@ describe("parseGeospatialFile", () => {
     expect(layers).toHaveLength(1);
     expect(layers[0].label).toBe("AOI Polygon KML");
     expect(layers[0].type).toBe("Polygon");
+  });
+
+  it("extracts document name instead of '0' when Placemark name is '0'", async () => {
+    const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Goa Highway Corridor</name>
+    <Placemark>
+      <name>0</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              73.8,15.2,0 73.9,15.2,0 73.9,15.3,0 73.8,15.3,0 73.8,15.2,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>`;
+
+    const layers = await parseGeospatialFile(kml, "highway_route.kml");
+    expect(layers).toHaveLength(1);
+    expect(layers[0].label).toBe("Goa Highway Corridor");
+    expect(layers[0].type).toBe("Polygon");
+  });
+
+  it("extracts file baseName instead of '0' when Placemark has no name or '0' and no document name", async () => {
+    const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Placemark id="0">
+      <name>0</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              73.8,15.2,0 73.9,15.2,0 73.9,15.3,0 73.8,15.3,0 73.8,15.2,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>`;
+
+    const layers = await parseGeospatialFile(kml, "Goa_Coastal_Route.kml");
+    expect(layers).toHaveLength(1);
+    expect(layers[0].label).toBe("Goa_Coastal_Route");
+    expect(layers[0].type).toBe("Polygon");
+  });
+
+  it("shows toast warning when skipping unsupported geometry type GeometryCollection", async () => {
+    const toastWarnSpy = vi.spyOn(toast, "warn");
+    const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Multi Collection Area</name>
+    <Placemark>
+      <name>Corridor Polygon</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              73.8,15.2,0 73.9,15.2,0 73.9,15.3,0 73.8,15.3,0 73.8,15.2,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Unsupported MultiGeom</name>
+      <MultiGeometry>
+        <Point><coordinates>73.85,15.25,0</coordinates></Point>
+        <LineString><coordinates>73.8,15.2,0 73.9,15.3,0</coordinates></LineString>
+      </MultiGeometry>
+    </Placemark>
+  </Document>
+</kml>`;
+
+    const layers = await parseGeospatialFile(kml, "mixed_geometries.kml");
+    expect(layers).toHaveLength(1);
+    expect(layers[0].label).toBe("Corridor Polygon");
+    expect(toastWarnSpy).toHaveBeenCalledWith(
+      "Skipping unsupported geometry type during import: GeometryCollection",
+    );
   });
 
   it("parses KMZ archive containing doc.kml", async () => {

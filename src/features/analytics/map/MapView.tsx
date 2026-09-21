@@ -156,10 +156,7 @@ export default function MapView() {
         if (layer.type === "fill-extrusion") {
           map.setLayoutProperty(layer.id, "visibility", mapType === "3d" ? "visible" : "none");
         }
-        if (layer.type === "raster") {
-          map.setLayoutProperty(layer.id, "visibility", mapType === "3d" ? "visible" : "none");
-        }
-        if (layer.type === "line") {
+        if (layer.id.toLowerCase().includes("building") && layer.type === "line") {
           map.setLayoutProperty(layer.id, "visibility", mapType === "3d" ? "visible" : "none");
 
           map.setPaintProperty(layer.id, "line-color", mapType === "3d" ? "#00000073" : "#ffffff");

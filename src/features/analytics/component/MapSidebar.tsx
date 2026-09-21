@@ -78,7 +78,7 @@ export default function MapSidebar({
                 <X size={18} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto bg-white">{renderSheetContent(activeIndex)}</div>
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-white">{renderSheetContent(activeIndex)}</div>
           </>
         )}
       </div>

@@ -9,7 +9,6 @@ import { useMapStore } from "../../store/useMapStore";
 import { type SelectedArchiveProduct, useArchiveProductStore } from "../sidebar/store/useArchiveProductStore";
 
 type CachedWmtsConfig =
-  | { type: "unsupported" }
   | { type: "wms"; wmsUrl: string; selectedLayer: string }
   | { type: "wmts"; rawText: string; layerId: string; matrixSet: string };
 
@@ -17,7 +16,7 @@ type CachedWmtsConfig =
 const wmtsConfigCache = new Map<string, CachedWmtsConfig>();
 import Collection from "ol/Collection";
 import Feature from "ol/Feature";
-import Map from "ol/Map";
+import OLMap from "ol/Map";
 import { unByKey } from "ol/Observable";
 import Overlay from "ol/Overlay";
 import View from "ol/View";
@@ -107,8 +106,8 @@ const createOrbitBadgeCanvas = (text: string): HTMLCanvasElement => {
 
 export default function MapView() {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<Map | null>(null);
-  const [mapState, setMapState] = useState<Map | null>(null);
+  const mapInstance = useRef<OLMap | null>(null);
+  const [mapState, setMapState] = useState<OLMap | null>(null);
   const vectorSourceRef = useRef<VectorSource | null>(null);
   const vectorLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
   // Features that Modify is allowed to touch. Orbit swath/track overlays are
@@ -143,6 +142,8 @@ export default function MapView() {
   const modifyInteractionRef = useRef<Modify | null>(null);
   const snapInteractionRef = useRef<Snap | null>(null);
   const lastVisibleProductIdsRef = useRef<string>("");
+  const productLayersRef = useRef<Map<string, BaseLayer>>(new Map());
+  const productAbortControllersRef = useRef<Map<string, AbortController>>(new Map());
   const { activeLayer } = useBaseMapStore();
   const fitLayerId = useMapStore((state) => state.fitLayerId);
   const setFitLayerId = useMapStore((state) => state.setFitLayerId);
@@ -503,7 +504,7 @@ const getAoiFitOptions = (areaKm2?: number) => {
     });
 
     // Initialize Map with EPSG:4326 projection
-    const map = new Map({
+    const map = new OLMap({
       target: mapRef.current,
       layers: [osmLayer, wmsLayer, vectorLayer, hoverLayer, pinLayer],
       controls: defaultControls({ zoom: false }),
@@ -1175,55 +1176,102 @@ const getAoiFitOptions = (areaKm2?: number) => {
     baseLayer.setSource(source);
   }, [activeLayer]);
 
+  // Cleanup all product layers and pending fetch controllers on MapView unmount
+  useEffect(() => {
+    return () => {
+      productAbortControllersRef.current.forEach((controller) => {
+        try {
+          controller.abort();
+        } catch {
+          // ignore
+        }
+      });
+      productAbortControllersRef.current.clear();
+
+      if (mapInstance.current) {
+        productLayersRef.current.forEach((layer) => {
+          try {
+            mapInstance.current?.removeLayer(layer);
+          } catch {
+            // ignore
+          }
+        });
+      }
+      productLayersRef.current.clear();
+    };
+  }, []);
+
   useEffect(() => {
     const map = mapInstance.current;
     if (!map) return;
+
+    const visibleIds = new Set(visibleProducts.map((p) => p.id));
+
+    // 1. Remove ONLY layers for products that are no longer visible
+    for (const [id, layer] of productLayersRef.current.entries()) {
+      if (!visibleIds.has(id)) {
+        try {
+          map.removeLayer(layer);
+        } catch (e) {
+          console.warn("Failed to remove layer for " + id + ":", e);
+        }
+        productLayersRef.current.delete(id);
+        useArchiveProductStore.getState().setProductLoading(id, false);
+      }
+    }
+
+    // 2. Abort any pending fetch controllers for products that are no longer visible
+    for (const [id, controller] of productAbortControllersRef.current.entries()) {
+      if (!visibleIds.has(id)) {
+        try {
+          controller.abort();
+        } catch {
+          // ignore
+        }
+        productAbortControllersRef.current.delete(id);
+        useArchiveProductStore.getState().setProductLoading(id, false);
+      }
+    }
+
+    if (!visibleProducts.length) {
+      lastVisibleProductIdsRef.current = "";
+      return;
+    }
 
     const currentIds = visibleProducts
       .map((p) => p.id)
       .sort()
       .join(",");
 
-    // Nothing visible: React has already run the previous cleanup, so the
-    // layers are gone. Clear the ref, otherwise it keeps the last id list and
-    // the next show is mistaken for "no change" and skipped.
-    if (!visibleProducts.length) {
-      lastVisibleProductIdsRef.current = "";
-      return;
-    }
-
-    // The layers are rebuilt on every run — the cleanup removed them before
-    // this ran, so skipping the rebuild would leave the map blank. The id
-    // comparison only decides whether to move the view, which is what the old
-    // guard was really protecting against (zoom changes producing a new array
-    // reference with the same products).
-    const isNewSelection = currentIds !== lastVisibleProductIdsRef.current;
     lastVisibleProductIdsRef.current = currentIds;
 
-    const hasNonJpg = visibleProducts.some((product) => {
-      if (!product.imageUrl) return false;
-      const url = product.imageUrl.toLowerCase().split("?")[0];
-      const isJpg = url.endsWith(".jpg") || url.endsWith(".jpeg");
-      return !isJpg;
-    });
-
-    // const computedMaxZoom = isSpecialCategoryUser ? UNRESTRICTED_MAX_ZOOM : hasNonJpg ? 14 : 18;
-    // setMaxZoom(computedMaxZoom);
-
-    let isMounted = true;
-    const addedLayers: BaseLayer[] = [];
-    const abortController = new AbortController();
-    // 20-second timeout to allow adequate time for remote WMTS capabilities to load without premature cancellation
-    const timeoutId = setTimeout(() => abortController.abort(), 7000);
-
     // Helper to create ImageStatic layer for a product
-    const createImageStaticLayer = (imageUrl: string, geom: any) => {
+    const createImageStaticLayer = (
+      imageUrl: string,
+      geom: any,
+      onLoaded?: () => void
+    ) => {
+      const staticSource = new ImageStatic({
+        url: imageUrl,
+        imageExtent: geom.getExtent(),
+        projection: "EPSG:4326",
+      });
+
+      if (onLoaded) {
+        let isDone = false;
+        const done = () => {
+          if (!isDone) {
+            isDone = true;
+            onLoaded();
+          }
+        };
+        staticSource.on("imageloadend", done);
+        staticSource.on("imageloaderror", done);
+        setTimeout(done, 15000);
+      }
+
       return new ImageLayer({
-        source: new ImageStatic({
-          url: imageUrl,
-          imageExtent: geom.getExtent(),
-          projection: "EPSG:4326",
-        }),
+        source: staticSource,
         opacity: 1,
         zIndex: 20,
       });
@@ -1245,70 +1293,69 @@ const getAoiFitOptions = (areaKm2?: number) => {
 
           if (!config) {
             const response = await fetch(product.wmts_url, { signal });
-            if (!response.ok) {
-              config = { type: "unsupported" };
-            } else {
+            if (response.ok) {
               const text = await response.text();
 
               if (
-                text.includes("This item does not support WMTS") ||
-                text.includes('"internalCode"')
+                !text.includes("This item does not support WMTS") &&
+                !text.includes('"internalCode"')
               ) {
-                config = { type: "unsupported" };
-              } else if (
-                text.includes("<WMS_Capabilities") ||
-                text.includes("<Name>WMS</Name>")
-              ) {
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(text, "text/xml");
+                if (
+                  text.includes("<WMS_Capabilities") ||
+                  text.includes("<Name>WMS</Name>")
+                ) {
+                  const parser = new DOMParser();
+                  const xmlDoc = parser.parseFromString(text, "text/xml");
 
-                const layerNames = Array.from(xmlDoc.querySelectorAll("Layer > Name"))
-                  .map((el) => el.textContent?.trim())
-                  .filter(Boolean) as string[];
+                  const layerNames = Array.from(xmlDoc.querySelectorAll("Layer > Name"))
+                    .map((el) => el.textContent?.trim())
+                    .filter(Boolean) as string[];
 
-                const selectedLayer =
-                  layerNames.find((n) => n === "layer_0") ||
-                  layerNames.find((n) => n !== "IDP_DAAS_Visualization") ||
-                  layerNames[0] ||
-                  "IDP_DAAS_Visualization";
+                  const selectedLayer =
+                    layerNames.find((n) => n === "layer_0") ||
+                    layerNames.find((n) => n !== "IDP_DAAS_Visualization") ||
+                    layerNames[0] ||
+                    "IDP_DAAS_Visualization";
 
-                const onlineResource =
-                  xmlDoc
-                    .querySelector("GetMap OnlineResource")
-                    ?.getAttribute("xlink:href") ||
-                  product.wms_url ||
-                  product.wmts_url.replace(/\/wmts\//, "/wms/");
+                  const onlineResource =
+                    xmlDoc
+                      .querySelector("GetMap OnlineResource")
+                      ?.getAttribute("xlink:href") ||
+                    product.wms_url ||
+                    product.wmts_url.replace(/\/wmts\//, "/wms/");
 
-                const wmsUrl = onlineResource.split("?")[0];
-                config = { type: "wms", wmsUrl, selectedLayer };
-              } else if (
-                text.includes("<Capabilities") ||
-                text.includes("<WMTS_Capabilities")
-              ) {
-                const parser = new WMTSCapabilities();
-                const result = parser.read(text);
-                const layerId = result?.Contents?.Layer?.[0]?.Identifier;
-                const matrixSet =
-                  result?.Contents?.TileMatrixSet?.find(
-                    (ms: any) =>
-                      ms?.Identifier === "EPSG:3857" || ms?.Identifier === "EPSG:4326"
-                  )?.Identifier ||
-                  result?.Contents?.TileMatrixSet?.[0]?.Identifier ||
-                  "EPSG:3857";
+                  const wmsUrl = onlineResource.split("?")[0];
+                  config = { type: "wms", wmsUrl, selectedLayer };
+                  wmtsConfigCache.set(product.wmts_url, config);
+                } else if (
+                  text.includes("<Capabilities") ||
+                  text.includes("<WMTS_Capabilities")
+                ) {
+                  const parser = new WMTSCapabilities();
+                  const result = parser.read(text);
+                  const layerId = result?.Contents?.Layer?.[0]?.Identifier;
+                  const matrixSet =
+                    result?.Contents?.TileMatrixSet?.find(
+                      (ms: any) => ms?.Identifier === "EPSG:4326"
+                    )?.Identifier ||
+                    result?.Contents?.TileMatrixSet?.find(
+                      (ms: any) => ms?.Identifier === "EPSG:3857"
+                    )?.Identifier ||
+                    result?.Contents?.TileMatrixSet?.[0]?.Identifier ||
+                    "EPSG:3857";
 
-                if (layerId) {
-                  config = { type: "wmts", rawText: text, layerId, matrixSet };
-                } else {
-                  config = { type: "unsupported" };
+                  if (layerId) {
+                    config = { type: "wmts", rawText: text, layerId, matrixSet };
+                    wmtsConfigCache.set(product.wmts_url, config);
+                  }
                 }
-              } else {
-                config = { type: "unsupported" };
               }
+            } else {
+              console.warn("WMTS fetch responded with status " + response.status + " for " + product.id);
             }
-            wmtsConfigCache.set(product.wmts_url, config);
           }
 
-          if (config.type === "wmts") {
+          if (config?.type === "wmts") {
             const parser = new WMTSCapabilities();
             const result = parser.read(config.rawText);
             const options = optionsFromCapabilities(result, {
@@ -1317,35 +1364,116 @@ const getAoiFitOptions = (areaKm2?: number) => {
             });
 
             if (options) {
+              const wmtsSource = new WMTS({
+                ...options,
+                cacheSize: 4096,
+                tileLoadFunction: (tile: any, src: string) => {
+                  const image = tile.getImage() as HTMLImageElement;
+                  image.crossOrigin = "anonymous";
+                  let attempts = 0;
+                  const maxAttempts = 3;
+
+                  const doLoad = () => {
+                    image.onload = () => {};
+                    image.onerror = () => {
+                      if (attempts < maxAttempts) {
+                        attempts++;
+                        setTimeout(() => {
+                          const separator = src.includes("?") ? "&" : "?";
+                          image.src = `${src}${separator}_ol_retry=${attempts}_${Date.now()}`;
+                        }, 350 * attempts);
+                      }
+                    };
+                    image.src = src;
+                  };
+
+                  doLoad();
+                },
+              });
+
               layer = new TileLayer({
-                source: new WMTS(options),
+                source: wmtsSource,
+                preload: Infinity,
                 opacity: 1,
                 zIndex: 20,
               });
               isWmtsOrWms = true;
 
-              const wmtsSource = layer.getSource();
-              if (wmtsSource) {
-                let finished = false;
-                const finishLoading = () => {
-                  if (!finished) {
-                    finished = true;
-                    useArchiveProductStore.getState().setProductLoading(product.id, false);
-                  }
-                };
-                wmtsSource.once("tileloadend", finishLoading);
-                wmtsSource.once("tileloaderror", finishLoading);
-                layer.once("postrender", finishLoading);
-                setTimeout(finishLoading, 2500);
-              } else {
+              let tilesLoading = 0;
+              let tilesStarted = 0;
+              let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+              let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+              let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+              let isFinished = false;
+
+              const finish = () => {
+                if (isFinished) return;
+                isFinished = true;
+                if (debounceTimer) clearTimeout(debounceTimer);
+                if (fallbackTimer) clearTimeout(fallbackTimer);
+                if (safetyTimer) clearTimeout(safetyTimer);
                 useArchiveProductStore.getState().setProductLoading(product.id, false);
-              }
-            } else {
-              useArchiveProductStore.getState().setProductLoading(product.id, false);
+              };
+
+              const checkAllDone = () => {
+                if (tilesStarted > 0 && tilesLoading === 0) {
+                  if (debounceTimer) clearTimeout(debounceTimer);
+                  debounceTimer = setTimeout(() => {
+                    finish();
+                  }, 300);
+                }
+              };
+
+              wmtsSource.on("tileloadstart", () => {
+                if (isFinished) return;
+                tilesStarted++;
+                tilesLoading++;
+                if (debounceTimer) {
+                  clearTimeout(debounceTimer);
+                  debounceTimer = null;
+                }
+              });
+
+              wmtsSource.on("tileloadend", () => {
+                if (isFinished) return;
+                tilesLoading = Math.max(0, tilesLoading - 1);
+                checkAllDone();
+              });
+
+              wmtsSource.on("tileloaderror", () => {
+                if (isFinished) return;
+                tilesLoading = Math.max(0, tilesLoading - 1);
+                checkAllDone();
+              });
+
+              // Fallback: if no tiles start loading within 3.5s (e.g. product is outside current viewport)
+              fallbackTimer = setTimeout(() => {
+                if (!isFinished && tilesStarted === 0) {
+                  finish();
+                }
+              }, 3500);
+
+              // Absolute safety timeout so spinner never hangs indefinitely
+              safetyTimer = setTimeout(() => {
+                finish();
+              }, 25000);
             }
-          } else if (config.type === "wms") {
+          } else if (config?.type === "wms") {
             const currentProduct = product;
             const currentGeom = geometry;
+
+            let isWmsFinished = false;
+            let wmsSafetyTimer: ReturnType<typeof setTimeout> | null = null;
+
+            const finishWms = () => {
+              if (isWmsFinished) return;
+              isWmsFinished = true;
+              if (wmsSafetyTimer) clearTimeout(wmsSafetyTimer);
+              useArchiveProductStore.getState().setProductLoading(currentProduct.id, false);
+            };
+
+            wmsSafetyTimer = setTimeout(finishWms, 25000);
+
             layer = new ImageLayer({
               source: new ImageWMS({
                 url: config.wmsUrl,
@@ -1361,23 +1489,28 @@ const getAoiFitOptions = (areaKm2?: number) => {
                 imageLoadFunction: (image: any, src: string) => {
                   const img = image.getImage() as HTMLImageElement;
                   img.onload = () => {
-                    useArchiveProductStore.getState().setProductLoading(currentProduct.id, false);
+                    finishWms();
                   };
                   img.onerror = () => {
-                    useArchiveProductStore.getState().setProductLoading(currentProduct.id, false);
-                    if (currentProduct.imageUrl && isMounted && mapInstance.current) {
+                    finishWms();
+                    if (currentProduct.imageUrl && mapInstance.current) {
                       console.warn(
-                        `WMS image load failed for ${currentProduct.id}, fallback to static imageUrl`
+                        "WMS image load failed for " + currentProduct.id + ", fallback to static imageUrl"
                       );
-                      if (layer) {
-                        mapInstance.current.removeLayer(layer);
+                      const existingLayer = productLayersRef.current.get(currentProduct.id);
+                      if (existingLayer) {
+                        mapInstance.current.removeLayer(existingLayer);
                       }
+                      useArchiveProductStore.getState().setProductLoading(currentProduct.id, true);
                       const fallbackLayer = createImageStaticLayer(
                         currentProduct.imageUrl,
-                        currentGeom
+                        currentGeom,
+                        () => {
+                          useArchiveProductStore.getState().setProductLoading(currentProduct.id, false);
+                        }
                       );
                       mapInstance.current.addLayer(fallbackLayer);
-                      addedLayers.push(fallbackLayer);
+                      productLayersRef.current.set(currentProduct.id, fallbackLayer);
                     }
                   };
                   img.src = src;
@@ -1390,27 +1523,13 @@ const getAoiFitOptions = (areaKm2?: number) => {
 
             const wmsSource = layer.getSource();
             if (wmsSource) {
-              let finished = false;
-              const finishLoading = () => {
-                if (!finished) {
-                  finished = true;
-                  useArchiveProductStore.getState().setProductLoading(product.id, false);
-                }
-              };
-              wmsSource.once("imageloadend", finishLoading);
-              wmsSource.once("imageloaderror", finishLoading);
-              layer.once("postrender", finishLoading);
-              setTimeout(finishLoading, 2500);
-            } else {
-              useArchiveProductStore.getState().setProductLoading(product.id, false);
+              wmsSource.once("imageloadend", finishWms);
+              wmsSource.once("imageloaderror", finishWms);
             }
-          } else {
-            useArchiveProductStore.getState().setProductLoading(product.id, false);
           }
         } catch (err: any) {
-          useArchiveProductStore.getState().setProductLoading(product.id, false);
           if (err?.name !== "AbortError") {
-            console.warn(`Failed to resolve WMTS/WMS for product ${product.id}:`, err);
+            console.warn("Failed to resolve WMTS/WMS for product " + product.id + ":", err);
           }
         }
       }
@@ -1460,17 +1579,25 @@ const getAoiFitOptions = (areaKm2?: number) => {
           layer.on("prerender", (event: any) => {
             const ctx = event.context as CanvasRenderingContext2D;
             if (!ctx) return;
-            const vectorContext = getVectorContext(event);
-            ctx.save();
-            vectorContext.setStyle(clipStyle);
-            vectorContext.drawGeometry(commonGeom);
-            ctx.clip();
+            try {
+              ctx.save();
+              const vectorContext = getVectorContext(event);
+              vectorContext.setStyle(clipStyle);
+              vectorContext.drawGeometry(commonGeom);
+              ctx.clip();
+            } catch (err) {
+              console.warn("Error in prerender clip:", err);
+            }
           });
 
           layer.on("postrender", (event: any) => {
             const ctx = event.context as CanvasRenderingContext2D;
             if (!ctx) return;
-            ctx.restore();
+            try {
+              ctx.restore();
+            } catch (err) {
+              console.warn("Error in postrender restore:", err);
+            }
           });
         }
       }
@@ -1478,20 +1605,40 @@ const getAoiFitOptions = (areaKm2?: number) => {
       // Fallback to ImageStatic if WMTS/WMS was not created or failed (JPG remains untouched)
       if (!layer && product.imageUrl) {
         try {
-          layer = createImageStaticLayer(product.imageUrl, geometry);
+          useArchiveProductStore.getState().setProductLoading(product.id, true);
+          layer = createImageStaticLayer(product.imageUrl, geometry, () => {
+            useArchiveProductStore.getState().setProductLoading(product.id, false);
+          });
         } catch (err) {
           console.warn("Failed to create ImageStatic layer:", err);
+          useArchiveProductStore.getState().setProductLoading(product.id, false);
         }
       }
 
       return layer;
     };
 
-    const loadProductLayers = async () => {
-      // Parallel layer resolution for instant map rendering
-      await Promise.all(
-        visibleProducts.map(async (product) => {
-          if (!product?.geometry) return;
+    // Filter products to only those needing loading
+    const productsToLoad = visibleProducts.filter(
+      (product) =>
+        !productLayersRef.current.has(product.id) &&
+        !productAbortControllersRef.current.has(product.id)
+    );
+
+    if (productsToLoad.length > 0) {
+      // Process with concurrency limit of 6 to prevent connection exhaustion and 429 errors
+      const CONCURRENCY = 6;
+      let currentIndex = 0;
+
+      const loadNext = async () => {
+        while (currentIndex < productsToLoad.length) {
+          const product = productsToLoad[currentIndex++];
+          if (!product) break;
+
+          if (!product.geometry) {
+            useArchiveProductStore.getState().setProductLoading(product.id, false);
+            continue;
+          }
 
           let feature: any;
           try {
@@ -1500,95 +1647,75 @@ const getAoiFitOptions = (areaKm2?: number) => {
               geometry: product.geometry,
             });
           } catch {
-            return;
+            useArchiveProductStore.getState().setProductLoading(product.id, false);
+            continue;
           }
 
-          if (Array.isArray(feature) || !feature) return;
+          if (Array.isArray(feature) || !feature) {
+            useArchiveProductStore.getState().setProductLoading(product.id, false);
+            continue;
+          }
 
           const geometry = feature.getGeometry();
-          if (!geometry) return;
-
-          const layer = await resolveProductLayer(
-            product,
-            feature,
-            geometry,
-            abortController.signal
-          );
-
-          if (layer && isMounted && mapInstance.current) {
-            mapInstance.current.addLayer(layer);
-            addedLayers.push(layer);
+          if (!geometry) {
+            useArchiveProductStore.getState().setProductLoading(product.id, false);
+            continue;
           }
-        })
-      );
 
-      // Keep AOI/vector layers above images
-      if (isMounted && mapInstance.current) {
-        mapInstance.current.getLayers().forEach((layer) => {
-          if (layer instanceof VectorLayer) {
-            layer.setZIndex(1000);
-          }
-        });
-      }
-    };
+          const controller = new AbortController();
+          productAbortControllersRef.current.set(product.id, controller);
 
-    loadProductLayers();
+          const timeoutId = setTimeout(() => {
+            try {
+              controller.abort();
+            } catch {}
+          }, 25000);
 
-    if (isNewSelection) {
-      try {
-        const extents: number[][] = [];
-        visibleProducts.forEach((product) => {
-          if (!product?.geometry) return;
           try {
-            const feature = new GeoJSON().readFeature({
-              type: "Feature",
-              geometry: product.geometry,
-            });
-            if (!Array.isArray(feature) && feature) {
-              const geom = feature.getGeometry();
-              if (geom) {
-                extents.push(geom.getExtent());
-              }
+            const layer = await resolveProductLayer(
+              product,
+              feature,
+              geometry,
+              controller.signal
+            );
+
+            clearTimeout(timeoutId);
+            productAbortControllersRef.current.delete(product.id);
+
+            // Verify product is still visible before attaching to map
+            const isStillVisible = useArchiveProductStore
+              .getState()
+              .visibleProducts.some((p) => p.id === product.id);
+
+            if (layer && isStillVisible && mapInstance.current) {
+              mapInstance.current.addLayer(layer);
+              productLayersRef.current.set(product.id, layer);
+            } else {
+              useArchiveProductStore.getState().setProductLoading(product.id, false);
             }
-          } catch {
-            // ignore individual invalid geometry
+          } catch (err: any) {
+            clearTimeout(timeoutId);
+            productAbortControllersRef.current.delete(product.id);
+            useArchiveProductStore.getState().setProductLoading(product.id, false);
+            if (err?.name !== "AbortError") {
+              console.error("Error loading layer for product " + product.id + ":", err);
+            }
           }
-        });
+        }
+      };
 
-        // if (extents.length > 0 && mapInstance.current) {
-        //   const overallExtent =
-        //     extents.length === 1
-        //       ? extents[0]
-        //       : extents.reduce((acc, cur) => [
-        //         Math.min(acc[0], cur[0]),
-        //         Math.min(acc[1], cur[1]),
-        //         Math.max(acc[2], cur[2]),
-        //         Math.max(acc[3], cur[3]),
-        //       ]);
-
-        //   // if (overallExtent) {
-        //   //   mapInstance.current.getView().fit(overallExtent, {
-        //   //     padding: [100, 100, 100, 100],
-        //   //     duration: 500,
-        //   //     // maxZoom: computedMaxZoom,
-        //   //   });
-        //   // }
-        // }
-      } catch (err) {
-        console.error("Error fitting map view extent:", err);
-      }
+      const workerCount = Math.min(CONCURRENCY, productsToLoad.length);
+      Promise.all(Array.from({ length: workerCount }, () => loadNext())).then(() => {
+        // Keep vector layers above image layers
+        if (mapInstance.current) {
+          mapInstance.current.getLayers().forEach((layer) => {
+            if (layer instanceof VectorLayer) {
+              layer.setZIndex(1000);
+            }
+          });
+        }
+      });
     }
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-      abortController.abort();
-      if (mapInstance.current) {
-        addedLayers.forEach((layer) => {
-          mapInstance.current?.removeLayer(layer);
-        });
-      }
-    };
   }, [visibleProducts, setMaxZoom, layers, selectedAOIId]);
 
   useEffect(() => {
