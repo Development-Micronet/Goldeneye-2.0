@@ -1,5 +1,5 @@
 import { FiPackage, FiChevronDown, FiLoader, FiX } from "react-icons/fi";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParameter } from "../hooks/useParameter";
 import { useProductStore } from "../hooks/useproductStore";
 import { listofproviderandsensors } from "./sidebar/api/product.service";
@@ -62,6 +62,9 @@ const ProductSwitcher: React.FC = () => {
   const [tempSensors, setTempSensors] = useState<string[]>(selectedSensors);
   const [tempProductTypes, setTempProductTypes] = useState<string[]>(selectedProductTypes);
 
+  const isInitialized = useProductStore((state) => state.isInitialized);
+  const prevInitialized = useRef(isInitialized);
+
   // Sync temp state with global store whenever the modal opens
   useEffect(() => {
     if (open) {
@@ -69,15 +72,17 @@ const ProductSwitcher: React.FC = () => {
       setTempSensors(selectedSensors);
       setTempProductTypes(selectedProductTypes);
     }
-  }, [open, selectedProvider, selectedSensors, selectedProductTypes]);
+  }, [open]);
 
-  // If providers load while modal is already open and tempSensors is empty
+  // If providers load while modal is already open
   useEffect(() => {
-    if (open && tempSensors.length === 0 && selectedSensors.length > 0) {
+    if (!prevInitialized.current && isInitialized && open) {
+      prevInitialized.current = true;
+      setTempProvider(selectedProvider);
       setTempSensors(selectedSensors);
       setTempProductTypes(selectedProductTypes);
     }
-  }, [open, selectedSensors, selectedProductTypes, tempSensors.length]);
+  }, [isInitialized, open, selectedProvider, selectedSensors, selectedProductTypes]);
 
   /* ── Derived: must be declared BEFORE anything that reads it ── */
   const currentProviderObj = providers.find((p) => p.name === tempProvider);
@@ -219,17 +224,17 @@ const ProductSwitcher: React.FC = () => {
     const nameLower = (sensor.name || "").toLowerCase();
 
     // Airbus specific mappings:
-    // Pleiades Neo (0.3m) -> "(0.3)"
+    // Pleiades Neo (0.3m) -> "0.3m"
     if (idUpper === "PNEO" || nameLower.includes("neo") || nameLower.includes("0.3")) {
-      return "(0.3)";
+      return "0.3m";
     }
-    // Pleiades (0.5m) -> "(0.5)"
+    // Pleiades (0.5m) -> "0.5m"
     if (
       idUpper === "PHR" ||
       nameLower.includes("0.5") ||
       (nameLower.includes("pleiades") && !nameLower.includes("neo"))
     ) {
-      return "(0.5)";
+      return "0.5m";
     }
     // DMC -> "DMC"
     if (idUpper === "DMC" || nameLower.includes("dmc")) {
@@ -243,14 +248,29 @@ const ProductSwitcher: React.FC = () => {
     // Fallback: Check if name has resolution in parentheses e.g. "(0.3m)"
     const match = sensor.name?.match(/\(([\d.]+)m?\)/i);
     if (match) {
-      return `(${match[1]})`;
+      return `${match[1]}m`;
     }
 
     return sensor.name || sensor.id;
   };
 
+  /* ── Product type sub-label extractor (e.g. "Pleiades-0.5m-MONO" -> "mono") ── */
+  const getProductTypeSubName = (productType: string): string => {
+    const val = (productType || "").toLowerCase().trim();
+    if (val.includes("tristereo")) return "tristereo";
+    if (val.includes("stereo")) return "stereo";
+    if (val.includes("mono")) return "mono";
+    if (val.includes("dsm")) return "dsm";
+    if (val.includes("dem")) return "dem";
+    if (val.includes("ortho")) return "ortho";
+
+    const parts = productType.split(/[-_]/);
+    return (parts[parts.length - 1] || productType).trim().toLowerCase();
+  };
+
   const activeDisplayProvider = open ? tempProvider : selectedProvider;
   const activeDisplaySensors = open ? tempSensors : selectedSensors;
+  const activeDisplayProductTypes = open ? tempProductTypes : selectedProductTypes;
 
   const displayProviderObj = providers.find((p) => p.name === activeDisplayProvider);
   const selectedDisplaySensorsList = (displayProviderObj?.sensors || []).filter((s) =>
@@ -259,8 +279,39 @@ const ProductSwitcher: React.FC = () => {
 
   const hasSelectedSensors = selectedDisplaySensorsList.length > 0;
 
+  const sensorLabels: string[] = [];
+
+  selectedDisplaySensorsList.forEach((sensor) => {
+    const baseName = getSensorShortName(sensor);
+    const sensorProductTypes = sensor.productTypes ?? [];
+    const selectedTypes = sensorProductTypes.filter((pt) =>
+      activeDisplayProductTypes.includes(pt),
+    );
+
+    if (sensorProductTypes.length === 0) {
+      // Sensor has no product types (e.g. DMC, Spot)
+      sensorLabels.push(baseName);
+    } else if (
+      selectedTypes.length > 0 &&
+      selectedTypes.length < sensorProductTypes.length
+    ) {
+      // Specific subset of product types selected (e.g. mono or stereo)
+      selectedTypes.forEach((pt) => {
+        const sub = getProductTypeSubName(pt);
+        const isSpot =
+          sensor.id?.toUpperCase() === "SPOT" ||
+          (sensor.name || "").toLowerCase().includes("spot");
+        const prefix = isSpot ? "1.5m" : baseName;
+        sensorLabels.push(`${prefix}-${sub}`);
+      });
+    } else {
+      // All product types selected for this sensor (or default)
+      sensorLabels.push(baseName);
+    }
+  });
+
   const buttonLabel = hasSelectedSensors
-    ? selectedDisplaySensorsList.map(getSensorShortName).join(", ")
+    ? sensorLabels.join(", ")
     : "Products";
 
   return (
@@ -286,7 +337,7 @@ const ProductSwitcher: React.FC = () => {
           className="border-primary bg-primary flex h-8 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-semibold text-white shadow-sm transition-all duration-200 select-none hover:bg-[#1f4e57]"
         >
           <FiPackage size={13} className="shrink-0 stroke-[2.5]" />
-          <span className="max-w-[200px] truncate">{buttonLabel}</span>
+          <span className="max-w-[280px] truncate">{buttonLabel}</span>
           <button
             type="button"
             onClick={handleReset}

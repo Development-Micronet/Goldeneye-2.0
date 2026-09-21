@@ -31,46 +31,102 @@ export const BottomFilterSummary: React.FC = () => {
     return `${dayNum} ${monthName} ${yearNum}`;
   };
 
+  /* ── Sensor short name for display (matching ProductSwitcher) ── */
+  const getSensorShortName = (sensor: { id: string; name?: string }) => {
+    const idUpper = (sensor.id || "").toUpperCase();
+    const nameLower = (sensor.name || "").toLowerCase();
+
+    // Airbus specific mappings:
+    // Pleiades Neo (0.3m) -> "0.3m"
+    if (idUpper === "PNEO" || nameLower.includes("neo") || nameLower.includes("0.3")) {
+      return "0.3m";
+    }
+    // Pleiades (0.5m) -> "0.5m"
+    if (
+      idUpper === "PHR" ||
+      nameLower.includes("0.5") ||
+      (nameLower.includes("pleiades") && !nameLower.includes("neo"))
+    ) {
+      return "0.5m";
+    }
+    // DMC -> "DMC"
+    if (idUpper === "DMC" || nameLower.includes("dmc")) {
+      return "DMC";
+    }
+    // Spot -> "Spot"
+    if (idUpper === "SPOT" || nameLower.includes("spot")) {
+      return "Spot";
+    }
+
+    // Fallback: Check if name has resolution in parentheses e.g. "(0.3m)"
+    const match = sensor.name?.match(/\(([\d.]+)m?\)/i);
+    if (match) {
+      return `${match[1]}m`;
+    }
+
+    return sensor.name || sensor.id;
+  };
+
+  /* ── Product type sub-label extractor (e.g. "Pleiades-0.5m-MONO" -> "mono") ── */
+  const getProductTypeSubName = (productType: string): string => {
+    const val = (productType || "").toLowerCase().trim();
+    if (val.includes("tristereo")) return "tristereo";
+    if (val.includes("stereo")) return "stereo";
+    if (val.includes("mono")) return "mono";
+    if (val.includes("dsm")) return "dsm";
+    if (val.includes("dem")) return "dem";
+    if (val.includes("ortho")) return "ortho";
+
+    const parts = productType.split(/[-_]/);
+    return (parts[parts.length - 1] || productType).trim().toLowerCase();
+  };
+
   const getProductsText = () => {
     const currentProviderObj = providers.find((p) => p.name === selectedProvider);
     if (!currentProviderObj) {
-      return "PNEO, DMC, SPOT, PHR, Elevation";
+      return "0.3m, 0.5m, DMC, Spot";
     }
 
-    // Get active main sensors (PNEO, DMC, SPOT, PHR)
-    const activeSensors = currentProviderObj.sensors
-      .filter((s) => selectedSensors.includes(s.id))
-      .map((s) => s.name || s.id.toUpperCase());
-
-    // Check if Elevation / DSM / DEM is selected
-    const hasElevation = selectedProductTypes.some((t) =>
-      ["elevation", "dsm", "dem", "32m", "22m"].includes(t.toLowerCase()),
+    const selectedSensorsList = (currentProviderObj.sensors || []).filter((s) =>
+      selectedSensors.includes(s.id),
     );
 
-    const titles: string[] = [];
-
-    // Maintain consistent order: PNEO, DMC, SPOT, PHR, Elevation
-    const standardOrder = ["PNEO", "DMC", "SPOT", "PHR"];
-    standardOrder.forEach((name) => {
-      if (activeSensors.some((s) => s.toUpperCase().includes(name))) {
-        titles.push(name);
-      }
-    });
-
-    // Add any other active sensor names not in standard list
-    activeSensors.forEach((s) => {
-      const upper = s.toUpperCase();
-      if (!standardOrder.some((name) => upper.includes(name)) && !titles.includes(s)) {
-        titles.push(s);
-      }
-    });
-
-    if (hasElevation && !titles.includes("Elevation")) {
-      titles.push("Elevation");
+    if (selectedSensorsList.length === 0) {
+      return "None";
     }
 
-    if (titles.length === 0) return "None";
-    return titles.join(", ");
+    const sensorLabels: string[] = [];
+
+    selectedSensorsList.forEach((sensor) => {
+      const baseName = getSensorShortName(sensor);
+      const sensorProductTypes = sensor.productTypes ?? [];
+      const selectedTypes = sensorProductTypes.filter((pt) =>
+        selectedProductTypes.includes(pt),
+      );
+
+      if (sensorProductTypes.length === 0) {
+        // Sensor has no product types (e.g. DMC, Spot)
+        sensorLabels.push(baseName);
+      } else if (
+        selectedTypes.length > 0 &&
+        selectedTypes.length < sensorProductTypes.length
+      ) {
+        // Specific subset of product types selected (e.g. mono or stereo)
+        selectedTypes.forEach((pt) => {
+          const sub = getProductTypeSubName(pt);
+          const isSpot =
+            sensor.id?.toUpperCase() === "SPOT" ||
+            (sensor.name || "").toLowerCase().includes("spot");
+          const prefix = isSpot ? "1.5m" : baseName;
+          sensorLabels.push(`${prefix}-${sub}`);
+        });
+      } else {
+        // All product types selected for this sensor (or default)
+        sensorLabels.push(baseName);
+      }
+    });
+
+    return sensorLabels.length > 0 ? sensorLabels.join(", ") : "None";
   };
 
   const getCloudCoverText = () => {
