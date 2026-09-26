@@ -141,6 +141,68 @@ function normalizeCoordinatesToWGS84(geom: any, prjString?: string): void {
  * @returns Array of layer data configurations ready for insertion into layers store.
  */
 /**
+ * Checks if a candidate label is empty, null, numeric, or a generic placeholder created by GIS tools
+ * (e.g. Global Mapper, QGIS, ArcGIS default export names like "Area Features", "Polygon", "Line Features", etc.)
+ */
+export function isGenericLabel(label: unknown): boolean {
+  if (label === undefined || label === null) return true;
+  const str = String(label).trim().toLowerCase();
+  if (
+    str === "" ||
+    str === "0" ||
+    str === "0.0" ||
+    str === "null" ||
+    str === "undefined" ||
+    str === "nan"
+  ) {
+    return true;
+  }
+
+  // Strip digits, punctuation, whitespace, and symbols to inspect core identifier
+  const stripped = str.replace(/[0-9_\-\s\(\)\[\]\.\,\:\;\/\\#]/g, "");
+
+  const genericKeywords = new Set([
+    "areafeatures",
+    "areafeature",
+    "linefeatures",
+    "linefeature",
+    "pointfeatures",
+    "pointfeature",
+    "genericfeatures",
+    "genericfeature",
+    "polygon",
+    "multipolygon",
+    "linestring",
+    "multilinestring",
+    "linearring",
+    "geometry",
+    "geometrycollection",
+    "untitled",
+    "untitledplacemark",
+    "untitledfolder",
+    "untitleddocument",
+    "newplacemark",
+    "default",
+    "dockml",
+    "doc",
+    "kml",
+    "layer",
+    "layer0",
+    "layer1",
+    "export",
+    "output",
+  ]);
+
+  return (
+    genericKeywords.has(stripped) ||
+    genericKeywords.has(str) ||
+    stripped.startsWith("areafeature") ||
+    stripped.startsWith("linefeature") ||
+    stripped.startsWith("pointfeature")
+  );
+}
+
+/**
  * Helper to safely extract a document or folder name from KML XML.
  */
 function extractKmlDocumentName(kmlText: string): string | null {
@@ -149,13 +211,7 @@ function extractKmlDocumentName(kmlText: string): string | null {
     const name = kmlFormat.readName(kmlText);
     if (name && typeof name === "string") {
       const trimmed = name.trim();
-      if (
-        trimmed !== "" &&
-        trimmed !== "0" &&
-        trimmed !== "0.0" &&
-        trimmed.toLowerCase() !== "null" &&
-        trimmed.toLowerCase() !== "undefined"
-      ) {
+      if (!isGenericLabel(trimmed)) {
         return trimmed;
       }
     }
@@ -168,13 +224,7 @@ function extractKmlDocumentName(kmlText: string): string | null {
     const match = kmlText.match(/<(?:Document|Folder|kml)[^>]*>[\s\S]*?<name>([^<]+)<\/name>/i);
     if (match && match[1]) {
       const val = match[1].trim();
-      if (
-        val !== "" &&
-        val !== "0" &&
-        val !== "0.0" &&
-        val.toLowerCase() !== "null" &&
-        val.toLowerCase() !== "undefined"
-      ) {
+      if (!isGenericLabel(val)) {
         return val;
       }
     }
@@ -431,20 +481,9 @@ export async function parseGeospatialFile(
   const geojsonFormatForExport = new GeoJSON();
   const warnedGeomTypes = new Set<string>();
 
-  // Helper to validate whether a label candidate is meaningful (not empty, not "0", not "0.0", not null/undefined)
+  // Helper to validate whether a label candidate is meaningful (not empty, not generic like "Area Features", not "0")
   const isValidLabel = (val: unknown): boolean => {
-    if (val === undefined || val === null) return false;
-    const str = String(val).trim();
-    if (
-      str === "" ||
-      str === "0" ||
-      str === "0.0" ||
-      str.toLowerCase() === "null" ||
-      str.toLowerCase() === "undefined"
-    ) {
-      return false;
-    }
-    return true;
+    return !isGenericLabel(val);
   };
 
   features.forEach((feature, index) => {
@@ -499,12 +538,10 @@ export async function parseGeospatialFile(
       "name",
       "label",
       "title",
-      "layer",
-      "layer_name",
-      "aoi",
-      "aoi_name",
       "feature_name",
       "placemark_name",
+      "aoi",
+      "aoi_name",
     ];
 
     for (const key of primaryLabelKeys) {
@@ -517,7 +554,7 @@ export async function parseGeospatialFile(
       if (labelVal) break;
     }
 
-    // 2. Check other string properties (excluding styling/db keys and pure numbers)
+    // 2. Check other string properties (excluding styling/db keys, pure numbers, and generic layer keys)
     if (!labelVal) {
       const ignoredKeys = new Set([
         "id",
@@ -533,6 +570,8 @@ export async function parseGeospatialFile(
         "stroke-width",
         "stroke-opacity",
         "fill-opacity",
+        "layer",
+        "layer_name",
       ]);
       for (const [propKey, propVal] of Object.entries(properties)) {
         if (!ignoredKeys.has(propKey.toLowerCase()) && isValidLabel(propVal)) {
@@ -545,9 +584,9 @@ export async function parseGeospatialFile(
       }
     }
 
-    // 3. Fallback to secondary keys (id, fid, etc.) only if valid and not "0"
+    // 3. Fallback to secondary keys (layer, id, fid, etc.) only if valid and not "0"
     if (!labelVal) {
-      const secondaryKeys = ["id", "fid", "feature_id", "objectid"];
+      const secondaryKeys = ["layer", "layer_name", "id", "fid", "feature_id", "objectid"];
       for (const key of secondaryKeys) {
         for (const [propKey, propVal] of Object.entries(properties)) {
           if (propKey.toLowerCase() === key && isValidLabel(propVal)) {
@@ -559,10 +598,10 @@ export async function parseGeospatialFile(
       }
     }
 
-    // 4. Fallback to KML Document/Folder name or file baseName (never "0")
+    // 4. Fallback to KML Document/Folder name or file baseName (never generic or "0")
     if (!labelVal || !isValidLabel(labelVal)) {
-      const fallbackName = kmlDocumentName || baseName;
-      labelVal = features.length === 1 ? fallbackName : `${fallbackName}_${index + 1}`;
+      labelVal =
+        (kmlDocumentName && !isGenericLabel(kmlDocumentName) ? kmlDocumentName : null) || baseName;
     }
 
     // Standardize feature properties and structure back to GeoJSON object
@@ -583,18 +622,38 @@ export async function parseGeospatialFile(
     });
   });
 
-  // If exactly 1 layer was successfully imported, normalize its name if it received an index suffix
+  // Post-process layers: if single layer has generic name, enforce file baseName
   if (layers.length === 1) {
     const single = layers[0];
-    const fallbackName = kmlDocumentName || baseName;
-    if (single.label.startsWith(`${fallbackName}_`)) {
-      single.label = fallbackName;
+    if (isGenericLabel(single.label)) {
+      single.label = baseName;
       if (single.geojson?.properties) {
-        single.geojson.properties.name = fallbackName;
-        single.geojson.properties.label = fallbackName;
+        single.geojson.properties.name = baseName;
+        single.geojson.properties.label = baseName;
       }
     }
   }
+
+  // Disambiguate duplicate labels across features in the imported file
+  const labelCounts = new Map<string, number>();
+  layers.forEach((l) => {
+    labelCounts.set(l.label, (labelCounts.get(l.label) || 0) + 1);
+  });
+
+  const labelIndices = new Map<string, number>();
+  layers.forEach((l) => {
+    const totalCount = labelCounts.get(l.label) || 1;
+    if (totalCount > 1) {
+      const currentIdx = (labelIndices.get(l.label) || 0) + 1;
+      labelIndices.set(l.label, currentIdx);
+      const uniqueLabel = `${l.label}_${currentIdx}`;
+      l.label = uniqueLabel;
+      if (l.geojson?.properties) {
+        l.geojson.properties.name = uniqueLabel;
+        l.geojson.properties.label = uniqueLabel;
+      }
+    }
+  });
 
   return layers;
 }

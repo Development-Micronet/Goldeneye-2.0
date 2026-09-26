@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { parseGeospatialFile } from "./geospatialUtils";
+import { parseGeospatialFile, isGenericLabel } from "./geospatialUtils";
 import JSZip from "jszip";
 import { createShapefileZip } from "./shapefileWriter";
 import { toast } from "react-toastify";
@@ -178,6 +178,89 @@ describe("parseGeospatialFile", () => {
     expect(layers[0].label).toBe("KMZ Zone Alpha");
     expect(layers[0].type).toBe("Polygon");
     expect(layers[0].area).toBeGreaterThan(0);
+  });
+
+  it("replaces generic 'Area Features' label with the KMZ file name", async () => {
+    const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Folder>
+      <name>Area Features</name>
+      <Placemark>
+        <name>Area Features</name>
+        <Polygon>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>74.7,19.1,0 74.8,19.1,0 74.8,19.2,0 74.7,19.2,0 74.7,19.1,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>`;
+
+    const zip = new JSZip();
+    zip.file("doc.kml", kml);
+    const kmzBuffer = await zip.generateAsync({ type: "arraybuffer" });
+
+    const layers = await parseGeospatialFile(kmzBuffer, "Ahilyanagar.kmz");
+    expect(layers).toHaveLength(1);
+    expect(layers[0].label).toBe("Ahilyanagar");
+  });
+
+  it("disambiguates multiple Placemarks with identical names in KMZ archive (e.g. 04090_1, 04090_2)", async () => {
+    const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>04090</name>
+    <Placemark>
+      <name>04090</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>77.1,28.1,0 77.2,28.1,0 77.2,28.2,0 77.1,28.2,0 77.1,28.1,0</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>04090</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>77.3,28.3,0 77.4,28.3,0 77.4,28.4,0 77.3,28.4,0 77.3,28.3,0</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>`;
+
+    const zip = new JSZip();
+    zip.file("doc.kml", kml);
+    const kmzBuffer = await zip.generateAsync({ type: "arraybuffer" });
+
+    const layers = await parseGeospatialFile(kmzBuffer, "04090.kmz");
+    expect(layers).toHaveLength(2);
+    expect(layers[0].label).toBe("04090_1");
+    expect(layers[1].label).toBe("04090_2");
+  });
+
+  it("identifies generic labels correctly with isGenericLabel", () => {
+    expect(isGenericLabel("Area Features")).toBe(true);
+    expect(isGenericLabel("Area Feature")).toBe(true);
+    expect(isGenericLabel("area features")).toBe(true);
+    expect(isGenericLabel("Polygon")).toBe(true);
+    expect(isGenericLabel("Line Features")).toBe(true);
+    expect(isGenericLabel("0")).toBe(true);
+    expect(isGenericLabel("0.0")).toBe(true);
+    expect(isGenericLabel(null)).toBe(true);
+    expect(isGenericLabel(undefined)).toBe(true);
+
+    expect(isGenericLabel("Ahilyanagar")).toBe(false);
+    expect(isGenericLabel("Goa Highway Corridor")).toBe(false);
+    expect(isGenericLabel("Zone Alpha")).toBe(false);
   });
 
   it("parses Shapefile ZIP archive (.zip)", async () => {
