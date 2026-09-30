@@ -149,7 +149,6 @@ interface MissionCardProps {
   onSelect: (segment: TaskingSegment) => void;
 }
 
-/** The summary shows the soonest pass; the rest live behind View more. */
 const MissionCard: React.FC<MissionCardProps> = ({
   mission,
   segments,
@@ -313,11 +312,31 @@ export const TaskingMenu: React.FC = () => {
 
   /** Segments the API returned for one mission and programme. */
   const segmentsFor = (mission: MissionKey, progType: ProgTypeKey) => {
-    const record = result?.progCapacities
-      .find((capacity) => capacity.mission === mission)
-      ?.progTypes.find((entry) => entry.name === progType);
+    const capacity = result?.progCapacities.find((c) => c.mission === mission);
+    if (!capacity) return [];
 
-    return record?.available ? record.segments ?? [] : [];
+    const matchingProgTypes = capacity.progTypes.filter(
+      (entry) =>
+        entry.name === progType ||
+        (progType === "ONENOW" && (entry.name === "ONENOWATTEMPTS" || entry.name === "ONENOW"))
+    );
+
+    const segments: TaskingSegment[] = [];
+    const seen = new Set<string>();
+
+    for (const pt of matchingProgTypes) {
+      if (pt.available && pt.segments) {
+        for (const seg of pt.segments) {
+          const key = seg.id || seg.segmentKey;
+          if (!seen.has(key)) {
+            seen.add(key);
+            segments.push(seg);
+          }
+        }
+      }
+    }
+
+    return segments;
   };
 
   /** Why a mission has no passes, when the reason is a rule rather than capacity. */
@@ -555,9 +574,8 @@ export const TaskingMenu: React.FC = () => {
               (mission) => segmentsFor(mission, progType).length > 0
             ).length;
 
-            // The summary only shows each mission's soonest pass. One Now has
-            // no day-by-day view, so it never opens out.
-            const hasMore = progType !== "ONENOW" && passCount > missionsWithPasses;
+            // The summary only shows each mission's soonest pass.
+            const hasMore = passCount > missionsWithPasses;
             const lastPage = Math.ceil(days.length / DAYS_PER_PAGE) - 1;
             const pageDays = days.slice(dayPage * DAYS_PER_PAGE, (dayPage + 1) * DAYS_PER_PAGE);
 

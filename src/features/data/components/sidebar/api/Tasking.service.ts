@@ -101,7 +101,7 @@ export const MISSION_LIMITS: Record<MissionKey, Array<{ label: string; value: st
 const PROG_TYPES_BY_MISSION: Record<MissionKey, ProgTypeKey[]> = {
   PLEIADES: ["ONEDAY", "ONENOW"],
   SPOT: ["ONEDAY", "ONENOW"],
-  PLEIADESNEO: ["ONEDAY"], // Airbus only exposes OneDay for Neo.
+  PLEIADESNEO: ["ONEDAY", "ONENOW"],
 };
 
 const MODES_BY_MISSION: Record<MissionKey, AcquisitionMode[]> = {
