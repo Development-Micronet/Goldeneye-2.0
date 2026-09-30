@@ -214,8 +214,9 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
 
             onSubmitted();
         } catch (caught) {
+            const msg = await apiErrorMessage(caught, accessToken ?? "");
             toast.error(
-                apiErrorMessage(caught) ||
+                msg ||
                 (isOrder
                     ? "Failed to place order. Please try again."
                     : "Failed to raise the request. Please try again.")
@@ -318,7 +319,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
 
                             <div className="sm:col-span-2">
                                 <p className="text-text-secondary text-[11px]">
-                                    The window has to start on or after {minStart} — Airbus needs a month of lead time.
+                                    The window has to start on or after {minStart}.
                                 </p>
                             </div>
                         </>

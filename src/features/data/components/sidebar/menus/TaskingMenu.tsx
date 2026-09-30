@@ -40,7 +40,7 @@ const SENSORS: Array<{ label: string; missions: MissionKey[] }> = [
 
 const INCIDENCE_OPTIONS = [20, 30, 50];
 const CLOUD_OPTIONS = [5, 10, 20];
-const AOI_TYPES = ["Polygon", "Box", "Coordinates", "Bound Coordinates"];
+const AOI_TYPES = ["Polygon", "Box", "Point", "Polyline", "Coordinates", "Bound Coordinates"];
 const DEBOUNCE_MS = 500;
 
 /** Days shown side by side once the section is opened out. */
@@ -79,6 +79,19 @@ const polygonRings = (geojson: any): number[][][] | null => {
   const geometry = geojson?.geometry ?? geojson;
   if (geometry?.type === "Polygon") return geometry.coordinates;
   if (geometry?.type === "MultiPolygon") return geometry.coordinates?.[0] ?? null;
+  if (geometry?.type === "Point" && Array.isArray(geometry.coordinates)) {
+    const [cx, cy] = geometry.coordinates;
+    const delta = 0.01;
+    return [
+      [
+        [cx - delta, cy - delta],
+        [cx + delta, cy - delta],
+        [cx + delta, cy + delta],
+        [cx - delta, cy + delta],
+        [cx - delta, cy - delta],
+      ],
+    ];
+  }
   return null;
 };
 
@@ -193,12 +206,12 @@ export const TaskingMenu: React.FC = () => {
     [layers]
   );
 
-  // Airbus needs a month of lead time, so the window can't start today.
+  // Window starts from today.
   const minStart = useMemo(() => earliestAcquisitionDate(), []);
 
   /* Filters */
   const [startDate, setStartDate] = useState(minStart);
-  const [endDate, setEndDate] = useState(() => addDays(minStart, 30));
+  const [endDate, setEndDate] = useState(minStart);
   const [sensorIndex, setSensorIndex] = useState(0);
   const [mode, setMode] = useState<AcquisitionMode>("MONO");
   const [incidenceAngle, setIncidenceAngle] = useState(INCIDENCE_OPTIONS[2]);
@@ -277,7 +290,8 @@ export const TaskingMenu: React.FC = () => {
         if (id === searchId.current) setResult(data);
       } catch (caught) {
         if (id !== searchId.current) return;
-        setError(apiErrorMessage(caught) || "Could not load passes from the tasking service.");
+        const msg = await apiErrorMessage(caught, accessToken ?? "");
+        setError(msg || "Could not load passes from the tasking service.");
       } finally {
         if (id === searchId.current) setIsLoading(false);
       }
@@ -393,7 +407,13 @@ export const TaskingMenu: React.FC = () => {
               type="date"
               value={startDate}
               min={minStart}
-              onChange={(event) => setStartDate(event.target.value)}
+              onChange={(event) => {
+                const val = event.target.value;
+                setStartDate(val);
+                if (endDate < val) {
+                  setEndDate(val);
+                }
+              }}
               className={field}
             />
             <span className="text-text-secondary shrink-0 text-[11px]">to</span>

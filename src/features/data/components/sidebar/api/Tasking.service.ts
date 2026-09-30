@@ -137,34 +137,51 @@ const ORDER_PROG_TYPE_NAMES: Record<ProgTypeKey, string> = {
 /* ------------------------------------------------------------------ */
 
 /**
- * Airbus rejects a window that starts less than a month out, so the earliest
- * date the UI offers is a month plus a day — the extra day keeps the request
- * clear of the server's own boundary check while it is in flight.
+ * Earliest date for acquisition window (today's date in local YYYY-MM-DD format).
  */
 export const earliestAcquisitionDate = () => {
   const date = new Date();
-  date.setMonth(date.getMonth() + 1);
-  date.setDate(date.getDate() + 1);
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 /**
- * Pulls the useful line out of a DRF error body. Validation failures arrive as
- * { errors: { non_field_errors: [...] } }, not as `detail`.
+ * Pulls the useful line out of an error body, decrypting AES-GCM envelopes if present.
  */
-export const apiErrorMessage = (error: unknown): string | null => {
-  const data = (error as any)?.response?.data;
+export const apiErrorMessage = async (error: unknown, token?: string): Promise<string | null> => {
+  let data = (error as any)?.response?.data;
   if (!data) return null;
 
-  if (typeof data.detail === "string") return data.detail;
-  if (typeof data.message === "string") return data.message;
+  if (token) {
+    try {
+      const envelope = typeof data === "string" ? data : data?.data;
+      if (typeof envelope === "string") {
+        data = await decryptAESGCM(envelope, token);
+      }
+    } catch {
+      // not encrypted or decryption failed
+    }
+  }
 
-  const errors = data.errors ?? data;
-  if (typeof errors !== "object") return null;
+  if (typeof data === "string") return data;
+  if (typeof data?.detail === "string") return data.detail;
+  if (typeof data?.message === "string") return data.message;
+  if (typeof data?.error === "string") return data.error;
+
+  const errors = data?.errors ?? data;
+  if (typeof errors !== "object" || !errors) return null;
 
   for (const value of Object.values(errors)) {
     if (typeof value === "string") return value;
     if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+    if (typeof value === "object" && value !== null) {
+      for (const nested of Object.values(value)) {
+        if (typeof nested === "string") return nested;
+        if (Array.isArray(nested) && typeof nested[0] === "string") return nested[0];
+      }
+    }
   }
 
   return null;
