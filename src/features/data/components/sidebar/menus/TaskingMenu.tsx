@@ -52,9 +52,14 @@ const DAYS_PER_PAGE = 2;
 
 /** Shift a yyyy-mm-dd string by a number of days. */
 const addDays = (isoDay: string, days: number) => {
-  const date = new Date(isoDay);
+  if (!isoDay) return "";
+  const [year, month, day] = isoDay.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
   date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 };
 
 const dayFormat = new Intl.DateTimeFormat("en-GB", {
@@ -210,7 +215,7 @@ export const TaskingMenu: React.FC = () => {
 
   /* Filters */
   const [startDate, setStartDate] = useState(minStart);
-  const [endDate, setEndDate] = useState(minStart);
+  const [endDate, setEndDate] = useState(() => addDays(minStart, 7));
   const [sensorIndex, setSensorIndex] = useState(0);
   const [mode, setMode] = useState<AcquisitionMode>("MONO");
   const [incidenceAngle, setIncidenceAngle] = useState(INCIDENCE_OPTIONS[2]);
@@ -427,10 +432,10 @@ export const TaskingMenu: React.FC = () => {
               value={startDate}
               min={minStart}
               onChange={(event) => {
-                const val = event.target.value;
-                setStartDate(val);
-                if (endDate < val) {
-                  setEndDate(val);
+                const newStart = event.target.value;
+                setStartDate(newStart);
+                if (newStart) {
+                  setEndDate(addDays(newStart, 7));
                 }
               }}
               className={field}

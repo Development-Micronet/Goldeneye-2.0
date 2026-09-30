@@ -4,6 +4,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useMapStore } from "../features/data/store/useMapStore";
 import { useLayersStore } from "../store/useLayersStore";
 import { logger } from "../utils/logger";
+import { decryptAESGCM } from "../utils/dataDecrypt";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_KEY = import.meta.env.VITE_API_KEY;
@@ -50,8 +51,26 @@ apiClient.interceptors.request.use(
  */
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     const status = error.response?.status;
+
+    // Automatically decrypt any encrypted error response globally
+    const { accessToken } = useAuthStore.getState();
+    const rawData = error.response?.data;
+
+    if (accessToken && rawData && error.response) {
+      try {
+        const envelope = typeof rawData === "string" ? rawData : (rawData as any)?.data;
+        if (typeof envelope === "string") {
+          const decrypted = await decryptAESGCM(envelope, accessToken);
+          if (decrypted) {
+            error.response.data = decrypted;
+          }
+        }
+      } catch {
+        // Leave original data if decryption fails or data was not encrypted
+      }
+    }
 
     if (status === 401) {
       logger.warn("[API] Unauthorized");
