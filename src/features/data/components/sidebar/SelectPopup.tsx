@@ -124,7 +124,8 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
     layer: DrawnLayer,
     format: "geojson" | "kml" | "kmz" | "shapefile",
   ) => {
-    const filenameBase = (layer.label || "layer").replace(/[^a-zA-Z0-9._-]/g, "_");
+    const cleanBase = (layer.label || "layer").replace(/\.(kmz|kml|geojson|json|shp|zip)$/i, "");
+    const filenameBase = cleanBase.replace(/[^a-zA-Z0-9._-]/g, "_");
     try {
       switch (format) {
         case "geojson":

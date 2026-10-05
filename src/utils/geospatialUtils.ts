@@ -622,38 +622,25 @@ export async function parseGeospatialFile(
     });
   });
 
-  // Post-process layers: if single layer has generic name, enforce file baseName
+  // Enforce the exact uploaded fileName (filename.shp, filename.zip, filename.geojson, filename.kml, filename.kmz)
+  // across Selected AOI and MapView for all imported geospatial files.
   if (layers.length === 1) {
     const single = layers[0];
-    if (isGenericLabel(single.label)) {
-      single.label = baseName;
-      if (single.geojson?.properties) {
-        single.geojson.properties.name = baseName;
-        single.geojson.properties.label = baseName;
-      }
+    single.label = fileName;
+    if (single.geojson?.properties) {
+      single.geojson.properties.name = fileName;
+      single.geojson.properties.label = fileName;
     }
+  } else if (layers.length > 1) {
+    layers.forEach((layer, idx) => {
+      const uniqueLabel = `${fileName}_${idx + 1}`;
+      layer.label = uniqueLabel;
+      if (layer.geojson?.properties) {
+        layer.geojson.properties.name = uniqueLabel;
+        layer.geojson.properties.label = uniqueLabel;
+      }
+    });
   }
-
-  // Disambiguate duplicate labels across features in the imported file
-  const labelCounts = new Map<string, number>();
-  layers.forEach((l) => {
-    labelCounts.set(l.label, (labelCounts.get(l.label) || 0) + 1);
-  });
-
-  const labelIndices = new Map<string, number>();
-  layers.forEach((l) => {
-    const totalCount = labelCounts.get(l.label) || 1;
-    if (totalCount > 1) {
-      const currentIdx = (labelIndices.get(l.label) || 0) + 1;
-      labelIndices.set(l.label, currentIdx);
-      const uniqueLabel = `${l.label}_${currentIdx}`;
-      l.label = uniqueLabel;
-      if (l.geojson?.properties) {
-        l.geojson.properties.name = uniqueLabel;
-        l.geojson.properties.label = uniqueLabel;
-      }
-    }
-  });
 
   return layers;
 }
