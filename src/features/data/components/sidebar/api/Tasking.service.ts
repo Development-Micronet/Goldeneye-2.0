@@ -6,7 +6,7 @@ import { decryptAESGCM } from "../../../../../utils/dataDecrypt";
 /* ------------------------------------------------------------------ */
 
 export type MissionKey = "PLEIADES" | "SPOT" | "PLEIADESNEO";
-export type ProgTypeKey = "ONEDAY" | "ONENOW";
+export type ProgTypeKey = "ONEDAY" | "ONENOW" | "ONEPLAN";
 export type AcquisitionMode = "MONO" | "STEREO" | "TRI";
 
 export interface TaskingAttemptPayload {
@@ -34,17 +34,31 @@ export interface TaskingSegment {
   acrossTrackIncidenceAngle: number;
 }
 
+export interface TaskingFeasibility {
+  classification: "EASY" | "CHALLENGING" | string;
+  automation: "MANUAL" | "AUTOMATIC" | string;
+}
+
+export interface TaskingErrorItem {
+  code: string;
+  locator: string;
+  message: string;
+}
+
 export interface TaskingProgType {
   name: ProgTypeKey;
   mission: MissionKey;
-  segments: TaskingSegment[];
+  segments?: TaskingSegment[];
   available: boolean;
+  feasibility?: TaskingFeasibility;
+  errors?: TaskingErrorItem[];
+  expirationDate?: string;
 }
 
 export interface TaskingAttemptResponse {
   success: boolean;
   progCapacities: Array<{ mission: MissionKey; progTypes: TaskingProgType[] }>;
-  segments: TaskingSegment[];
+  segments?: TaskingSegment[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -53,7 +67,7 @@ export interface TaskingAttemptResponse {
 
 export const MISSIONS: MissionKey[] = ["PLEIADES", "SPOT", "PLEIADESNEO"];
 
-export const PROG_TYPES: ProgTypeKey[] = ["ONEDAY", "ONENOW"];
+export const PROG_TYPES: ProgTypeKey[] = ["ONEDAY", "ONENOW", "ONEPLAN"];
 
 export const PROG_TYPE_META: Record<ProgTypeKey, { title: string; blurb: string; cloud: string }> = {
   ONEDAY: {
@@ -63,6 +77,11 @@ export const PROG_TYPE_META: Record<ProgTypeKey, { title: string; blurb: string;
   },
   ONENOW: {
     title: "ONE NOW",
+    blurb: "Access useful information in an instant",
+    cloud: "Up to 10%",
+  },
+  ONEPLAN: {
+    title: "ONE PLAN",
     blurb: "Access useful information in an instant",
     cloud: "Up to 10%",
   },
@@ -99,9 +118,9 @@ export const MISSION_LIMITS: Record<MissionKey, Array<{ label: string; value: st
 /* ------------------------------------------------------------------ */
 
 const PROG_TYPES_BY_MISSION: Record<MissionKey, ProgTypeKey[]> = {
-  PLEIADES: ["ONEDAY", "ONENOW"],
-  SPOT: ["ONEDAY", "ONENOW"],
-  PLEIADESNEO: ["ONEDAY", "ONENOW"],
+  PLEIADES: ["ONEDAY", "ONENOW", "ONEPLAN"],
+  SPOT: ["ONEDAY", "ONENOW", "ONEPLAN"],
+  PLEIADESNEO: ["ONEDAY", "ONENOW", "ONEPLAN"],
 };
 
 const MODES_BY_MISSION: Record<MissionKey, AcquisitionMode[]> = {
@@ -124,12 +143,16 @@ export const ORDER_ENDPOINTS: Record<string, string> = {
   PLEIADES_ONENOW: "/tasking/pleiades-one-now-attempts/order/",
   SPOT_ONENOW: "/tasking/spot-one-now-attempts/order/",
   PLEIADESNEO_ONENOW: "/tasking/pleiades-neo-one-now-attempts/order/",
+  PLEIADES_ONEPLAN: "/pleiades-one-plan/order/",
+  SPOT_ONEPLAN: "/tasking/spot-one-plan/order/",
+  PLEIADESNEO_ONEPLAN: "/tasking/pleiades-neo-one-plan/order/",
 };
 
 /** One Now orders are placed as attempts, so the name differs from the search. */
 const ORDER_PROG_TYPE_NAMES: Record<ProgTypeKey, string> = {
   ONEDAY: "ONEDAY",
   ONENOW: "ONENOWATTEMPTS",
+  ONEPLAN: "ONEPLAN",
 };
 
 /* ------------------------------------------------------------------ */
@@ -202,6 +225,14 @@ export const FetchAttempt = async (
   token: string
 ): Promise<TaskingAttemptResponse> => {
   const res = await apiClient.post("/tasking/attempts/", payload);
+  return unwrap(res.data, token);
+};
+
+export const FetchFeasibility = async (
+  payload: TaskingAttemptPayload,
+  token: string
+): Promise<TaskingAttemptResponse> => {
+  const res = await apiClient.post("/tasking/feasibility/", payload);
   return unwrap(res.data, token);
 };
 
@@ -350,7 +381,9 @@ export interface TaskingOrderContext {
   mission: MissionKey;
   progType: ProgTypeKey;
   acquisitionMode: AcquisitionMode;
-  segment: TaskingSegment;
+  segment?: TaskingSegment;
+  feasibility?: TaskingFeasibility;
+  feasibilityProperties?: Array<{ key: string; value: string }>;
 }
 
 /**
@@ -384,10 +417,39 @@ const attemptWindow = (segment: TaskingSegment) => {
   }
 };
 
-/** Direct order payload — mirrors the documented Pleiades/SPOT OneDay body. */
+/** Direct order payload — mirrors the documented Pleiades/SPOT OneDay or OnePlan body. */
 export const buildOrderPayload = (form: TaskingOrderForm, context: TaskingOrderContext) => {
+  if (context.progType === "ONEPLAN") {
+    const startDate = form.acquisitionStartDate.includes("T")
+      ? form.acquisitionStartDate
+      : `${form.acquisitionStartDate}T00:00:00Z`;
+    const endDate = form.acquisitionEndDate.includes("T")
+      ? form.acquisitionEndDate
+      : `${form.acquisitionEndDate}T23:59:59Z`;
+
+    const feasibilityProperties = context.feasibilityProperties ?? [
+      { key: "classification", value: context.feasibility?.classification ?? "EASY" },
+      { key: "automation", value: context.feasibility?.automation ?? "MANUAL" },
+    ];
+
+    return {
+      aoi: context.aoi,
+      progTypeNames: "ONEPLAN",
+      acquisitionStartDate: startDate,
+      acquisitionEndDate: endDate,
+      feasibilityProperties,
+      emailId: form.emailId.trim(),
+      comments: form.comments.trim(),
+      maxCloudCover: String(form.maxCloudCover),
+      maxIncidenceAngle: String(form.maxIncidenceAngle),
+    };
+  }
+
   const isAttempts = context.progType === "ONENOW";
-  const window = attemptWindow(context.segment);
+  const window = context.segment ? attemptWindow(context.segment) : {
+    start: `${form.acquisitionStartDate}T00:00:00Z`,
+    end: `${form.acquisitionEndDate}T23:59:59Z`,
+  };
 
   return {
     aoi: context.aoi,
@@ -396,7 +458,7 @@ export const buildOrderPayload = (form: TaskingOrderForm, context: TaskingOrderC
     // Attempts are booked against the segment's own periods.
     acquisitionStartDate: isAttempts ? window.start : `${form.acquisitionStartDate}T00:00:00Z`,
     acquisitionEndDate: isAttempts ? window.end : `${form.acquisitionEndDate}T23:59:59Z`,
-    segmentKey: context.segment.segmentKey,
+    segmentKey: context.segment?.segmentKey ?? "",
     maxCloudCover: String(form.maxCloudCover),
     maxIncidenceAngle: String(form.maxIncidenceAngle),
     customerReference: form.customerReference.trim(),
@@ -417,31 +479,73 @@ export const buildOrderPayload = (form: TaskingOrderForm, context: TaskingOrderC
 };
 
 /** Indent payload — the same choices, spelled out for the approval queue. */
-export const buildIndentPayload = (form: TaskingOrderForm, context: TaskingOrderContext) => ({
-  indentType: "Tasking" as const,
-  aoi: context.aoi,
-  missions: context.mission,
-  progTypeNames: ORDER_PROG_TYPE_NAMES[context.progType],
-  acquisitionMode: context.acquisitionMode,
-  acquisitionStartDate: `${form.acquisitionStartDate}T00:00:00Z`,
-  acquisitionEndDate: `${form.acquisitionEndDate}T23:59:59Z`,
-  segmentKey: context.segment.segmentKey,
-  maxCloudCover: form.maxCloudCover,
-  maxIncidenceAngle: form.maxIncidenceAngle,
-  geometric_processing: labelFor("processing_level", form.processing_level),
-  projection_code: labelFor("projection_1", form.projection_1),
-  spectral_bands_combination: labelFor("spectral_processing", form.spectral_processing),
-  orthorectification_dem_reference: labelFor("dem", form.dem),
-  product_format: labelFor("image_format", form.image_format),
-  pixel_coding: labelFor("pixel_coding", form.pixel_coding),
-  radiometric_processing: labelFor("radiometric_processing", form.radiometric_processing),
-  licence: labelFor("licence", form.licence),
-  primaryMarket: form.primaryMarket,
-  secondaryMarket: form.secondaryMarket,
-  customerReference: form.customerReference.trim(),
-  comments: form.comments.trim(),
-  emailId: form.emailId.trim(),
-});
+export const buildIndentPayload = (form: TaskingOrderForm, context: TaskingOrderContext) => {
+  const startDate = form.acquisitionStartDate.includes("T")
+    ? form.acquisitionStartDate
+    : `${form.acquisitionStartDate}T00:00:00Z`;
+  const endDate = form.acquisitionEndDate.includes("T")
+    ? form.acquisitionEndDate
+    : `${form.acquisitionEndDate}T23:59:59Z`;
+
+  if (context.progType === "ONEPLAN") {
+    const feasibilityProperties = context.feasibilityProperties ?? [
+      { key: "classification", value: context.feasibility?.classification ?? "EASY" },
+      { key: "automation", value: context.feasibility?.automation ?? "MANUAL" },
+    ];
+
+    return {
+      indentType: "Tasking" as const,
+      aoi: context.aoi,
+      missions: context.mission,
+      progTypeNames: "ONEPLAN",
+      acquisitionMode: context.acquisitionMode,
+      acquisitionStartDate: startDate,
+      acquisitionEndDate: endDate,
+      feasibilityProperties,
+      maxCloudCover: form.maxCloudCover,
+      maxIncidenceAngle: form.maxIncidenceAngle,
+      geometric_processing: labelFor("processing_level", form.processing_level),
+      projection_code: labelFor("projection_1", form.projection_1),
+      spectral_bands_combination: labelFor("spectral_processing", form.spectral_processing),
+      orthorectification_dem_reference: labelFor("dem", form.dem),
+      product_format: labelFor("image_format", form.image_format),
+      pixel_coding: labelFor("pixel_coding", form.pixel_coding),
+      radiometric_processing: labelFor("radiometric_processing", form.radiometric_processing),
+      licence: labelFor("licence", form.licence),
+      primaryMarket: form.primaryMarket,
+      secondaryMarket: form.secondaryMarket,
+      customerReference: form.customerReference.trim(),
+      comments: form.comments.trim(),
+      emailId: form.emailId.trim(),
+    };
+  }
+
+  return {
+    indentType: "Tasking" as const,
+    aoi: context.aoi,
+    missions: context.mission,
+    progTypeNames: ORDER_PROG_TYPE_NAMES[context.progType],
+    acquisitionMode: context.acquisitionMode,
+    acquisitionStartDate: startDate,
+    acquisitionEndDate: endDate,
+    segmentKey: context.segment?.segmentKey ?? "",
+    maxCloudCover: form.maxCloudCover,
+    maxIncidenceAngle: form.maxIncidenceAngle,
+    geometric_processing: labelFor("processing_level", form.processing_level),
+    projection_code: labelFor("projection_1", form.projection_1),
+    spectral_bands_combination: labelFor("spectral_processing", form.spectral_processing),
+    orthorectification_dem_reference: labelFor("dem", form.dem),
+    product_format: labelFor("image_format", form.image_format),
+    pixel_coding: labelFor("pixel_coding", form.pixel_coding),
+    radiometric_processing: labelFor("radiometric_processing", form.radiometric_processing),
+    licence: labelFor("licence", form.licence),
+    primaryMarket: form.primaryMarket,
+    secondaryMarket: form.secondaryMarket,
+    customerReference: form.customerReference.trim(),
+    comments: form.comments.trim(),
+    emailId: form.emailId.trim(),
+  };
+};
 
 /* ------------------------------------------------------------------ */
 /* Submitting                                                          */
@@ -454,8 +558,23 @@ export const submitTaskingOrder = async (
   payload: ReturnType<typeof buildOrderPayload>,
   token: string
 ) => {
-  const res = await apiClient.post(endpoint, payload);
-  return unwrap(res.data, token);
+  try {
+    const res = await apiClient.post(endpoint, payload);
+    return unwrap(res.data, token);
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
+      const alternateEndpoint = endpoint.startsWith("/tasking/")
+        ? endpoint.replace("/tasking/", "/")
+        : `/tasking${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
+      try {
+        const altRes = await apiClient.post(alternateEndpoint, payload);
+        return unwrap(altRes.data, token);
+      } catch {
+        throw error;
+      }
+    }
+    throw error;
+  }
 };
 
 export const submitTaskingIndent = async (

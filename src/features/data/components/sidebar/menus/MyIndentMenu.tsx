@@ -668,6 +668,8 @@ export const MyIndentMenu: React.FC = () => {
     let progTypeKey: ProgTypeKey = "ONEDAY";
     if ((item.progTypeNames || "").toUpperCase().includes("NOW")) {
       progTypeKey = "ONENOW";
+    } else if ((item.progTypeNames || "").toUpperCase().includes("PLAN")) {
+      progTypeKey = "ONEPLAN";
     }
 
     let mode: AcquisitionMode = "MONO";
