@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, ChevronDown, Crosshair, Loader2, Pin, Plus, ShoppingCart, Upload } from "lucide-react";
+import { AlertCircle, ChevronDown, Crosshair, ImageOff, Loader2, Pin, Plus, ShoppingCart, Upload } from "lucide-react";
 import { Tooltip } from "react-tooltip";
 import { toast } from "react-toastify";
 
@@ -164,6 +164,7 @@ const toArchiveProduct = (item: any, provider: string): SelectedArchiveProduct =
 
 export const ArchiveSearchMenu: React.FC = () => {
   const shouldAutoSelectRef = useRef(false);
+  const shouldAutoRenderVisibleRef = useRef(false);
   const { pinnedProducts, clearPinnedProducts, selectAllPinned } = usePinnedProductStore();
   const { cloudcover, dateMode, startDate, endDate, incidentAngle } = useParameter();
   const selectedAOIId = useSelectedAOIStore((state) => state.selectedAOIId);
@@ -497,11 +498,26 @@ export const ArchiveSearchMenu: React.FC = () => {
   }, [queryClient, searchKey]);
 
   useEffect(() => {
-    if (shouldAutoSelectRef.current && !isPending && mappedProducts.length > 0) {
-      selectAllProducts(mappedProducts);
-      shouldAutoSelectRef.current = false;
+    if (!isPending && mappedProducts.length > 0) {
+      if (shouldAutoSelectRef.current && shouldAutoRenderVisibleRef.current) {
+        useArchiveProductStore.setState({
+          selectedProducts: mappedProducts,
+          visibleProducts: mappedProducts,
+          loadingProductIds: mappedProducts
+            .filter((p) => p.wmts_url || p.imageUrl || p.wms_url)
+            .map((p) => p.id),
+        });
+        shouldAutoSelectRef.current = false;
+        shouldAutoRenderVisibleRef.current = false;
+      } else if (shouldAutoSelectRef.current) {
+        selectAllProducts(mappedProducts);
+        shouldAutoSelectRef.current = false;
+      } else if (shouldAutoRenderVisibleRef.current) {
+        showSelectedProducts();
+        shouldAutoRenderVisibleRef.current = false;
+      }
     }
-  }, [mappedProducts, isPending, selectAllProducts]);
+  }, [mappedProducts, isPending, selectAllProducts, showSelectedProducts]);
 
   if (!aoi) {
     return (
@@ -699,6 +715,11 @@ export const ArchiveSearchMenu: React.FC = () => {
                 if (allSelected) {
                   shouldAutoSelectRef.current = true;
                 }
+                if (allSelectedVisible) {
+                  shouldAutoRenderVisibleRef.current = true;
+                } else {
+                  shouldAutoRenderVisibleRef.current = false;
+                }
                 setcurrentpage((page) => page + 1);
               }}
               disabled={isPending || loadedCount >= (products?.pagination.total_count ?? 0)}
@@ -757,6 +778,19 @@ export const ArchiveSearchMenu: React.FC = () => {
         {isLoading && !mappedProducts.length && (
           <div className="flex h-full items-center justify-center">
             <img src={Spinners} alt="Loading" className="h-24 w-24" />
+          </div>
+        )}
+
+        {/* Empty state when there is no archive search image for the area */}
+        {!isLoading && !isPending && !isError && mappedProducts.length === 0 && (
+          <div className="flex h-full min-h-[300px] flex-col items-center justify-center p-6 text-center">
+            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+              <ImageOff className="h-7 w-7 text-gray-400" />
+            </div>
+            <p className="text-sm font-semibold text-gray-800">No image available for the area</p>
+            <p className="mt-1 max-w-xs text-xs text-gray-500">
+              No satellite imagery found for this area. Try adjusting your dates, cloud cover, or selected sensor filters.
+            </p>
           </div>
         )}
 

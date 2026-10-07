@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { toast } from "react-toastify";
 import { Crosshair, ImageOff, Info, Loader2, Pin, ShoppingCart } from "lucide-react";
 
 import { useArchiveProductStore, type SelectedArchiveProduct } from "../store/useArchiveProductStore";
@@ -66,11 +67,13 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
   const { addPinnedProduct, removePinnedProduct, isPinned } = usePinnedProductStore();
   const { infoProduct, setInfoProduct } = useArchiveInfoStore();
   const isLoading = useArchiveProductStore((state) => state.loadingProductIds.includes(product.id));
+  const [imageError, setImageError] = useState(false);
 
   const isCartHidden = useIsCartHidden();
 
   const pinned = isPinned(product.id);
   const infoOpen = infoProduct?.id === product.id;
+  const isImageEmpty = !product.imageUrl && !product.wmts_url;
 
   const button = "rounded p-0.5 transition-all duration-300";
   /** Inactive controls sit back; the active one takes the primary colour. */
@@ -96,19 +99,20 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
       </div>
 
       {/* Thumbnail */}
-      {/* Thumbnail */}
       <div className="mr-2 w-[4rem] shrink-0 sm:w-[5rem] md:w-[6rem]">
-        <div className="relative box-border flex items-center justify-center bg-black">
-          {product.imageUrl ? (
+        <div className="relative box-border flex items-center justify-center overflow-hidden rounded border border-gray-200 bg-gray-50">
+          {!imageError && product.imageUrl ? (
             <img
               src={product.imageUrl}
               alt={product.name}
               loading="lazy"
+              onError={() => setImageError(true)}
               className="h-[100px] w-full object-cover"
             />
           ) : (
-            <div className="flex h-full items-center justify-center">
-              <ImageOff className="h-3.5 w-3.5 text-gray-500" />
+            <div className="flex h-[100px] w-full flex-col items-center justify-center bg-gray-100 p-1 text-center">
+              <ImageOff className="mb-1 h-4 w-4 text-gray-400" />
+              <span className="text-[10px] font-semibold leading-tight text-gray-500">Not Available</span>
             </div>
           )}
         </div>
@@ -159,17 +163,31 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
 
           <button
             type="button"
-            onClick={() => !isLoading && onToggleVisibility(product)}
+            onClick={() => {
+              if (isImageEmpty) {
+                toast.info("Image not available for this product");
+                return;
+              }
+              if (!isLoading) onToggleVisibility(product);
+            }}
             disabled={isLoading}
             data-tooltip-id="archive-tooltip"
-            data-tooltip-content={isLoading ? "Loading..." : isVisible ? "Hide image" : "Visibility"}
+            data-tooltip-content={
+              isImageEmpty
+                ? "Not available"
+                : isLoading
+                ? "Loading..."
+                : isVisible
+                ? "Hide image"
+                : "Visibility"
+            }
             className={`${button} ${isLoading ? "cursor-wait opacity-80" : ""}`}
             aria-label={isLoading ? "Loading image" : isVisible ? "Hide image" : "Visibility"}
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
             ) : (
-              <VisibilityIcon dimmed={!isVisible} />
+              <VisibilityIcon dimmed={!isVisible || isImageEmpty} />
             )}
           </button>
 
