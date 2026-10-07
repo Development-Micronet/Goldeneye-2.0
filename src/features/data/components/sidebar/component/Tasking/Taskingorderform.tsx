@@ -22,6 +22,7 @@ import type {
     MissionKey,
     OrderFieldKey,
     ProgTypeKey,
+    TaskingFeasibility,
     TaskingOrderForm as OrderFormValues,
     TaskingSegment,
 } from "../../api/Tasking.service";
@@ -118,7 +119,8 @@ interface TaskingOrderFormProps {
     mission: MissionKey;
     progType: ProgTypeKey;
     acquisitionMode: AcquisitionMode;
-    segment: TaskingSegment;
+    segment?: TaskingSegment;
+    feasibility?: TaskingFeasibility;
     /** Search filters, used as the starting values for the order. */
     startDate: string;
     endDate: string;
@@ -135,6 +137,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
     progType,
     acquisitionMode,
     segment,
+    feasibility,
     startDate,
     endDate,
     cloudCover,
@@ -201,6 +204,7 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
             progType,
             acquisitionMode,
             segment,
+            feasibility,
         };
 
         try {
@@ -227,7 +231,9 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
     };
 
     // Ortho at a wide angle degrades geometry, so warn before committing.
-    const showAngleWarning = form.processing_level === "ortho" && segment.incidenceAngle > 20;
+    const showAngleWarning =
+        form.processing_level === "ortho" &&
+        ((segment?.incidenceAngle ?? form.maxIncidenceAngle) > 20);
 
     return (
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
@@ -236,7 +242,10 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                     {isOrder ? "ORDER IMAGE" : "ORDER CRITERIA SELECTION"}
                 </h2>
                 <p className="text-text-secondary mt-0.5 text-[11px]">
-                    {mission} · {progType} · {dateTimeFormat.format(new Date(segment.acquisitionStartDate))}
+                    {mission} · {progType}
+                    {segment?.acquisitionStartDate
+                        ? ` · ${dateTimeFormat.format(new Date(segment.acquisitionStartDate))}`
+                        : ` · ${form.acquisitionStartDate} to ${form.acquisitionEndDate}`}
                 </p>
             </div>
 
@@ -493,13 +502,27 @@ export const TaskingOrderForm: React.FC<TaskingOrderFormProps> = ({
                     <div className="space-y-2 sm:border-l sm:border-slate-200 sm:pl-4">
                         <h4 className="text-sm font-bold text-slate-900">Satellite details</h4>
                         <Detail label="Mission" value={`${mission} · ${progType}`} />
+                        {feasibility && (
+                            <>
+                                <Detail label="Classification" value={feasibility.classification} />
+                                <Detail label="Automation" value={feasibility.automation} />
+                            </>
+                        )}
                         <Detail
                             label="Acquisition"
-                            value={dateTimeFormat.format(new Date(segment.acquisitionStartDate))}
+                            value={
+                                segment?.acquisitionStartDate
+                                    ? dateTimeFormat.format(new Date(segment.acquisitionStartDate))
+                                    : `${form.acquisitionStartDate} to ${form.acquisitionEndDate}`
+                            }
                         />
                         <Detail
                             label="Incidence angle"
-                            value={`${segment.incidenceAngle.toFixed(2)}° - ${form.maxIncidenceAngle}°`}
+                            value={
+                                segment?.incidenceAngle !== undefined
+                                    ? `${segment.incidenceAngle.toFixed(2)}° - ${form.maxIncidenceAngle}°`
+                                    : `≤ ${form.maxIncidenceAngle}°`
+                            }
                         />
                         <Detail label="Processing" value={labelFor("processing_level", form.processing_level)} />
                         <Detail label="Format" value={labelFor("image_format", form.image_format)} />
