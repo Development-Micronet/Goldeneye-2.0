@@ -103,26 +103,6 @@ function normalizeCoordinatesToWGS84(geom: any, prjString?: string): void {
       return;
     }
   }
-
-  // 3. Check if coordinates are swapped [latitude, longitude] instead of [longitude, latitude]
-  // In India: Latitude is between 5 and 38, Longitude is between 65 and 100
-  if (x >= 5 && x <= 40 && y >= 65 && y <= 100) {
-    const swapCoord = (coords: any): any => {
-      if (
-        Array.isArray(coords) &&
-        coords.length >= 2 &&
-        typeof coords[0] === "number" &&
-        typeof coords[1] === "number"
-      ) {
-        return [coords[1], coords[0], ...coords.slice(2)];
-      }
-      if (Array.isArray(coords)) {
-        return coords.map(swapCoord);
-      }
-      return coords;
-    };
-    geom.coordinates = swapCoord(geom.coordinates);
-  }
 }
 
 /**
@@ -381,6 +361,18 @@ export async function parseGeospatialFile(
       );
 
       if (hasShp) {
+        const hasShx = fileNames.some((n) => n.toLowerCase().endsWith(".shx"));
+        const hasDbf = fileNames.some((n) => n.toLowerCase().endsWith(".dbf"));
+        const hasPrj = fileNames.some((n) => n.toLowerCase().endsWith(".prj"));
+
+        if (!hasShx || !hasDbf) {
+          throw new Error("Invalid Shapefile: A complete shapefile ZIP must contain .shp, .shx, and .dbf files.");
+        }
+
+        if (!hasPrj) {
+          toast.warning(`Warning: .prj file is missing inside ${fileName}. Map placement might be incorrect if the default projection doesn't match.`);
+        }
+
         const { parseZip } = await import("shpjs");
         const geojsonResult = await parseZip(buffer);
         const collections = Array.isArray(geojsonResult) ? geojsonResult : [geojsonResult];
