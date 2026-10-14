@@ -309,7 +309,14 @@ export const AnalyticsMenu: React.FC = () => {
               operation={operation}
               layerName={selectedRaster?.name}
               isOnMap={selectedRaster?.displayOperationId === operation.id}
-              onShow={() => showOperation(selectedRaster!.id, operation.id)}
+              onShow={() => {
+                showOperation(selectedRaster!.id, operation.id);
+                toast.info(`Showing ${operation.type} on map`);
+              }}
+              onHide={() => {
+                resetDisplayImage(selectedRaster!.id);
+                toast.info("Showing original raster");
+              }}
               onZoom={() => {
                 showOperation(selectedRaster!.id, operation.id);
                 requestZoom(selectedRaster!.id);

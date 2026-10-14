@@ -11,6 +11,7 @@ import {
   X,
   AlertTriangle,
   Layers,
+  Loader2,
 } from "lucide-react";
 
 import AOIDialog from "./AOIDialog";
@@ -55,24 +56,31 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
   const map = useMapStore((state) => state.map);
   const mapType = useMapStore((state) => state.Maptype);
   const setMaptype = useMapStore((state) => state.setMaptype);
-  const [pendingImage, setPendingImage] = useState<{
-    file: File;
-    uploadResult: UploadRasterResponse;
-  } | null>(null);
+  const pendingImage = useRasterStore((s) => s.pendingImage);
+  const setPendingImage = useRasterStore((s) => s.setPendingImage);
 
   const reset = useCallback(() => {
     setRasterStatus("idle");
     setRasterProgress(0);
   }, [setRasterStatus, setRasterProgress]);
 
-  // Clear the "Done!" banner after a moment, and on unmount.
+  // Clear the "Done!" banner after a moment.
   useEffect(() => {
     if (rasterStatus !== "done") return;
     const timer = setTimeout(reset, 2500);
     return () => clearTimeout(timer);
   }, [rasterStatus, reset]);
 
-  useEffect(() => reset, [reset]);
+  // Only reset on unmount if not actively reading or uploading
+  useEffect(() => {
+    return () => {
+      const current = useRasterStore.getState().rasterStatus;
+      if (current === "done" || current === "error") {
+        useRasterStore.getState().setRasterStatus("idle");
+        useRasterStore.getState().setRasterProgress(0);
+      }
+    };
+  }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (mapType === "3d") {
@@ -142,6 +150,12 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
         queryClient.invalidateQueries({
           queryKey: ["company-images"],
         });
+        setTimeout(() => {
+          if (useRasterStore.getState().rasterStatus === "done") {
+            useRasterStore.getState().setRasterStatus("idle");
+            useRasterStore.getState().setRasterProgress(0);
+          }
+        }, 2500);
 
       } else {
         // Plain image: upload, then ask the user for an AOI before adding.
@@ -157,6 +171,11 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
       toast.error(`Unable to add raster: ${errorMessage(error)}`);
       setRasterStatus("error");
       setRasterProgress(0);
+      setTimeout(() => {
+        if (useRasterStore.getState().rasterStatus === "error") {
+          useRasterStore.getState().setRasterStatus("idle");
+        }
+      }, 4000);
     }
   };
 
@@ -271,9 +290,14 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
       {/* Progress */}
       {statusLabel && (
         <div className="mt-3 rounded-lg border border-teal-100 bg-teal-50 p-3 text-xs">
-          <div className="flex justify-between font-medium text-teal-900">
-            <span className="truncate pr-2">{statusLabel}</span>
-            <span className="shrink-0">{rasterProgress}%</span>
+          <div className="flex items-center justify-between font-medium text-teal-900">
+            <span className="flex items-center gap-1.5 truncate pr-2">
+              {(rasterStatus === "reading" || rasterStatus === "rendering") && (
+                <Loader2 size={13} className="shrink-0 animate-spin text-teal-600" />
+              )}
+              {statusLabel}
+            </span>
+            <span className="shrink-0 font-semibold">{rasterProgress}%</span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-teal-200/60">
             <div
@@ -301,12 +325,26 @@ const RasterPopup: React.FC<RasterPopupProps> = ({ onClose }) => {
         onChange={handleUpload}
       />
       <button
+        type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="my-3 flex items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-teal-700 disabled:opacity-60"
+        className={`my-3 flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold text-white transition-colors ${
+          rasterStatus === "reading" || rasterStatus === "rendering"
+            ? "cursor-not-allowed bg-teal-600/80"
+            : "bg-teal-600 hover:bg-teal-700 active:bg-teal-800"
+        }`}
         disabled={rasterStatus === "reading" || rasterStatus === "rendering"}
       >
-        <Upload size={16} />
-        Upload raster
+        {rasterStatus === "reading" || rasterStatus === "rendering" ? (
+          <>
+            <Loader2 size={16} className="animate-spin text-white" />
+            <span>{rasterStatus === "reading" ? "Reading file..." : "Uploading raster..."}</span>
+          </>
+        ) : (
+          <>
+            <Upload size={16} />
+            <span>Upload raster</span>
+          </>
+        )}
       </button>
 
       {/* Layer list */}

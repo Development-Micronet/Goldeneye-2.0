@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "react-toastify";
+import { create } from "zustand";
 
 import {
   isActive,
@@ -9,6 +10,7 @@ import {
   type PredictionStatus,
 } from "../../../constant/Analytics.config";
 import { useRasterStore, type DetectionType, type RasterLayer } from "../store/useRasterStore";
+import { queryClient } from "../../../providers/QueryProvider";
 
 export interface PredictionOperation {
   id: string;
@@ -45,37 +47,46 @@ const PROCESSING_CEILING = 88;
 /** If the transport never reports upload bytes, don't sit at 2% forever. */
 const UPLOAD_FALLBACK_MS = 1_500;
 
-export function usePredictions() {
-  const [predictions, setPredictions] = useState<PredictionOperation[]>([]);
-  const addOperation = useRasterStore((state) => state.addOperation);
+let tickerInterval: ReturnType<typeof setInterval> | null = null;
+const fallbackTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+const abortControllers: Record<string, AbortController> = {};
 
-  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+interface PredictionStoreState {
+  predictions: PredictionOperation[];
+  activeCount: number;
+  patch: (id: string, data: Partial<PredictionOperation>) => void;
+  beginProcessing: (id: string) => void;
+  run: (layer: RasterLayer, services: DetectionType[]) => Promise<void>;
+  abort: (id: string) => void;
+  dismiss: (id: string) => void;
+  clearHistory: () => void;
+}
 
-  const patch = useCallback(
-    (id: string, data: Partial<PredictionOperation>) =>
-      setPredictions((prev) => prev.map((item) => (item.id === id ? { ...item, ...data } : item))),
-    [],
-  );
-
-  const activePredictions = useMemo(
-    () => predictions.filter((item) => isActive(item.status)),
-    [predictions],
-  );
-
+function checkAndManageTicker(
+  get: () => PredictionStoreState,
+  set: (fn: (state: PredictionStoreState) => Partial<PredictionStoreState>) => void,
+) {
+  const { predictions } = get();
   const hasProcessing = predictions.some((item) => item.status === "processing");
 
-  /* --- estimate ticker ------------------------------------------- */
+  if (hasProcessing && !tickerInterval) {
+    tickerInterval = setInterval(() => {
+      const current = get().predictions;
+      const stillProcessing = current.some((item) => item.status === "processing");
 
-  useEffect(() => {
-    if (!hasProcessing) return;
+      if (!stillProcessing) {
+        if (tickerInterval) {
+          clearInterval(tickerInterval);
+          tickerInterval = null;
+        }
+        return;
+      }
 
-    const interval = setInterval(() => {
-      setPredictions((prev) =>
-        prev.map((item) => {
+      set((state) => {
+        const updated = state.predictions.map((item) => {
           if (item.status !== "processing") return item;
 
           const baseline = SERVICE_BY_NAME.get(item.serviceName)?.baselineMs ?? 25_000;
-
           const elapsed = Date.now() - (item.processingStartedAt ?? item.startedAt);
 
           // asymptotic: approaches the ceiling but never claims to reach it
@@ -87,175 +98,327 @@ export function usePredictions() {
               PROCESSING_CEILING,
               UPLOAD_CEILING + eased * (PROCESSING_CEILING - UPLOAD_CEILING),
             ),
-            remainingMs: baseline - elapsed,
+            remainingMs: Math.max(0, baseline - elapsed),
           };
-        }),
-      );
+        });
+
+        return {
+          predictions: updated,
+          activeCount: updated.filter((item) => isActive(item.status)).length,
+        };
+      });
     }, 300);
+  } else if (!hasProcessing && tickerInterval) {
+    clearInterval(tickerInterval);
+    tickerInterval = null;
+  }
+}
 
-    return () => clearInterval(interval);
-  }, [hasProcessing]);
+export const usePredictionStore = create<PredictionStoreState>((set, get) => ({
+  predictions: [],
+  activeCount: 0,
 
-  useEffect(
-    () => () => {
-      Object.values(timers.current).forEach(clearTimeout);
-    },
-    [],
-  );
+  patch: (id: string, data: Partial<PredictionOperation>) => {
+    set((state) => {
+      const updated = state.predictions.map((item) =>
+        item.id === id ? { ...item, ...data } : item,
+      );
+      return {
+        predictions: updated,
+        activeCount: updated.filter((item) => isActive(item.status)).length,
+      };
+    });
+    checkAndManageTicker(get, set);
+  },
 
-  const beginProcessing = useCallback((id: string) => {
-    clearTimeout(timers.current[id]);
-    delete timers.current[id];
+  beginProcessing: (id: string) => {
+    if (fallbackTimers[id]) {
+      clearTimeout(fallbackTimers[id]);
+      delete fallbackTimers[id];
+    }
 
-    setPredictions((prev) =>
-      prev.map((item) =>
+    set((state) => {
+      const updated = state.predictions.map((item) =>
         item.id === id && (item.status === "uploading" || item.status === "queued")
           ? {
               ...item,
-              status: "processing",
+              status: "processing" as PredictionStatus,
               processingStartedAt: Date.now(),
               progress: Math.max(item.progress, UPLOAD_CEILING),
             }
           : item,
-      ),
-    );
-  }, []);
-
-  /* --- run ------------------------------------------------------- */
-
-  const run = useCallback(
-    async (layer: RasterLayer, services: DetectionType[]) => {
-      if (services.length === 0) return;
-
-      const batch: PredictionOperation[] = services.map((name) => ({
-        id: crypto.randomUUID(),
-        serviceName: name,
-        layerId: layer.id,
-        layerName: layer.name,
-        status: "queued",
-        progress: 0,
-        startedAt: Date.now(),
-      }));
-
-      setPredictions((prev) => [...batch, ...prev]);
-
-      toast.info(
-        services.length === 1
-          ? `${serviceLabel(services[0])} started on ${layer.name}`
-          : `${services.length} predictions started on ${layer.name}`,
       );
+      return {
+        predictions: updated,
+        activeCount: updated.filter((item) => isActive(item.status)).length,
+      };
+    });
 
-      // All services fire together; each commits its result the moment it
-      // lands, so the panel fills in rather than waiting on the slowest.
-      const settled = await Promise.allSettled(
-        batch.map(async (job) => {
-          const service = SERVICE_BY_NAME.get(job.serviceName)!;
+    checkAndManageTicker(get, set);
+  },
 
-          patch(job.id, { status: "uploading", progress: 2 });
+  run: async (layer: RasterLayer, services: DetectionType[]) => {
+    if (services.length === 0) return;
 
-          timers.current[job.id] = setTimeout(() => beginProcessing(job.id), UPLOAD_FALLBACK_MS);
+    const batch: PredictionOperation[] = services.map((name) => ({
+      id: crypto.randomUUID(),
+      serviceName: name,
+      layerId: layer.id,
+      layerName: layer.name,
+      status: "queued" as PredictionStatus,
+      progress: 0,
+      startedAt: Date.now(),
+    }));
 
-          try {
-            const data = await service.run(layer.file, (fraction) => {
+    set((state) => {
+      const updated = [...batch, ...state.predictions];
+      return {
+        predictions: updated,
+        activeCount: updated.filter((item) => isActive(item.status)).length,
+      };
+    });
+
+    toast.info(
+      services.length === 1
+        ? `${serviceLabel(services[0])} started on ${layer.name}`
+        : `${services.length} predictions started on ${layer.name}`,
+    );
+
+    const { patch, beginProcessing } = get();
+
+    // All services fire together; each commits its result the moment it
+    // lands, so the panel fills in rather than waiting on the slowest.
+    const settled = await Promise.allSettled(
+      batch.map(async (job) => {
+        const service = SERVICE_BY_NAME.get(job.serviceName)!;
+        const controller = new AbortController();
+        abortControllers[job.id] = controller;
+
+        patch(job.id, { status: "uploading", progress: 2 });
+
+        fallbackTimers[job.id] = setTimeout(
+          () => beginProcessing(job.id),
+          UPLOAD_FALLBACK_MS,
+        );
+
+        try {
+          const data = await service.run(
+            layer.file,
+            (fraction: number) => {
               if (fraction >= 1) {
                 beginProcessing(job.id);
                 return;
               }
 
-              setPredictions((prev) =>
-                prev.map((item) =>
+              set((state) => ({
+                predictions: state.predictions.map((item) =>
                   item.id === job.id && item.status === "uploading"
                     ? {
                         ...item,
-                        progress: Math.max(item.progress, Math.round(fraction * UPLOAD_CEILING)),
+                        progress: Math.max(
+                          item.progress,
+                          Math.round(fraction * UPLOAD_CEILING),
+                        ),
                       }
                     : item,
                 ),
-              );
-            });
+              }));
+            },
+            controller.signal,
+          );
 
-            patch(job.id, { status: "finalizing", progress: 94 });
+          patch(job.id, { status: "finalizing", progress: 94 });
 
-            const resultId = crypto.randomUUID();
-            const count = readCount(data);
-            const finishedAt = Date.now();
+          const resultId = crypto.randomUUID();
+          const count = readCount(data);
+          const finishedAt = Date.now();
 
-            addOperation(layer.id, {
-              id: resultId,
-              type: job.serviceName,
-              imageUrl: data.imageUrl,
-              previewUrl: data.previewUrl,
-              cogUrl: data.cogUrl,
-              cogFileUrl: data.cogFileUrl,
-              fileName: data.fileName,
-              status: "ok",
-              message: data.message,
-              count,
-              aoiApplied: "aoi_applied" in data ? data.aoi_applied : undefined,
-              durationMs: finishedAt - job.startedAt,
-              createdAt: finishedAt,
-            });
+          useRasterStore.getState().addOperation(layer.id, {
+            id: resultId,
+            type: job.serviceName,
+            imageUrl: data.imageUrl,
+            previewUrl: data.previewUrl,
+            cogUrl: data.cogUrl,
+            cogFileUrl: data.cogFileUrl,
+            fileName: data.fileName,
+            status: "ok",
+            message: data.message,
+            count,
+            aoiApplied: "aoi_applied" in data ? data.aoi_applied : undefined,
+            durationMs: finishedAt - job.startedAt,
+            createdAt: finishedAt,
+          });
 
-            patch(job.id, {
-              status: "completed",
-              progress: 100,
-              finishedAt,
-              remainingMs: undefined,
-              count,
-              resultId,
-              fileName: data.fileName,
-            });
+          patch(job.id, {
+            status: "completed",
+            progress: 100,
+            finishedAt,
+            remainingMs: undefined,
+            count,
+            resultId,
+            fileName: data.fileName,
+          });
 
-            toast.success(
-              `${serviceLabel(job.serviceName)} found ${count} object${count === 1 ? "" : "s"}`,
-            );
+          toast.success(
+            `${serviceLabel(job.serviceName)} found ${count} object${count === 1 ? "" : "s"}`,
+          );
 
-            return job.serviceName;
-          } catch (error) {
-            clearTimeout(timers.current[job.id]);
-            delete timers.current[job.id];
+          queryClient.invalidateQueries({
+            queryKey: ["company-images"],
+          });
 
-            const message = error instanceof Error ? error.message : "Prediction failed";
+          return job.serviceName;
+        } catch (error: any) {
+          if (fallbackTimers[job.id]) {
+            clearTimeout(fallbackTimers[job.id]);
+            delete fallbackTimers[job.id];
+          }
 
-            patch(job.id, {
-              status: "failed",
-              progress: 100,
+          const wasAborted =
+            controller.signal.aborted ||
+            error?.name === "CanceledError" ||
+            error?.code === "ERR_CANCELED" ||
+            error?.message?.toLowerCase().includes("canceled") ||
+            error?.message?.toLowerCase().includes("aborted");
+
+          if (wasAborted) {
+            const current = get().predictions.find((p) => p.id === job.id);
+            if (current && current.status !== "aborted") {
+              patch(job.id, {
+                status: "aborted",
+                progress: 0,
+                finishedAt: Date.now(),
+                remainingMs: undefined,
+                error: "Cancelled by user",
+              });
+              toast.info(`${serviceLabel(job.serviceName)} cancelled`);
+            }
+            return;
+          }
+
+          const message = error instanceof Error ? error.message : "Prediction failed";
+
+          patch(job.id, {
+            status: "failed",
+            progress: 100,
+            finishedAt: Date.now(),
+            remainingMs: undefined,
+            error: message,
+          });
+
+          toast.error(`${serviceLabel(job.serviceName)}: ${message}`);
+
+          throw error;
+        } finally {
+          delete abortControllers[job.id];
+        }
+      }),
+    );
+
+    const failed = settled.filter((item) => item.status === "rejected").length;
+
+    if (failed && settled.length > 1) {
+      toast.warning(`${settled.length - failed} of ${settled.length} predictions completed`);
+    }
+  },
+
+  abort: (id: string) => {
+    if (abortControllers[id]) {
+      try {
+        abortControllers[id].abort();
+      } catch (e) {
+        console.warn("[analytics] error aborting controller", e);
+      }
+      delete abortControllers[id];
+    }
+
+    if (fallbackTimers[id]) {
+      clearTimeout(fallbackTimers[id]);
+      delete fallbackTimers[id];
+    }
+
+    const { predictions } = get();
+    const pred = predictions.find((p) => p.id === id);
+
+    set((state) => {
+      const updated = state.predictions.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              status: "aborted" as PredictionStatus,
+              progress: 0,
               finishedAt: Date.now(),
               remainingMs: undefined,
-              error: message,
-            });
-
-            toast.error(`${serviceLabel(job.serviceName)}: ${message}`);
-
-            throw error;
-          }
-        }),
+              error: "Cancelled by user",
+            }
+          : item,
       );
+      return {
+        predictions: updated,
+        activeCount: updated.filter((item) => isActive(item.status)).length,
+      };
+    });
 
-      const failed = settled.filter((item) => item.status === "rejected").length;
+    if (pred) {
+      toast.info(`${serviceLabel(pred.serviceName)} cancelled`);
+    }
 
-      if (failed && settled.length > 1) {
-        toast.warning(`${settled.length - failed} of ${settled.length} predictions completed`);
+    checkAndManageTicker(get, set);
+  },
+
+  dismiss: (id: string) => {
+    if (abortControllers[id]) {
+      try {
+        abortControllers[id].abort();
+      } catch (e) {
+        console.warn("[analytics] error aborting controller", e);
       }
-    },
-    [addOperation, beginProcessing, patch],
-  );
+      delete abortControllers[id];
+    }
+    if (fallbackTimers[id]) {
+      clearTimeout(fallbackTimers[id]);
+      delete fallbackTimers[id];
+    }
+    set((state) => {
+      const updated = state.predictions.filter((item) => item.id !== id);
+      return {
+        predictions: updated,
+        activeCount: updated.filter((item) => isActive(item.status)).length,
+      };
+    });
+    checkAndManageTicker(get, set);
+  },
 
-  const dismiss = useCallback(
-    (id: string) => setPredictions((prev) => prev.filter((item) => item.id !== id)),
-    [],
-  );
+  clearHistory: () => {
+    set((state) => {
+      const updated = state.predictions.filter((item) => isActive(item.status));
+      return {
+        predictions: updated,
+        activeCount: updated.length,
+      };
+    });
+  },
+}));
 
-  const clearHistory = useCallback(
-    () => setPredictions((prev) => prev.filter((item) => isActive(item.status))),
-    [],
+export function usePredictions() {
+  const predictions = usePredictionStore((state) => state.predictions);
+  const activeCount = usePredictionStore((state) => state.activeCount);
+  const run = usePredictionStore((state) => state.run);
+  const abort = usePredictionStore((state) => state.abort);
+  const dismiss = usePredictionStore((state) => state.dismiss);
+  const clearHistory = usePredictionStore((state) => state.clearHistory);
+
+  const activePredictions = useMemo(
+    () => predictions.filter((item) => isActive(item.status)),
+    [predictions],
   );
 
   return {
     predictions,
     activePredictions,
-    activeCount: activePredictions.length,
+    activeCount,
     run,
+    abort,
     dismiss,
     clearHistory,
   };

@@ -2,9 +2,11 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { useEffect, useRef, useState } from "react";
 import { RasterIcon, Baselayer, drawIcon } from "../../../assets";
+import { Loader2 } from "lucide-react";
 
 import RasterPopup from "./RasterPopup";
 import { useMapStore } from "../../data/store/useMapStore";
+import { useRasterStore } from "../store/useRasterStore";
 import BasemapPopup from "./BasemapPopup";
 import AnalyticsDrawPopup from "./AnalyticsDrawPopup";
 
@@ -24,6 +26,8 @@ export default function LeftSidebar({
   const setActiveIndex = propSetActiveIndex || setInternalActiveIndex;
 
   const { resetMapState } = useMapStore();
+  const rasterStatus = useRasterStore((s) => s.rasterStatus);
+  const isRasterLoading = rasterStatus === "reading" || rasterStatus === "rendering";
 
   useEffect(() => {
     if (activeIndex !== null) {
@@ -75,6 +79,7 @@ export default function LeftSidebar({
       <ul className="flex w-full flex-col items-center gap-2">
         {sidebarItems.map((item, index) => {
           const isActive = activeIndex === index;
+          const isItemLoading = index === 0 && isRasterLoading;
 
           return (
             <li key={item.id} className="relative flex w-full justify-center">
@@ -93,22 +98,38 @@ export default function LeftSidebar({
                   aria-label={item.tooltip}
                   aria-expanded={isActive}
                   data-tooltip-id={isActive ? undefined : "left-sidebar-tooltip"}
-                  data-tooltip-content={item.tooltip}
+                  data-tooltip-content={
+                    isItemLoading ? "Raster (Uploading...)" : item.tooltip
+                  }
                   className={`group focus-visible:ring-primary/40 flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-150 outline-none focus-visible:ring-2 sm:h-10 sm:w-10 md:h-10 md:w-10 ${
                     isActive
                       ? "bg-primary/10 text-primary ring-primary/15 ring-1"
+                      : isItemLoading
+                      ? "bg-teal-50 text-teal-700 ring-1 ring-teal-400/60 hover:bg-teal-100/70"
                       : "text-gray-600 hover:bg-gray-100 active:bg-gray-200"
                   }`}
                 >
-                  <img
-                    src={item.icon}
-                    alt=""
-                    aria-hidden
-                    draggable={false}
-                    className={`h-[18px] w-[18px] object-contain transition-opacity ${
-                      isActive ? "opacity-100" : "opacity-60 group-hover:opacity-90"
-                    }`}
-                  />
+                  <div className="relative flex items-center justify-center">
+                    <img
+                      src={item.icon}
+                      alt=""
+                      aria-hidden
+                      draggable={false}
+                      className={`h-[18px] w-[18px] object-contain transition-opacity ${
+                        isActive || isItemLoading
+                          ? "opacity-100"
+                          : "opacity-60 group-hover:opacity-90"
+                      }`}
+                    />
+                    {isItemLoading && (
+                      <span
+                        title="Uploading raster..."
+                        className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-teal-500"
+                      >
+                        <Loader2 className="h-2.5 w-2.5 animate-spin text-teal-600" />
+                      </span>
+                    )}
+                  </div>
                 </button>
 
                 {index === 0 && isActive && <RasterPopup onClose={() => setActiveIndex(null)} />}

@@ -43,7 +43,7 @@ export const AnalyticsMenu: React.FC = () => {
   const removeOperation = useRasterStore((state) => state.removeOperation);
   const requestZoom = useRasterStore((state) => state.requestZoom);
   const queryClient = useQueryClient();
-  const { predictions, activeCount, run, clearHistory } = usePredictions();
+  const { predictions, activeCount, run, abort, clearHistory } = usePredictions();
 
   const [selectedServices, setSelectedServices] = useState<DetectionType[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -101,18 +101,16 @@ export const AnalyticsMenu: React.FC = () => {
       return;
     }
 
+    setSelectedServices((prev) => prev.filter((item) => !services.includes(item)));
+
     try {
       await run(selectedRaster, services);
       queryClient.invalidateQueries({
         queryKey: ["company-images"],
       });
-
-
     } catch (error) {
       console.error("[analytics] prediction failed", error);
       toast.error(error instanceof Error ? error.message : "Prediction failed");
-    } finally {
-      setSelectedServices((prev) => prev.filter((item) => !services.includes(item)));
     }
   };
 
@@ -275,6 +273,12 @@ export const AnalyticsMenu: React.FC = () => {
               prediction={latestByService.get(service.servicename)}
               onToggle={() => toggleService(service.servicename)}
               onRunOne={() => void runServices([service.servicename])}
+              onAbort={() => {
+                const pred = latestByService.get(service.servicename);
+                if (pred) {
+                  abort(pred.id);
+                }
+              }}
             />
           ))}
         </div>
@@ -329,7 +333,14 @@ export const AnalyticsMenu: React.FC = () => {
               operation={operation}
               layerName={selectedRaster?.name}
               isOnMap={selectedRaster?.displayOperationId === operation.id}
-              onShow={() => showOperation(selectedRasterId, operation.id)}
+              onShow={() => {
+                showOperation(selectedRasterId, operation.id);
+                toast.info(`Showing ${operation.type} on map`);
+              }}
+              onHide={() => {
+                resetDisplayImage(selectedRasterId);
+                toast.info("Showing original raster");
+              }}
               onZoom={() => {
                 showOperation(selectedRasterId, operation.id);
                 requestZoom(selectedRasterId);

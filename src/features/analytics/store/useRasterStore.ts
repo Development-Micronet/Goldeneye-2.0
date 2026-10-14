@@ -104,6 +104,14 @@ export interface ZoomRequest {
   nonce: number;
 }
 
+export interface PendingRasterImage {
+  file: File;
+  uploadResult: {
+    previewUrl: string;
+    cogUrl?: string;
+  };
+}
+
 interface RasterStore {
   rasters: RasterLayer[];
 
@@ -113,6 +121,8 @@ interface RasterStore {
   rasterStatus: RasterStatus;
 
   rasterProgress: number;
+
+  pendingImage: PendingRasterImage | null;
 
   zoomRequest: ZoomRequest | null;
 
@@ -150,6 +160,8 @@ interface RasterStore {
   setRasterStatus: (status: RasterStatus) => void;
 
   setRasterProgress: (value: number) => void;
+
+  setPendingImage: (pending: PendingRasterImage | null) => void;
 
   setRasterDisplay: (id: string, displayImageUrl: string, displayType: RasterDisplayType) => void;
 }
@@ -212,6 +224,8 @@ export const useRasterStore = create<RasterStore>()(
 
       rasterProgress: 0,
 
+      pendingImage: null,
+
       zoomRequest: null,
 
       addRaster: (layer) =>
@@ -265,6 +279,7 @@ export const useRasterStore = create<RasterStore>()(
             fitRasterId: null,
             rasterStatus: "idle",
             rasterProgress: 0,
+            pendingImage: null,
             zoomRequest: null,
           };
         }),
@@ -374,6 +389,8 @@ export const useRasterStore = create<RasterStore>()(
       setRasterStatus: (status) => set({ rasterStatus: status }),
 
       setRasterProgress: (value) => set({ rasterProgress: value }),
+
+      setPendingImage: (pending) => set({ pendingImage: pending }),
 
       setRasterDisplay: (id, displayImageUrl, displayType) =>
         set((state) => ({
