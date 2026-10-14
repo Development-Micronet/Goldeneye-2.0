@@ -43,7 +43,8 @@ export const Captcha: React.FC<CaptchaProps> = ({ code, onRefresh }) => {
     }
 
     // Draw characters with random rotations and styles
-    ctx.font = 'bold 22px "Courier New", Courier, monospace';
+    // ctx.font = 'bold 22px "Courier New", Courier, monospace';
+    ctx.font = 'bold 24px Verdana, Arial, sans-serif';
     ctx.textBaseline = "middle";
 
     // Adjust character placement dynamically

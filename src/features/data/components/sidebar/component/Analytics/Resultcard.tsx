@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
-import { Check, Crosshair, Download, Layers, Pencil, Trash2, X } from "lucide-react";
+import { Check, Crosshair, Download, EyeOff, Layers, Pencil, Trash2, X } from "lucide-react";
 import type { RasterOperation } from "../../../../hooks/useRasterStore";
 import {
   formatClock,
@@ -54,6 +54,7 @@ interface ResultCardProps {
   layerName?: string;
   isOnMap: boolean;
   onShow: () => void;
+  onHide?: () => void;
   onZoom: () => void;
   onRename: (fileName: string) => void;
   onDelete: () => void;
@@ -176,16 +177,22 @@ export const ResultCard: React.FC<ResultCardProps> = ({
       <div className="border-border mt-2.5 flex items-center justify-between gap-2 border-t pt-2.5 pl-1.5">
         <button
           type="button"
-          onClick={onShow}
-          disabled={isOnMap}
-          className={`font-mona focus-visible:outline-primary inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+          onClick={() => {
+            if (isOnMap) {
+              if (onHide) onHide();
+              else onShow();
+            } else {
+              onShow();
+            }
+          }}
+          className={`font-mona focus-visible:outline-primary inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.97] ${
             isOnMap
-              ? "bg-primary/10 text-primary cursor-default"
-              : "bg-primary text-white hover:brightness-110 active:scale-[0.97]"
+              ? "border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50"
+              : "bg-primary text-white hover:brightness-110"
           } `}
         >
-          <Layers size={12} />
-          {isOnMap ? "Showing" : `Show ${operation.type}`}
+          {isOnMap ? <EyeOff size={12} /> : <Layers size={12} />}
+          {isOnMap ? `Hide ${operation.type}` : `Show ${operation.type}`}
         </button>
 
         <div className="flex items-center gap-1">

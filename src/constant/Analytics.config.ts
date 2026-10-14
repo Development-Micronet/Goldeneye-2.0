@@ -24,7 +24,11 @@ export interface ServiceConfig {
   icon: ElementType;
   /** Rough server-side runtime, used only to estimate remaining time */
   baselineMs: number;
-  run: (file: File, onUploadProgress?: UploadProgressHandler) => Promise<any>;
+  run: (
+    file: File,
+    onUploadProgress?: UploadProgressHandler,
+    signal?: AbortSignal,
+  ) => Promise<any>;
 }
 
 export const SERVICES: ServiceConfig[] = [
@@ -63,7 +67,13 @@ export const serviceLabel = (name: DetectionType) => SERVICE_BY_NAME.get(name)?.
  * ------------------------------------------------------------------ */
 
 export type PredictionStatus =
-  "queued" | "uploading" | "processing" | "finalizing" | "completed" | "failed";
+  | "queued"
+  | "uploading"
+  | "processing"
+  | "finalizing"
+  | "completed"
+  | "failed"
+  | "aborted";
 
 export const STAGE_LABEL: Record<PredictionStatus, string> = {
   queued: "Queued",
@@ -72,6 +82,7 @@ export const STAGE_LABEL: Record<PredictionStatus, string> = {
   finalizing: "Generating result",
   completed: "Completed",
   failed: "Failed",
+  aborted: "Cancelled",
 };
 
 export const isActive = (status: PredictionStatus) =>
@@ -121,6 +132,12 @@ export const STATUS_STYLE: Record<
     pill: "bg-red-600 text-white",
     bar: "bg-red-500",
     spine: "bg-red-500",
+  },
+  aborted: {
+    card: "border-gray-300 bg-gray-50/80",
+    pill: "bg-gray-500 text-white",
+    bar: "bg-gray-400",
+    spine: "bg-gray-400",
   },
 };
 

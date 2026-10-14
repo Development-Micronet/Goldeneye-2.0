@@ -78,8 +78,11 @@ export interface CompanyImagesResponse {
  */
 export type UploadProgressHandler = (fraction: number) => void;
 
-const withProgress = (onUploadProgress?: UploadProgressHandler): AxiosRequestConfig =>
-  onUploadProgress
+const withProgress = (
+  onUploadProgress?: UploadProgressHandler,
+  signal?: AbortSignal,
+): AxiosRequestConfig => ({
+  ...(onUploadProgress
     ? {
       onUploadProgress: (event: AxiosProgressEvent) => {
         if (!event.total) return;
@@ -87,7 +90,9 @@ const withProgress = (onUploadProgress?: UploadProgressHandler): AxiosRequestCon
         onUploadProgress(Math.min(1, event.loaded / event.total));
       },
     }
-    : {};
+    : {}),
+  signal,
+});
 
 const rasterForm = (file: File) => {
   const formData = new FormData();
@@ -100,11 +105,12 @@ const rasterForm = (file: File) => {
 export async function uploadRaster(
   file: File,
   onUploadProgress?: UploadProgressHandler,
+  signal?: AbortSignal,
 ): Promise<UploadRasterResponse> {
   const { data } = await apiClient2.post<UploadRasterResponse>(
     "/upload-tif/",
     rasterForm(file),
-    withProgress(onUploadProgress),
+    withProgress(onUploadProgress, signal),
   );
 
   if (!data.success) {
@@ -117,11 +123,12 @@ export async function uploadRaster(
 export async function detectAircraft(
   file: File,
   onUploadProgress?: UploadProgressHandler,
+  signal?: AbortSignal,
 ): Promise<AircraftDetectionResponse> {
   const { data } = await apiClient2.post<AircraftDetectionResponse>(
     "/aircraft/",
     rasterForm(file),
-    withProgress(onUploadProgress),
+    withProgress(onUploadProgress, signal),
   );
 
   if (!data.success) {
@@ -134,11 +141,12 @@ export async function detectAircraft(
 export async function detectTree(
   file: File,
   onUploadProgress?: UploadProgressHandler,
+  signal?: AbortSignal,
 ): Promise<TreeDetectionResponse> {
   const { data } = await apiClient2.post<TreeDetectionResponse>(
     "/tree/",
     rasterForm(file),
-    withProgress(onUploadProgress),
+    withProgress(onUploadProgress, signal),
   );
 
   if (!data.success) {
@@ -151,11 +159,12 @@ export async function detectTree(
 export async function detectShip(
   file: File,
   onUploadProgress?: UploadProgressHandler,
+  signal?: AbortSignal,
 ): Promise<ShipDetectionResponse> {
   const { data } = await apiClient2.post<ShipDetectionResponse>(
     "/ship/",
     rasterForm(file),
-    withProgress(onUploadProgress),
+    withProgress(onUploadProgress, signal),
   );
 
   if (!data.success) {

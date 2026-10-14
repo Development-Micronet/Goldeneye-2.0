@@ -11,6 +11,8 @@ import SubscriptionFormModal from "../components/Subscription/SubscriptionFormMo
 import SubscriptionList from "../components/Subscription/SubscriptionList";
 import { PlanFormModal } from "../components/Plan/PlanFormModal";
 import { PlanTable } from "../components/Plan/PlanTable";
+import { ApiKeyTable } from "../components/ApiKey/ApiKeyTable";
+import { ApiKeyFormModal } from "../components/ApiKey/ApiKeyFormModal";
 import { buildManageTabSearch, getTabFromSearch } from "../utils/manageTabs";
 import { TenantPlansTable } from "../components/Plan/TenantPlansTable";
 import Swal from "sweetalert2";
@@ -23,6 +25,7 @@ export const ManagePage: React.FC = () => {
   const [showProviderModalform, setshowProviderModalform] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
 
   const [activeTab, setActiveTab] = useState<TabType>(() =>
@@ -56,6 +59,8 @@ export const ManagePage: React.FC = () => {
       setShowSubscriptionModal(true);
     } else if (activeTab === "plan") {
       setShowPlanModal(true);
+    } else if (activeTab === "api-key-access") {
+      setShowApiKeyModal(true);
     }
   };
 
@@ -120,6 +125,7 @@ export const ManagePage: React.FC = () => {
               {activeTab === "provider & Contracts" && "Manage Providers"}
               {activeTab === "subscription" && "Manage Subscriptions"}
               {activeTab === "plan" && (roleName === "admin" ? "My Plan" : "Manage Plans")}
+              {activeTab === "api-key-access" && "API Key Access"}
             </h2>
 
             {activeTab !== "end-users" &&
@@ -133,6 +139,7 @@ export const ManagePage: React.FC = () => {
                   {activeTab === "provider & Contracts" && "Add Provider"}
                   {activeTab === "subscription" && "Add Subscription"}
                   {activeTab === "plan" && "Add Plan"}
+                  {activeTab === "api-key-access" && "Generate API Key"}
                 </button>
               )}
           </div>
@@ -156,6 +163,9 @@ export const ManagePage: React.FC = () => {
                 {roleName !== "admin" && <TenantPlansTable />}
               </>
             )}
+            {activeTab === "api-key-access" && (
+              <ApiKeyTable onGenerateKey={() => setShowApiKeyModal(true)} />
+            )}
           </div>
         </div>
       </div>
@@ -173,6 +183,12 @@ export const ManagePage: React.FC = () => {
       )}
       {activeTab === "plan" && (
         <PlanFormModal open={showPlanModal} onClose={handleClosePlanModal} plan={selectedPlan} />
+      )}
+      {showApiKeyModal && (
+        <ApiKeyFormModal
+          open={showApiKeyModal}
+          onClose={() => setShowApiKeyModal(false)}
+        />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import React from "react";
-import { AlertTriangle, Check, FileImage, Loader2, Play } from "lucide-react";
-import type { PredictionOperation } from "../../../utils/Usepredictions";
+import { AlertTriangle, Check, FileImage, Loader2, Play, X } from "lucide-react";
+import type { PredictionOperation } from "../utils/Usepredictions";
 import {
   formatDuration,
   formatEta,
@@ -19,6 +19,7 @@ interface ServiceCardProps {
   prediction?: PredictionOperation;
   onToggle: () => void;
   onRunOne: () => void;
+  onAbort?: () => void;
 }
 
 export const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -29,6 +30,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
   prediction,
   onToggle,
   onRunOne,
+  onAbort,
 }) => {
   const Icon = service.icon;
   const status = prediction?.status;
@@ -75,15 +77,19 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
               ? "bg-emerald-600 text-white"
               : status === "failed"
                 ? "bg-red-600 text-white"
-                : running || selected
-                  ? "bg-primary text-white"
-                  : "bg-primary-100 text-primary"
+                : status === "aborted"
+                  ? "bg-gray-500 text-white"
+                  : running || selected
+                    ? "bg-primary text-white"
+                    : "bg-primary-100 text-primary"
           } `}
         >
           {running ? (
             <Loader2 size={14} className="animate-spin" />
           ) : status === "completed" ? (
             <Check size={14} />
+          ) : status === "aborted" ? (
+            <X size={14} />
           ) : status === "failed" ? (
             <AlertTriangle size={14} />
           ) : (
@@ -125,13 +131,31 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
             />
           </div>
 
-          <div className="font-mona text-text-muted mt-1 flex items-center justify-between text-[10px] tabular-nums">
-            <span>{Math.round(prediction!.progress)}%</span>
-            <span>
-              {prediction!.status === "processing" && prediction!.remainingMs !== undefined
-                ? formatEta(prediction!.remainingMs)
-                : STAGE_LABEL[prediction!.status]}
-            </span>
+          <div className="font-mona text-text-muted mt-1.5 flex items-center justify-between text-[10px] tabular-nums">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="font-semibold text-primary">{Math.round(prediction!.progress)}%</span>
+              <span className="text-text-muted/60">·</span>
+              <span className="truncate">
+                {prediction!.status === "processing" && prediction!.remainingMs !== undefined
+                  ? formatEta(prediction!.remainingMs)
+                  : STAGE_LABEL[prediction!.status]}
+              </span>
+            </div>
+
+            {onAbort && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onAbort();
+                }}
+                title={`Cancel ${service.label}`}
+                className="font-mona inline-flex shrink-0 items-center gap-1 rounded border border-red-200 bg-red-50/90 px-2 py-0.5 text-[10px] font-bold text-red-600 transition-all duration-150 hover:bg-red-100 hover:border-red-300 hover:text-red-700 active:scale-95"
+              >
+                <X size={10} strokeWidth={2.5} />
+                Cancel
+              </button>
+            )}
           </div>
         </div>
       ) : (
@@ -142,6 +166,10 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
               <span className="truncate">
                 found in {formatDuration((prediction!.finishedAt ?? 0) - prediction!.startedAt)}
               </span>
+            </span>
+          ) : status === "aborted" ? (
+            <span className="font-mona flex min-w-0 items-baseline gap-1 text-[11px] text-gray-500">
+              <span className="font-medium">Cancelled</span>
             </span>
           ) : status === "failed" ? (
             <span className="min-w-0 truncate text-[11px] text-red-700" title={prediction!.error}>
@@ -171,7 +199,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
             } `}
           >
             <Play size={10} />
-            {status === "completed" || status === "failed" ? "Again" : "Run"}
+            {status === "completed" || status === "failed" || status === "aborted" ? "Again" : "Run"}
           </button>
         </div>
       )}

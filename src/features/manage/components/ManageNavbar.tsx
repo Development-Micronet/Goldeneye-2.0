@@ -7,7 +7,8 @@ export type TabType =
   | "allocated-products"
   | "provider & Contracts"
   | "subscription"
-  | "plan";
+  | "plan"
+  | "api-key-access";
 
 interface TabConfig {
   value: TabType;
@@ -39,6 +40,11 @@ const TABS_CONFIG: TabConfig[] = [
   {
     value: "plan",
     label: "Plan",
+    notAllowedRoles: [],
+  },
+  {
+    value: "api-key-access",
+    label: "API Key Access",
     notAllowedRoles: [],
   },
 ];

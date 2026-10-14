@@ -1,12 +1,18 @@
-import { useState } from "react";
-import { ChevronRight, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronRight, Loader2, X } from "lucide-react";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 
 import { RasterIcon, HistoryIcon } from "../../../assets";
+import {
+  isActive,
+  SERVICE_BY_NAME,
+  STAGE_LABEL,
+} from "../../../constant/Analytics.config";
 
 import { AnalyticsMenu } from "./AnalyticsMenu";
 import History from "./History";
+import { usePredictionStore } from "../utils/Usepredictions";
 
 
 interface MapSidebarProps {
@@ -23,8 +29,13 @@ export default function MapSidebar({
   const [expanded, setExpanded] = useState(false);
 
   const activeIndex = propActiveIndex !== undefined ? propActiveIndex : internalActive;
-
   const setActiveIndex = propSetActiveIndex || setInternalActive;
+  const predictions = usePredictionStore((state) => state.predictions);
+  const abort = usePredictionStore((state) => state.abort);
+  const activePredictions = useMemo(
+    () => predictions.filter((item) => isActive(item.status)),
+    [predictions],
+  );
   const renderSheetContent = (index: number) => {
     switch (index) {
       case 0:
@@ -125,6 +136,73 @@ export default function MapSidebar({
             </button>
           );
         })}
+
+        {/* Loading models below Historical Archive when sidebar is closed and models are running */}
+        {activeIndex === null && activePredictions.length > 0 && (
+          <div className={`flex flex-col gap-1.5 w-full ${expanded ? "mt-1.5 px-0" : "items-center mt-1.5"}`}>
+            {activePredictions.map((pred) => {
+              const service = SERVICE_BY_NAME.get(pred.serviceName);
+              const label = service?.label ?? pred.serviceName;
+              const Icon = service?.icon;
+              const stage = STAGE_LABEL[pred.status] ?? "Running";
+              const progressPct = pred.progress > 0 ? `${Math.round(pred.progress)}%` : "";
+              const tooltipContent = `${label}: ${stage}${progressPct ? ` (${progressPct})` : ""}`;
+
+              return (
+                <button
+                  key={pred.id}
+                  onClick={() => setActiveIndex(0)}
+                  data-tooltip-id="map-sidebar-tooltip"
+                  data-tooltip-content={tooltipContent}
+                  className={`group relative flex items-center rounded-lg border border-teal-200/90 bg-teal-50/80 text-teal-800 transition-all duration-150 outline-none hover:bg-teal-100/90 hover:border-teal-300 focus-visible:ring-2 focus-visible:ring-teal-500/40 ${
+                    expanded ? "h-12 w-full gap-2.5 px-3" : "h-10 w-10 justify-center"
+                  }`}
+                >
+                  <div className="relative flex items-center justify-center shrink-0">
+                    {Icon ? (
+                      <>
+                        <Icon className="h-4 w-4 text-teal-700" />
+                        <Loader2 className="absolute -top-1.5 -right-1.5 h-3 w-3 animate-spin text-teal-600" />
+                      </>
+                    ) : (
+                      <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
+                    )}
+                  </div>
+
+                  <span
+                    aria-hidden
+                    className="absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-teal-600 opacity-70"
+                  />
+
+                  {expanded && (
+                    <>
+                      <div className="flex min-w-0 flex-1 flex-col items-start text-left leading-tight">
+                        <span className="w-full truncate text-[12px] font-semibold text-teal-900">
+                          {label}
+                        </span>
+                        <span className="w-full truncate text-[10px] text-teal-600">
+                          {stage} {progressPct ? `· ${progressPct}` : ""}
+                        </span>
+                      </div>
+
+                      <div
+                        role="button"
+                        title={`Cancel ${label}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          abort(pred.id);
+                        }}
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-teal-700/70 hover:bg-red-100 hover:text-red-600 transition-colors"
+                      >
+                        <X size={12} strokeWidth={2.5} />
+                      </div>
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {!expanded && (
