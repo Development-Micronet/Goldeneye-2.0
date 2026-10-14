@@ -79,7 +79,7 @@ export const DrawPopup: React.FC<DrawPopupProps> = ({ onClose }) => {
           title="Buffer Distance"
           value={pointBufferDistance}
           onChange={setPointBufferDistance}
-          onReset={() => setPointBufferDistance("2.25")}
+          onReset={() => setPointBufferDistance("5")}
           onConfirm={() => {
             toast.success(`Point buffer distance set to ${pointBufferDistance} km`);
             setActiveSubMenu(null);
@@ -94,7 +94,7 @@ export const DrawPopup: React.FC<DrawPopupProps> = ({ onClose }) => {
           title="Buffer Distance"
           value={polylineBufferDistance}
           onChange={setPolylineBufferDistance}
-          onReset={() => setPolylineBufferDistance("2.25")}
+          onReset={() => setPolylineBufferDistance("5")}
           onConfirm={() => {
             toast.success(`Polyline buffer distance set to ${polylineBufferDistance} km`);
             setActiveSubMenu(null);

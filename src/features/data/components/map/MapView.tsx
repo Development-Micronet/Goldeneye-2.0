@@ -729,7 +729,7 @@ export default function MapView() {
           const cx = coordinates[0];
           const cy = coordinates[1];
           // Side length B (in km) is pointBufferDistance, so center to edge is B / 2
-          const buffer = parseFloat(pointBufferDistance) || 2.25;
+          const buffer = parseFloat(pointBufferDistance) || 5;
           const dist = buffer / 2;
           // Convert km to degrees
           const latDeg = dist / 111.32;
