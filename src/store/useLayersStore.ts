@@ -12,7 +12,9 @@ export interface DrawnLayer {
 interface LayersState {
   layers: DrawnLayer[];
   addLayer: (layer: Omit<DrawnLayer, "id" | "label"> & { label?: string }) => DrawnLayer;
+  addLayers: (layers: (Omit<DrawnLayer, "id" | "label"> & { label?: string })[]) => DrawnLayer[];
   removeLayer: (id: string) => void;
+  removeLayers: (ids: string[]) => void;
   clearLayers: () => void;
   toggleLayerVisibility: (id: string) => void;
   updateLayerLabel: (id: string, label: string) => void;
@@ -63,10 +65,67 @@ export const useLayersStore = create<LayersState>()((set) => ({
     });
     return newLayer!;
   },
+  addLayers: (layersData) => {
+    let createdLayers: DrawnLayer[] = [];
+    set((state) => {
+      const typeLabelMap: Record<string, string> = {
+        Box: "Rectangle",
+        Coordinates: "Rectangle",
+        Point: "Point",
+        Polyline: "Polyline",
+        Polygon: "Polygon",
+      };
+
+      const maxNums: Record<string, number> = {};
+      state.layers.forEach((l) => {
+        Object.keys(typeLabelMap).forEach((type) => {
+          const prefix = typeLabelMap[type] || type;
+          if (l.label.startsWith(prefix + " ")) {
+            const num = parseInt(l.label.slice(prefix.length + 1), 10);
+            if (!isNaN(num) && num > (maxNums[prefix] || 0)) {
+              maxNums[prefix] = num;
+            }
+          }
+        });
+      });
+
+      createdLayers = layersData.map((layerData) => {
+        const id =
+          typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : Math.random().toString(36).substring(2, 9);
+        const labelPrefix = typeLabelMap[layerData.type] || layerData.type;
+        const currentMax = maxNums[labelPrefix] || 0;
+        const rawLabel = layerData.label ? String(layerData.label).trim() : "";
+        const isLabelValid = rawLabel !== "" && rawLabel !== "0" && rawLabel !== "0.0";
+        let label = rawLabel;
+        if (!isLabelValid) {
+          maxNums[labelPrefix] = currentMax + 1;
+          label = `${labelPrefix} ${maxNums[labelPrefix]}`;
+        }
+        return {
+          ...layerData,
+          id,
+          label,
+        };
+      });
+
+      return {
+        layers: [...state.layers, ...createdLayers],
+      };
+    });
+    return createdLayers;
+  },
   removeLayer: (id) =>
     set((state) => ({
       layers: state.layers.filter((l) => l.id !== id),
     })),
+  removeLayers: (ids) => {
+    const idSet = new Set(ids);
+    set((state) => ({
+      layers: state.layers.filter((l) => !idSet.has(l.id)),
+    }));
+  },
   clearLayers: () => set({ layers: [] }),
   toggleLayerVisibility: (id) =>
     set((state) => ({

@@ -14,6 +14,7 @@ import { useArchiveProductStore } from "../../../features/data/components/sideba
 import { useMapStore } from "../../../features/data/store/useMapStore";
 import { usePlanStore } from "../../../features/data/hooks/usePlanStore";
 import { hasGeo3dAccess, isBsfUser } from "../../../utils/geo3dPermissions";
+import { isArchiveAndGeo3dOnlyUser } from "../../../utils/userAccessPermissions";
 
 const PRODUCT_NAME_MAP: Record<string, string> = {
   PNEO: "Pleiades-Neo-0.3m",
@@ -47,16 +48,19 @@ export default function Navbar() {
   const plan = usePlanStore((state) => state.plan);
   const allowedServices = plan?.services ?? [];
 
+  const isArchiveAndGeo3dOnly = isArchiveAndGeo3dOnlyUser(user);
   const hasGeo3d = hasGeo3dAccess(user, allowedServices);
   const hasAnalytics =
-    roleName === "superadmin" ||
-    allowedServices.some((service) => service?.toLowerCase() === "analytics");
+    !isArchiveAndGeo3dOnly &&
+    (roleName === "superadmin" ||
+      allowedServices.some((service) => service?.toLowerCase() === "analytics"));
 
   const hasQuotations =
-    roleName === "superadmin" ||
-    allowedServices.some((service) =>
-      ["quotations", "quotation"].includes(service?.toLowerCase()?.trim()),
-    );
+    !isArchiveAndGeo3dOnly &&
+    (roleName === "superadmin" ||
+      allowedServices.some((service) =>
+        ["quotations", "quotation"].includes(service?.toLowerCase()?.trim()),
+      ));
   // Search location handler using Nominatim API
   const searchPlaces = async (query: string) => {
     if (!query.trim()) {
@@ -220,7 +224,7 @@ export default function Navbar() {
 
     // 2. Check useProductStore
     try {
-      const zustandItems = useProductStore?.getState?.()?.selectedItems;
+      const zustandItems = (useProductStore?.getState?.() as any)?.selectedItems;
       if (Array.isArray(zustandItems) && zustandItems.length > 0) {
         return { hasProducts: true, data: zustandItems };
       }
@@ -414,16 +418,18 @@ export default function Navbar() {
   const username = user?.user || "user";
   const initial = username[0]?.toUpperCase() || "U";
   // Filter navigation items based on user's roleName
-  const navItems = getNavigationItems(user?.roleName).filter((item) => {
-    if (item.label === "Analytics") {
-      return hasAnalytics;
-    }
-    if (item.label === "Quotation") {
-      return hasQuotations;
-    }
+  const navItems = isArchiveAndGeo3dOnly
+    ? [{ label: "Archive", path: "/data" }]
+    : getNavigationItems(user?.roleName).filter((item) => {
+        if (item.label === "Analytics") {
+          return hasAnalytics;
+        }
+        if (item.label === "Quotation") {
+          return hasQuotations;
+        }
 
-    return true;
-  });
+        return true;
+      });
   const naviagtetoGeo3d = () => {
     if (isBsfUser(user) || !hasGeo3d) {
       toast.error("You do not have access to GEO 3D");

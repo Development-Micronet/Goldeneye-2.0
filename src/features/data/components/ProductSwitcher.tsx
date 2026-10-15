@@ -7,6 +7,7 @@ import { decryptAESGCM } from "../../../utils/dataDecrypt";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useMapSidebarStore } from "../hooks/useMapSidebarStore";
 import { FaSatellite } from "react-icons/fa";
+import { isArchiveAndGeo3dOnlyUser } from "../../../utils/userAccessPermissions";
 
 /* ── Provider icon map ──────────────────────────────── */
 const PROVIDER_META: Record<string, { label: string; color: string; dot: string }> = {
@@ -37,7 +38,8 @@ const providerMeta = (name: string) =>
 const ProductSwitcher: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
-  const { accessToken } = useAuthStore();
+  const { accessToken, user } = useAuthStore();
+  const isArchiveAndGeo3dOnly = isArchiveAndGeo3dOnlyUser(user);
   const token = accessToken?.replace("Bearer ", "").trim() || "";
   const [openSensors, setOpenSensors] = useState<string[]>([]);
 
@@ -52,40 +54,61 @@ const ProductSwitcher: React.FC = () => {
     setSelectedProductTypes,
   } = useProductStore();
 
+  const visibleProviders = isArchiveAndGeo3dOnly
+    ? providers.filter((p) => p.name?.toLowerCase() === "airbus")
+    : providers;
+
   const { tab, setTab } = useParameter();
   const activeIndex = useMapSidebarStore((state) => state.activeIndex);
   const isSidebarOpen = activeIndex !== null;
   const open = tab === "products";
 
   /* ── Local draft state for selections before applying ── */
-  const [tempProvider, setTempProvider] = useState<string>(selectedProvider);
+  const [tempProvider, setTempProvider] = useState<string>(
+    isArchiveAndGeo3dOnly ? "airbus" : selectedProvider,
+  );
   const [tempSensors, setTempSensors] = useState<string[]>(selectedSensors);
   const [tempProductTypes, setTempProductTypes] = useState<string[]>(selectedProductTypes);
 
   const isInitialized = useProductStore((state) => state.isInitialized);
   const prevInitialized = useRef(isInitialized);
 
+  // Ensure Airbus is selected for restricted users
+  useEffect(() => {
+    if (isArchiveAndGeo3dOnly) {
+      if (selectedProvider?.toLowerCase() !== "airbus") {
+        setSelectedProvider("airbus");
+      }
+      if (tempProvider?.toLowerCase() !== "airbus") {
+        setTempProvider("airbus");
+      }
+    }
+  }, [isArchiveAndGeo3dOnly, selectedProvider, tempProvider, setSelectedProvider]);
+
   // Sync temp state with global store whenever the modal opens
   useEffect(() => {
     if (open) {
-      setTempProvider(selectedProvider);
+      setTempProvider(isArchiveAndGeo3dOnly ? "airbus" : selectedProvider);
       setTempSensors(selectedSensors);
       setTempProductTypes(selectedProductTypes);
     }
-  }, [open]);
+  }, [open, isArchiveAndGeo3dOnly, selectedProvider, selectedSensors, selectedProductTypes]);
 
   // If providers load while modal is already open
   useEffect(() => {
     if (!prevInitialized.current && isInitialized && open) {
       prevInitialized.current = true;
-      setTempProvider(selectedProvider);
+      setTempProvider(isArchiveAndGeo3dOnly ? "airbus" : selectedProvider);
       setTempSensors(selectedSensors);
       setTempProductTypes(selectedProductTypes);
     }
-  }, [isInitialized, open, selectedProvider, selectedSensors, selectedProductTypes]);
+  }, [isInitialized, open, isArchiveAndGeo3dOnly, selectedProvider, selectedSensors, selectedProductTypes]);
 
   /* ── Derived: must be declared BEFORE anything that reads it ── */
-  const currentProviderObj = providers.find((p) => p.name === tempProvider);
+  const currentProviderObj =
+    visibleProviders.find((p) => p.name === tempProvider) ||
+    visibleProviders.find((p) => p.name?.toLowerCase() === "airbus") ||
+    visibleProviders[0];
 
   type Sensor = NonNullable<typeof currentProviderObj>["sensors"][number];
 
@@ -268,11 +291,14 @@ const ProductSwitcher: React.FC = () => {
     return (parts[parts.length - 1] || productType).trim().toLowerCase();
   };
 
-  const activeDisplayProvider = open ? tempProvider : selectedProvider;
+  const activeDisplayProvider = isArchiveAndGeo3dOnly ? "airbus" : (open ? tempProvider : selectedProvider);
   const activeDisplaySensors = open ? tempSensors : selectedSensors;
   const activeDisplayProductTypes = open ? tempProductTypes : selectedProductTypes;
 
-  const displayProviderObj = providers.find((p) => p.name === activeDisplayProvider);
+  const displayProviderObj =
+    visibleProviders.find((p) => p.name === activeDisplayProvider) ||
+    visibleProviders.find((p) => p.name?.toLowerCase() === "airbus") ||
+    visibleProviders[0];
   const selectedDisplaySensorsList = (displayProviderObj?.sensors || []).filter((s) =>
     activeDisplaySensors.includes(s.id),
   );
@@ -433,8 +459,8 @@ const ProductSwitcher: React.FC = () => {
                   </div>
                 ) : (
                   <div className="flex gap-1.5 rounded-xl bg-slate-100 p-1">
-                    {(providers || []).map((p) => {
-                      const isActive = tempProvider === p.name;
+                    {(visibleProviders || []).map((p) => {
+                      const isActive = (isArchiveAndGeo3dOnly ? "airbus" : tempProvider) === p.name;
                       const m = providerMeta(p.name);
                       return (
                         <button

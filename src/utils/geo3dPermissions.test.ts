@@ -78,6 +78,12 @@ describe("geo3dPermissions", () => {
       expect(hasGeo3dAccess(baseUser, ["GEO_3D", "search"])).toBe(true);
     });
 
+    it("should allow access for regular user if plan does not include geo_3d when user is in ARCHIVE_AND_GEO3D_ONLY_USERS (e.g. satya_chakra)", () => {
+      const satyaUser: User = { ...baseUser, user: "satya_chakra" };
+      expect(hasGeo3dAccess(satyaUser, [])).toBe(true);
+      expect(hasGeo3dAccess(satyaUser, ["search"])).toBe(true);
+    });
+
     it("should deny access for regular user if plan does not include geo_3d", () => {
       expect(hasGeo3dAccess(baseUser, ["search", "analytics"])).toBe(false);
       expect(hasGeo3dAccess(baseUser, [])).toBe(false);

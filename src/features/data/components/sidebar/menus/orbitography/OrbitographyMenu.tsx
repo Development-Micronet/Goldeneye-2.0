@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, Radar, RefreshCw, Calendar, X, Loader2 } from "lucide-react";
+import { ChevronDown, Radar, RefreshCw, Calendar, X, Loader2, CheckSquare } from "lucide-react";
 import * as turf from "@turf/turf";
 
 import { CalendarPopover } from "./CalendarPopover";
 import { getBadgeStyle } from "./orbitographyUtils";
 import { useAuthStore } from "../../../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../../../utils/dataDecrypt";
-import { useLayersStore } from "../../../../../../store/useLayersStore";
+import { useLayersStore, type DrawnLayer } from "../../../../../../store/useLayersStore";
 import { useSelectedAOIStore } from "../../../../hooks/useSelectedAOIStore";
 import { fetchOrbits } from "../../api/orbitography.service";
 
@@ -16,7 +16,7 @@ export const OrbitographyMenu: React.FC = () => {
   // =========================================================
 
   const layers = useLayersStore((state) => state.layers);
-  const addLayer = useLayersStore((state) => state.addLayer);
+  const addLayers = useLayersStore((state) => state.addLayers);
 
   const selectedAOIId = useSelectedAOIStore((state) => state.selectedAOIId);
 
@@ -38,11 +38,7 @@ export const OrbitographyMenu: React.FC = () => {
   const isMountedRef = useRef(false);
 
   const searchRequestIdRef = useRef<number>(0);
-
-  // Important:
-  // First successful search par sirf ek baar first 5
-  // results automatically select honge.
-  // const firstFiveAutoSelectedRef = useRef(false);
+  const batchOperationIdRef = useRef<number>(0);
 
   // =========================================================
   // STATE
@@ -73,6 +69,17 @@ export const OrbitographyMenu: React.FC = () => {
 
   // Which orbit result checkboxes are selected
   const [visiblePassIds, setVisiblePassIds] = useState<string[]>([]);
+
+  // Progressive batch rendering state for Select All
+  const [isBatchRendering, setIsBatchRendering] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+
+  // Cleanup in-flight batch on unmount
+  useEffect(() => {
+    return () => {
+      batchOperationIdRef.current++;
+    };
+  }, []);
 
   // =========================================================
   // OUTSIDE CLICK
@@ -140,13 +147,17 @@ export const OrbitographyMenu: React.FC = () => {
   // =========================================================
 
   const clearAllOrbitLayers = () => {
+    batchOperationIdRef.current++;
+    setIsBatchRendering(false);
+    setBatchProgress(null);
+
     const state = useLayersStore.getState();
 
     const orbitLayers = state.layers.filter((layer) => layer.label.startsWith("Orbit:"));
 
-    orbitLayers.forEach((layer) => {
-      state.removeLayer(layer.id);
-    });
+    if (orbitLayers.length > 0) {
+      state.removeLayers(orbitLayers.map((layer) => layer.id));
+    }
   };
 
   // =========================================================
@@ -160,9 +171,9 @@ export const OrbitographyMenu: React.FC = () => {
 
     const existingOrbitLayers = state.layers.filter((layer) => layer.label.startsWith(prefix));
 
-    existingOrbitLayers.forEach((layer) => {
-      state.removeLayer(layer.id);
-    });
+    if (existingOrbitLayers.length > 0) {
+      state.removeLayers(existingOrbitLayers.map((layer) => layer.id));
+    }
   };
 
   // =========================================================
@@ -259,25 +270,23 @@ export const OrbitographyMenu: React.FC = () => {
   };
 
   // =========================================================
-  // SHOW ORBIT ON MAP
+  // CREATE LAYERS FOR PASS
   // =========================================================
 
-  const handleLocateOrbit = (pass: any) => {
+  const createLayersForPass = (pass: any) => {
     const coords = getOrbitCoordinates(pass);
 
     if (!coords) {
-      return;
+      return [];
     }
 
-    // IMPORTANT:
-    // Yahan ALL orbit layers remove nahi karne hain.
-    // Isliye multiple checked orbits ek saath map par rahenge.
+    const created: (Omit<DrawnLayer, "id" | "label"> & { label?: string })[] = [];
 
     try {
       const swathFeature = createSwath(coords, angle);
 
       if (swathFeature && swathFeature.geometry) {
-        addLayer({
+        created.push({
           label: `Orbit: ${pass.id} Swath`,
           type: "Polygon",
           geojson: {
@@ -296,7 +305,7 @@ export const OrbitographyMenu: React.FC = () => {
     }
 
     // Track
-    addLayer({
+    created.push({
       label: `Orbit: ${pass.id} Track`,
       type: "Polyline",
       geojson: {
@@ -312,6 +321,19 @@ export const OrbitographyMenu: React.FC = () => {
       },
       visible: true,
     });
+
+    return created;
+  };
+
+  // =========================================================
+  // SHOW ORBIT ON MAP
+  // =========================================================
+
+  const handleLocateOrbit = (pass: any) => {
+    const newLayers = createLayersForPass(pass);
+    if (newLayers.length > 0) {
+      addLayers(newLayers);
+    }
   };
 
   // =========================================================
@@ -319,6 +341,12 @@ export const OrbitographyMenu: React.FC = () => {
   // =========================================================
 
   const handlePassCheckbox = (pass: any) => {
+    if (isBatchRendering) {
+      batchOperationIdRef.current++;
+      setIsBatchRendering(false);
+      setBatchProgress(null);
+    }
+
     const isCurrentlyVisible = visiblePassIds.includes(pass.id);
 
     if (isCurrentlyVisible) {
@@ -347,6 +375,10 @@ export const OrbitographyMenu: React.FC = () => {
   // =========================================================
 
   const handleSatelliteChange = (satellite: string) => {
+    batchOperationIdRef.current++;
+    setIsBatchRendering(false);
+    setBatchProgress(null);
+
     const isSelected = selectedSatellites.includes(satellite);
 
     if (isSelected) {
@@ -359,9 +391,14 @@ export const OrbitographyMenu: React.FC = () => {
       );
 
       // Map layers remove karo
-      passesToRemove.forEach((pass) => {
-        handleClearOrbit(pass);
-      });
+      const state = useLayersStore.getState();
+      const layersToRemove = state.layers.filter((layer) =>
+        passesToRemove.some((pass) => layer.label.startsWith(`Orbit: ${pass.id}`)),
+      );
+
+      if (layersToRemove.length > 0) {
+        state.removeLayers(layersToRemove.map((layer) => layer.id));
+      }
 
       // Visible IDs bhi remove karo
       setVisiblePassIds((prev) =>
@@ -415,6 +452,10 @@ export const OrbitographyMenu: React.FC = () => {
   // =========================================================
 
   const handleSearch = async () => {
+    batchOperationIdRef.current++;
+    setIsBatchRendering(false);
+    setBatchProgress(null);
+
     const requestId = ++searchRequestIdRef.current;
 
     setIsSearching(true);
@@ -655,6 +696,94 @@ export const OrbitographyMenu: React.FC = () => {
 
   const displayedResults = results.filter((pass) => selectedSatellites.includes(pass.name));
 
+  const isAllSelected =
+    displayedResults.length > 0 &&
+    displayedResults.every((pass) => visiblePassIds.includes(pass.id));
+
+  const handleToggleSelectAll = async () => {
+    if (displayedResults.length === 0) return;
+
+    if (isBatchRendering) {
+      // User clicked while batch is rendering -> cancel immediately
+      batchOperationIdRef.current++;
+      setIsBatchRendering(false);
+      setBatchProgress(null);
+      return;
+    }
+
+    if (isAllSelected) {
+      // DESELECT ALL DISPLAYED
+      batchOperationIdRef.current++;
+      setIsBatchRendering(false);
+      setBatchProgress(null);
+
+      const displayedIdSet = new Set(displayedResults.map((p) => p.id));
+      const state = useLayersStore.getState();
+      const layersToRemove = state.layers.filter((layer) =>
+        displayedResults.some((pass) => layer.label.startsWith(`Orbit: ${pass.id}`))
+      );
+
+      if (layersToRemove.length > 0) {
+        state.removeLayers(layersToRemove.map((layer) => layer.id));
+      }
+
+      setVisiblePassIds((prev) => prev.filter((id) => !displayedIdSet.has(id)));
+    } else {
+      // SELECT ALL DISPLAYED IN BATCHES
+      const unselectedPasses = displayedResults.filter(
+        (pass) => !visiblePassIds.includes(pass.id)
+      );
+
+      if (unselectedPasses.length === 0) return;
+
+      const opId = ++batchOperationIdRef.current;
+      setIsBatchRendering(true);
+      setBatchProgress({ current: 0, total: unselectedPasses.length });
+
+      const BATCH_SIZE = 15;
+      let processed = 0;
+
+      for (let i = 0; i < unselectedPasses.length; i += BATCH_SIZE) {
+        if (opId !== batchOperationIdRef.current) {
+          return;
+        }
+
+        const chunk = unselectedPasses.slice(i, i + BATCH_SIZE);
+        const chunkLayers: (Omit<DrawnLayer, "id" | "label"> & { label?: string })[] = [];
+
+        chunk.forEach((pass) => {
+          chunkLayers.push(...createLayersForPass(pass));
+        });
+
+        if (opId !== batchOperationIdRef.current) {
+          return;
+        }
+
+        if (chunkLayers.length > 0) {
+          addLayers(chunkLayers);
+        }
+
+        const chunkIds = chunk.map((p) => p.id);
+        setVisiblePassIds((prev) => {
+          const next = new Set(prev);
+          chunkIds.forEach((id) => next.add(id));
+          return Array.from(next);
+        });
+
+        processed += chunk.length;
+        setBatchProgress({ current: processed, total: unselectedPasses.length });
+
+        // Yield execution so the browser UI thread can paint and remain responsive
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+
+      if (opId === batchOperationIdRef.current) {
+        setIsBatchRendering(false);
+        setBatchProgress(null);
+      }
+    }
+  };
+
   // =========================================================
   // RENDER
   // =========================================================
@@ -799,6 +928,30 @@ export const OrbitographyMenu: React.FC = () => {
 
           {showSatelliteDropdown && (
             <div className="absolute top-[105%] left-0 z-50 flex w-full flex-col gap-2 rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-1.5">
+                <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                  Satellites
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (selectedSatellites.length === SATELLITE_OPTIONS.length) {
+                      clearAllOrbitLayers();
+                      setVisiblePassIds([]);
+                      setSelectedSatellites([]);
+                    } else {
+                      setSelectedSatellites(SATELLITE_OPTIONS);
+                    }
+                  }}
+                  className="text-xs font-semibold text-[#106070] hover:underline cursor-pointer"
+                >
+                  {selectedSatellites.length === SATELLITE_OPTIONS.length
+                    ? "Deselect All"
+                    : "Select All"}
+                </button>
+              </div>
+
               {SATELLITE_OPTIONS.map((satellite) => {
                 const checked = selectedSatellites.includes(satellite);
 
@@ -933,27 +1086,62 @@ export const OrbitographyMenu: React.FC = () => {
 
           <div className="flex flex-col gap-1.5 border-b border-gray-100 bg-gray-50/50 px-4 py-3 font-sans">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <span className="text-xs font-bold text-gray-800">
                   Showing {displayedResults.length} results
                 </span>
 
                 {visiblePassIds.length > 0 && (
-                  <span className="rounded bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-700">
+                  <span className="rounded bg-cyan-50 px-2 py-0.5 text-xs font-semibold text-cyan-700">
                     Selected: {visiblePassIds.length}
                   </span>
                 )}
               </div>
 
-              <button
-                title="Refresh results"
-                onClick={handleSearch}
-                className="rounded p-1 text-gray-400 transition hover:bg-gray-200 hover:text-gray-600"
-              >
-                <RefreshCw
-                  className={`h-3.5 w-3.5 ${isSearching ? "animate-spin text-cyan-600" : ""}`}
-                />
-              </button>
+              <div className="flex items-center gap-2">
+                {displayedResults.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleToggleSelectAll}
+                    title={
+                      isBatchRendering
+                        ? `Rendering orbits (${batchProgress?.current || 0}/${batchProgress?.total || 0})... Click to cancel.`
+                        : isAllSelected
+                          ? "Deselect all displayed orbits"
+                          : "Select all displayed orbits"
+                    }
+                    className={`flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold shadow-2xs transition active:scale-95 cursor-pointer ${
+                      isBatchRendering
+                        ? "border-[#106070] bg-cyan-50/70 text-[#106070]"
+                        : "text-gray-700 hover:border-[#106070] hover:bg-cyan-50/50 hover:text-[#106070]"
+                    }`}
+                  >
+                    {isBatchRendering ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[#106070]" />
+                        <span>
+                          Rendering ({batchProgress?.current || 0}/{batchProgress?.total || 0})
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckSquare className="h-3.5 w-3.5 text-[#106070]" />
+                        <span>{isAllSelected ? "Deselect All" : "Select All"}</span>
+                      </>
+                    )}
+                  </button>
+                )}
+
+                <button
+                  title="Refresh results"
+                  onClick={handleSearch}
+                  className="rounded p-1 text-gray-400 transition hover:bg-gray-200 hover:text-gray-600 cursor-pointer"
+                >
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 ${isSearching ? "animate-spin text-cyan-600" : ""}`}
+                  />
+                </button>
+              </div>
             </div>
 
             {debugMsg && (

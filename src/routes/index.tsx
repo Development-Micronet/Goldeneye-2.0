@@ -14,6 +14,7 @@ import { ForceResetPasswordPage } from "../features/auth/pages/ForceResetPasswor
 import MapLayout from "../features/analytics/map/MapLayout";
 import { useMyPlan } from "../features/manage/hooks/usePlans";
 import { usePlanStore } from "../features/data/hooks/usePlanStore";
+import { isArchiveAndGeo3dOnlyUser } from "../utils/userAccessPermissions";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -60,6 +61,11 @@ interface RoleRouteProps {
 
 const RoleRoute: React.FC<RoleRouteProps> = ({ children, allowedRoles }) => {
   const user = useAuthStore((state) => state.user);
+
+  if (isArchiveAndGeo3dOnlyUser(user)) {
+    return <Navigate to="/data" replace />;
+  }
+
   const role = user?.roleName?.toLowerCase() || "";
 
   if (!allowedRoles.includes(role)) {
@@ -77,6 +83,10 @@ interface PlanRouteProps {
 const PlanRoute: React.FC<PlanRouteProps> = ({ children, requiredService }) => {
   const plan = usePlanStore((state) => state.plan);
   const user = useAuthStore((state) => state.user);
+
+  if (isArchiveAndGeo3dOnlyUser(user)) {
+    return <Navigate to="/data" replace />;
+  }
 
   const roleName = user?.roleName?.toLowerCase() || "";
 

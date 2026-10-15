@@ -2,12 +2,17 @@ import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useParameter } from "../hooks/useParameter";
 import { useProductStore } from "../hooks/useproductStore";
+import { useAuthStore } from "../../../store/useAuthStore";
+import { isArchiveAndGeo3dOnlyUser } from "../../../utils/userAccessPermissions";
 
 export const BottomFilterSummary: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const { cloudcover, incidentAngle, dateMode, startDate, endDate } = useParameter();
   const { providers, selectedProvider, selectedSensors, selectedProductTypes } = useProductStore();
+  const user = useAuthStore((state) => state.user);
+  const isArchiveAndGeo3dOnly = isArchiveAndGeo3dOnlyUser(user);
+  const effectiveProvider = isArchiveAndGeo3dOnly ? "airbus" : selectedProvider;
 
   const formatDisplayDate = (dateStr?: string) => {
     if (!dateStr) return "";
@@ -82,7 +87,7 @@ export const BottomFilterSummary: React.FC = () => {
   };
 
   const getProductsText = () => {
-    const currentProviderObj = providers.find((p) => p.name === selectedProvider);
+    const currentProviderObj = providers.find((p) => p.name === effectiveProvider);
     if (!currentProviderObj) {
       return "0.3m, 0.5m, DMC, Spot";
     }

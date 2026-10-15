@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { useAuthStore } from "../../../../../store/useAuthStore";
 import { decryptAESGCM } from "../../../../../utils/dataDecrypt";
 import { useIsCartHidden } from "../../../../../utils/cartPermissions";
+import { isArchiveAndGeo3dOnlyUser } from "../../../../../utils/userAccessPermissions";
 import { useParameter } from "../../../hooks/useParameter";
 import { useProductStore } from "../../../hooks/useproductStore";
 import type { ProductResponse } from "../Models/product.types";
@@ -172,11 +173,13 @@ export const ArchiveSearchMenu: React.FC = () => {
   const layers = useLayersStore((state) => state.layers);
   const { setFlyToProduct } = useMapStore();
   const { providers, selectedProvider, selectedSensors, selectedProductTypes } = useProductStore();
-  const { accessToken } = useAuthStore();
+  const { user, accessToken } = useAuthStore();
+  const isArchiveAndGeo3dOnly = isArchiveAndGeo3dOnlyUser(user);
+  const effectiveProvider = isArchiveAndGeo3dOnly ? "airbus" : selectedProvider;
 
-  const provider = selectedProvider as SatelliteProvider;
+  const provider = effectiveProvider as SatelliteProvider;
   const token = accessToken?.replace("Bearer ", "").trim() || "";
-  const isAirbus = selectedProvider === "airbus";
+  const isAirbus = effectiveProvider === "airbus";
 
   const [currentpage, setcurrentpage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>("+date");
@@ -226,11 +229,11 @@ export const ArchiveSearchMenu: React.FC = () => {
   );
 
   const sensors = useMemo(() => {
-    const currentProviderObj = providers.find((p) => p.name === selectedProvider);
+    const currentProviderObj = providers.find((p) => p.name === effectiveProvider);
     if (!currentProviderObj) return selectedSensors;
     const providerSensorIds = currentProviderObj.sensors.map((s) => s.id);
     return selectedSensors.filter((id) => providerSensorIds.includes(id));
-  }, [providers, selectedProvider, selectedSensors]);
+  }, [providers, effectiveProvider, selectedSensors]);
 
   const aoi = useMemo(() => {
     const layer = layers.find((l) => l.id === selectedAOIId);

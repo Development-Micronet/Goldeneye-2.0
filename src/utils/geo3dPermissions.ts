@@ -1,5 +1,6 @@
 import { useAuthStore } from "../store/useAuthStore";
 import type { User } from "../store/useAuthStore";
+import { isArchiveAndGeo3dOnlyUser } from "./userAccessPermissions";
 
 /**
  * Array of customer / schema / role identifiers representing BSF users
@@ -47,6 +48,7 @@ export const isBsfUser = (
 /**
  * Validates whether a user has access to GEO 3D.
  * If the user is BSF, access is denied (returns false).
+ * If the user is in ARCHIVE_AND_GEO3D_ONLY_USERS, access is granted (returns true).
  * Otherwise, superadmins or users with 'geo_3d' in their plan's services are granted access.
  *
  * @param user - User object
@@ -59,6 +61,7 @@ export const hasGeo3dAccess = (
 ): boolean => {
   if (!user) return false;
   if (isBsfUser(user)) return false;
+  if (isArchiveAndGeo3dOnlyUser(user)) return true;
 
   const roleName = user.roleName?.toLowerCase() || "";
   return (
