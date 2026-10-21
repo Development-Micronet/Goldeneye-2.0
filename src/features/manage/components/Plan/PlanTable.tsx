@@ -16,6 +16,7 @@ import { type Plan } from "../../api/plans";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { AssignPlanModal } from "./AssignPlanModal";
 import Swal from "sweetalert2";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PlanTableProps {
   onEdit: (plan: Plan) => void;
@@ -25,6 +26,7 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
   const user = useAuthStore((state) => state.user);
   const roleName = user?.roleName.toLowerCase() || "";
   const isAdmin = roleName === "admin";
+  const queryClient = useQueryClient();
 
   const {
     data: allPlans = [],
@@ -72,6 +74,10 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
 
     deleteMutation.mutate(id, {
       onSuccess: () => {
+        // 👉 Call company-plan assignment GET APIs
+        queryClient.invalidateQueries({ queryKey: ["plans"] });
+        queryClient.invalidateQueries({ queryKey: ["tenant-plans"] });
+        queryClient.invalidateQueries({ queryKey: ["my-plan"] });
         Swal.fire({
           title: "Deleted!",
           text: `Plan "${name}" has been deleted successfully.`,
@@ -190,15 +196,14 @@ export const PlanTable: React.FC<PlanTableProps> = ({ onEdit }) => {
                       return (
                         <div key={provider} className="flex flex-wrap items-center gap-1.5">
                           <span
-                            className={`rounded-full border px-2 py-0.5 text-[10px] font-bold capitalize select-none ${
-                              provLower === "airbus"
+                            className={`rounded-full border px-2 py-0.5 text-[10px] font-bold capitalize select-none ${provLower === "airbus"
                                 ? "border-[#2c6671]/20 bg-[#EFFBFD] text-[#2c6671]"
                                 : provLower === "planet"
                                   ? "border-indigo-200 bg-indigo-50 text-indigo-800"
                                   : provLower === "sentinel"
                                     ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                                     : "border-gray-200 bg-gray-100 text-gray-700"
-                            }`}
+                              }`}
                           >
                             {provider}
                           </span>

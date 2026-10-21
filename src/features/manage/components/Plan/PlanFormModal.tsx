@@ -170,6 +170,10 @@ export const PlanFormModal = ({ open, onClose, plan }: PlanFormModalProps) => {
         { id: plan.id, data: formData },
         {
           onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["plans"] });
+          queryClient.invalidateQueries({ queryKey: ["tenant-plans"] });
+          queryClient.invalidateQueries({ queryKey: ["my-plan"] });
+
             toast.success("Plan updated successfully");
             onClose();
           },
