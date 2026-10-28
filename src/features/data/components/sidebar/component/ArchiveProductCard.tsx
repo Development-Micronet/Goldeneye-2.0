@@ -63,16 +63,16 @@ export const ArchiveProductCard: React.FC<ArchiveProductCardProps> = ({
   onFlyToProduct,
   onOrder,
 }) => {
-  const { setHoveredProduct } = useArchiveHoverStore();
+  const setHoveredProduct = useArchiveHoverStore((state) => state.setHoveredProduct);
   const { addPinnedProduct, removePinnedProduct, isPinned } = usePinnedProductStore();
-  const { infoProduct, setInfoProduct } = useArchiveInfoStore();
+  const setInfoProduct = useArchiveInfoStore((state) => state.setInfoProduct);
+  const infoOpen = useArchiveInfoStore((state) => state.infoProduct?.id === product.id);
   const isLoading = useArchiveProductStore((state) => state.loadingProductIds.includes(product.id));
   const [imageError, setImageError] = useState(false);
 
   const isCartHidden = useIsCartHidden();
 
   const pinned = isPinned(product.id);
-  const infoOpen = infoProduct?.id === product.id;
   const isImageEmpty = !product.imageUrl && !product.wmts_url;
 
   const button = "rounded p-0.5 transition-all duration-300";

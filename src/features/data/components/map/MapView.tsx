@@ -139,6 +139,7 @@ export default function MapView() {
   const lastVisibleProductIdsRef = useRef<string>("");
   const productLayersRef = useRef<Map<string, BaseLayer>>(new Map());
   const productAbortControllersRef = useRef<Map<string, AbortController>>(new Map());
+  const hoverIntersectionCacheRef = useRef<Map<string, Feature>>(new Map());
 
   const { activeLayer } = useBaseMapStore();
   const fitLayerId = useMapStore((state) => state.fitLayerId);
@@ -164,6 +165,14 @@ export default function MapView() {
       maxZoom,
     };
   };
+
+  // Sync selectedAOIIdRef with selectedAOIId so style function always has live selection
+  useEffect(() => {
+    selectedAOIIdRef.current = selectedAOIId ? String(selectedAOIId) : null;
+    if (vectorLayerRef.current) {
+      vectorLayerRef.current.changed();
+    }
+  }, [selectedAOIId]);
 
   // Zoom to / fit bounds of selected layer
   useEffect(() => {
@@ -354,7 +363,14 @@ export default function MapView() {
         }),
       ];
 
-      if (label && geom) {
+      // Live layer count from Zustand store (avoids stale closure in useEffect [])
+      // When thousands of features are present (e.g. 20,811 village polygons),
+      // drawing thousands of overlapping black text badges turns the map into a black blob and freezes canvas.
+      // Show text label only if selected, or if orbit badge, or if total features <= 25.
+      const totalLayers = useLayersStore.getState().layers.length;
+      const shouldShowLabel = isOrbit || isSelected || totalLayers <= 25;
+
+      if (label && geom && shouldShowLabel) {
         const extent = geom.getExtent();
         // Fallback to top-left of bounding box
         let labelCoord = [extent[0], extent[3]];
@@ -557,36 +573,113 @@ export default function MapView() {
     };
   }, [setZoom]);
 
-  // Synchronize features from the global layers store with the vector source
+  // Synchronize features from the global layers store with VectorSource using BATCH RENDERING
   useEffect(() => {
     const vectorSource = vectorSourceRef.current;
     if (!vectorSource) return;
 
-    vectorSource.clear();
+    if (!layers.length) {
+      vectorSource.clear(true); // FAST CLEAR - no events fired for thousands of features
+      editableFeaturesRef.current.clear();
+      return;
+    }
+
+    let isCancelled = false;
+    const geojsonFormat = new GeoJSON();
+    const visibleLayers = layers.filter((l) => l.visible !== false);
+
+    // Incremental removal check: if a few layers were deleted from an already populated source
+    const existingFeatures = vectorSource.getFeatures();
+    if (
+      existingFeatures.length > 50 &&
+      existingFeatures.length > visibleLayers.length &&
+      existingFeatures.length - visibleLayers.length < 50
+    ) {
+      const currentIdSet = new Set(visibleLayers.map((l) => String(l.id)));
+      existingFeatures.forEach((feat) => {
+        const fid = feat.getId();
+        if (fid && !currentIdSet.has(String(fid))) {
+          vectorSource.removeFeature(feat);
+        }
+      });
+      return;
+    }
+
+    // Fast clear without firing individual remove events
+    vectorSource.clear(true);
     editableFeaturesRef.current.clear();
 
-    const geojsonFormat = new GeoJSON();
-    layers.forEach((layer) => {
-      if (layer.visible === false) return; // Skip hidden layers
-      try {
-        const feature = geojsonFormat.readFeature(layer.geojson) as any;
-        feature.setId(layer.id);
-        feature.set("label", layer.label);
-        if (layer.area !== undefined) {
-          feature.set("area", layer.area);
+    // If small number of layers (<= 100), add immediately
+    if (visibleLayers.length <= 100) {
+      const featuresToAdd: Feature[] = [];
+      visibleLayers.forEach((layer) => {
+        try {
+          const feature = geojsonFormat.readFeature(layer.geojson) as any;
+          feature.setId(layer.id);
+          feature.set("label", layer.label);
+          if (layer.area !== undefined) {
+            feature.set("area", layer.area);
+          }
+          featuresToAdd.push(feature);
+          // Only enable vertex-dragging modify handles if total layers is small (<= 25)
+          if (!layer.label.startsWith("Orbit:") && visibleLayers.length <= 25) {
+            editableFeaturesRef.current.push(feature);
+          }
+        } catch (err) {
+          logger.error("Error loading layer from store:", err);
         }
-        vectorSource.addFeature(feature);
-
-        // Orbit swath/track overlays are read-only map annotations, not AOIs.
-        // Keep them out of the editable collection so Modify can't add
-        // draggable vertex handles to them.
-        if (!layer.label.startsWith("Orbit:")) {
-          editableFeaturesRef.current.push(feature);
-        }
-      } catch (err) {
-        logger.error("Error loading layer from store:", err);
+      });
+      if (featuresToAdd.length > 0) {
+        vectorSource.addFeatures(featuresToAdd);
       }
-    });
+      return;
+    }
+
+    // BATCH RENDERING for large datasets (e.g. 20,000+ features):
+    // Renders 500 features per batch, yielding to UI thread every 10ms
+    const BATCH_SIZE = 500;
+    const renderLayersInBatches = async () => {
+      for (let i = 0; i < visibleLayers.length; i += BATCH_SIZE) {
+        if (isCancelled) break;
+
+        const currentBatch = visibleLayers.slice(i, i + BATCH_SIZE);
+        const featuresToAdd: Feature[] = [];
+
+        currentBatch.forEach((layer) => {
+          try {
+            const feature = geojsonFormat.readFeature(layer.geojson) as any;
+            feature.setId(layer.id);
+            feature.set("label", layer.label);
+            if (layer.area !== undefined) {
+              feature.set("area", layer.area);
+            }
+            featuresToAdd.push(feature);
+
+            // Never put thousands of polygons into vertex Modify interaction
+            if (!layer.label.startsWith("Orbit:") && visibleLayers.length <= 25) {
+              editableFeaturesRef.current.push(feature);
+            }
+          } catch (err) {
+            logger.error("Error loading layer from store:", err);
+          }
+        });
+
+        if (featuresToAdd.length > 0) {
+          vectorSource.addFeatures(featuresToAdd);
+        }
+
+        // Allow browser UI to breathe between batches
+        if (i + BATCH_SIZE < visibleLayers.length) {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      }
+    };
+
+    renderLayersInBatches();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [layers]);
 
   useEffect(() => {
@@ -1290,11 +1383,24 @@ export default function MapView() {
       return null;
     };
 
-    // Helper: Extract common area (intersection) between selected AOI and product footprint
+    // Helper: Extract common area (intersection) between selected AOI and product footprint (Optimized)
     const getCommonIntersection = (aoiGeomJson: any, productGeom: any) => {
       if (!aoiGeomJson || !productGeom) return null;
       try {
         const format = new GeoJSON();
+
+        // 1. FAST BOUNDING BOX CHECK (0.001ms)
+        const aoiBbox = turf.bbox(aoiGeomJson);
+        const prodBbox = turf.bbox(productGeom);
+        if (
+          aoiBbox[0] > prodBbox[2] ||
+          aoiBbox[2] < prodBbox[0] ||
+          aoiBbox[1] > prodBbox[3] ||
+          aoiBbox[3] < prodBbox[1]
+        ) {
+          return null; // Bounding boxes do not overlap, skip immediately!
+        }
+
         const aoiFeature = format.readFeature({
           type: "Feature",
           geometry: aoiGeomJson,
@@ -1307,8 +1413,24 @@ export default function MapView() {
         const aoiGeo = format.writeFeatureObject(aoiFeature as any);
         const prodGeo = format.writeFeatureObject(prodFeature as any);
 
+        // 2. POLYGON SIMPLIFICATION (For complex polygons > 300 points)
+        let geomForIntersection: any = aoiGeo;
+        try {
+          const totalPoints = turf.coordAll(aoiGeo).length;
+          if (totalPoints > 300) {
+            geomForIntersection = turf.simplify(aoiGeo, {
+              tolerance: 0.0005, // ~50m, visually identical but 100x faster
+              highQuality: false,
+              mutate: false,
+            });
+          }
+        } catch (simErr) {
+          geomForIntersection = aoiGeo;
+        }
+
+        // 3. SAFE INTERSECT
         const intersection = turf.intersect(
-          turf.featureCollection([aoiGeo, prodGeo] as any)
+          turf.featureCollection([geomForIntersection, prodGeo] as any)
         );
 
         if (intersection && intersection.geometry) {
@@ -1558,7 +1680,7 @@ export default function MapView() {
       }
     };
 
-    // Load newly visible products that don't have a map layer yet
+    // Load newly visible products in smooth non-blocking batches
     const productsToLoad = visibleProducts.filter(
       (product) =>
         !productLayersRef.current.has(product.id) &&
@@ -1567,38 +1689,51 @@ export default function MapView() {
     );
 
     if (productsToLoad.length > 0) {
-      for (const product of productsToLoad) {
-        if (!product?.geometry) {
-          useArchiveProductStore.getState().setProductLoading(product.id, false);
-          continue;
+      const processProductsInBatches = async () => {
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < productsToLoad.length; i += BATCH_SIZE) {
+          const batch = productsToLoad.slice(i, i + BATCH_SIZE);
+
+          for (const product of batch) {
+            if (!product?.geometry) {
+              useArchiveProductStore.getState().setProductLoading(product.id, false);
+              continue;
+            }
+
+            try {
+              const feature = new GeoJSON().readFeature({
+                type: "Feature",
+                geometry: product.geometry,
+              });
+              const geometry = (feature as any)?.getGeometry?.();
+              if (!geometry) {
+                useArchiveProductStore.getState().setProductLoading(product.id, false);
+                continue;
+              }
+
+              loadProductOnMap(product, geometry);
+            } catch (err) {
+              console.error("Error loading product layer " + product.id, err);
+              useArchiveProductStore.getState().setProductLoading(product.id, false);
+            }
+          }
+
+          if (i + BATCH_SIZE < productsToLoad.length) {
+            await new Promise((resolve) => setTimeout(resolve, 15));
+          }
         }
 
-        try {
-          const feature = new GeoJSON().readFeature({
-            type: "Feature",
-            geometry: product.geometry,
+        // Ensure vector overlays (AOI polygons, markers) stay on top of imagery
+        if (mapInstance.current) {
+          mapInstance.current.getLayers().forEach((layer) => {
+            if (layer instanceof VectorLayer) {
+              layer.setZIndex(1000);
+            }
           });
-          const geometry = (feature as any)?.getGeometry?.();
-          if (!geometry) {
-            useArchiveProductStore.getState().setProductLoading(product.id, false);
-            continue;
-          }
-
-          loadProductOnMap(product, geometry);
-        } catch (err) {
-          console.error("Error loading product layer " + product.id, err);
-          useArchiveProductStore.getState().setProductLoading(product.id, false);
         }
-      }
+      };
 
-      // Ensure vector overlays (AOI polygons, markers) stay on top of imagery
-      if (mapInstance.current) {
-        mapInstance.current.getLayers().forEach((layer) => {
-          if (layer instanceof VectorLayer) {
-            layer.setZIndex(1000);
-          }
-        });
-      }
+      processProductsInBatches();
     }
   }, [visibleProducts, setMaxZoom, layers, selectedAOIId]);
 
@@ -1676,60 +1811,116 @@ export default function MapView() {
 
     if (!hoverSource) return;
 
-    // clear old hover
-    hoverSource.clear();
+    // Fast clear without firing individual events
+    hoverSource.clear(true);
 
-    if (!hoveredProduct) return;
+    if (!hoveredProduct?.geometry) return;
+
+    // Check cache first (0ms instant return)
+    const activeAoiId = selectedAOIId || "default";
+    const cacheKey = `${activeAoiId}_${hoveredProduct.id}`;
+    const cachedFeature = hoverIntersectionCacheRef.current.get(cacheKey);
+    if (cachedFeature) {
+      hoverSource.addFeature(cachedFeature);
+      return;
+    }
 
     const format = new GeoJSON();
 
-    // Product geometry
-    const productFeature = format.readFeature({
-      type: "Feature",
-      geometry: hoveredProduct.geometry,
-    });
+    try {
+      const productGeo: any = {
+        type: "Feature",
+        geometry: hoveredProduct.geometry,
+        properties: {},
+      };
+      const prodBbox = turf.bbox(productGeo);
 
-    const productGeo = format.writeFeatureObject(productFeature as any);
+      // Find the active selected AOI (or first AOI if none selected)
+      const targetAoi = (selectedAOIId ? layers.find((l) => l.id === selectedAOIId) : null) ||
+        layers.find((l) => ["Polygon", "Box", "Coordinates", "Bound Coordinates"].includes(l.type));
 
-    // Get AOIs
-    const aoiLayers = layers.filter((layer) =>
-      ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(layer.type),
-    );
+      if (targetAoi?.geojson) {
+        const rawAoiGeo: any = targetAoi.geojson.type === "Feature"
+          ? targetAoi.geojson
+          : { type: "Feature", geometry: targetAoi.geojson.geometry || targetAoi.geojson, properties: {} };
 
-    aoiLayers.forEach((aoiLayer) => {
-      try {
-        if (!aoiLayer?.geojson) return;
-        const aoiFeature = format.readFeature(aoiLayer.geojson);
-        const aoiGeo = format.writeFeatureObject(aoiFeature as any);
+        const aoiBbox = turf.bbox(rawAoiGeo);
 
-        // AOI ∩ Image footprint
-        const intersection = turf.intersect(turf.featureCollection([aoiGeo, productGeo] as any));
-        if (intersection) {
-          const commonFeature = format.readFeature(intersection);
-
-          (commonFeature as any).setStyle(
-            new Style({
-              fill: new Fill({
-                color: "rgba(218, 198, 130, 0.50)",
-              }),
-              stroke: new Stroke({
-                color: "rgba(115, 72, 30, 0.9)",
-                width: 1.5,
-              }),
-            }),
-          );
-
-          hoverSource.addFeature(commonFeature as any);
+        // Fast BBox check: skip if not overlapping
+        if (
+          aoiBbox[0] > prodBbox[2] ||
+          aoiBbox[2] < prodBbox[0] ||
+          aoiBbox[1] > prodBbox[3] ||
+          aoiBbox[3] < prodBbox[1]
+        ) {
+          return;
         }
-      } catch (err) {
-        // Ignore invalid geometry intersections on hover
+
+        // Fast simplify for hover calculation if geometry has > 100 points
+        let geomForHover = rawAoiGeo;
+        try {
+          const totalPoints = turf.coordAll(rawAoiGeo).length;
+          if (totalPoints > 100) {
+            geomForHover = turf.simplify(rawAoiGeo, {
+              tolerance: 0.001, // ~100m, visually identical on hover preview, 100x faster
+              highQuality: false,
+              mutate: false,
+            });
+          }
+        } catch {}
+
+        const intersection = turf.intersect(turf.featureCollection([geomForHover, productGeo] as any));
+        const geomToRender = intersection?.geometry || hoveredProduct.geometry;
+
+        const commonFeature = format.readFeature({
+          type: "Feature",
+          geometry: geomToRender,
+        }) as any;
+
+        commonFeature.setStyle(
+          new Style({
+            fill: new Fill({
+              color: "rgba(218, 198, 130, 0.50)",
+            }),
+            stroke: new Stroke({
+              color: "rgba(115, 72, 30, 0.9)",
+              width: 1.5,
+            }),
+          }),
+        );
+
+        hoverIntersectionCacheRef.current.set(cacheKey, commonFeature);
+        hoverSource.addFeature(commonFeature);
+      } else {
+        // Fallback: render product footprint directly
+        const commonFeature = format.readFeature({
+          type: "Feature",
+          geometry: hoveredProduct.geometry,
+        }) as any;
+
+        commonFeature.setStyle(
+          new Style({
+            fill: new Fill({
+              color: "rgba(218, 198, 130, 0.50)",
+            }),
+            stroke: new Stroke({
+              color: "rgba(115, 72, 30, 0.9)",
+              width: 1.5,
+            }),
+          }),
+        );
+
+        hoverIntersectionCacheRef.current.set(cacheKey, commonFeature);
+        hoverSource.addFeature(commonFeature);
       }
-    });
+    } catch {
+      // Ignore hover geometry errors
+    }
 
     return () => {
-      hoverSource.clear();
+      hoverSource.clear(true);
     };
-  }, [hoveredProduct, layers]);
+  }, [hoveredProduct, layers, selectedAOIId]);
 
   useEffect(() => {
     const source = pinSourceRef.current;
@@ -1742,56 +1933,79 @@ export default function MapView() {
 
     const format = new GeoJSON();
 
-    const aoiLayers = layers.filter((layer) =>
-      ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(
-        layer.type,
-      ),
-    );
+    try {
+      const aoiLayers = layers.filter((layer) =>
+        ["Polygon", "Box", "Point", "Coordinates", "Bound Coordinates"].includes(layer.type),
+      );
 
-    pinnedProducts.forEach((product) => {
-      const productFeature = format.readFeature({
-        type: "Feature",
-        geometry: product.geometry,
+      const targetAois = selectedAOIId
+        ? aoiLayers.filter((l) => l.id === selectedAOIId)
+        : aoiLayers.slice(0, 3);
+
+      pinnedProducts.forEach((product) => {
+        if (!product?.geometry) return;
+
+        const productFeature = format.readFeature({
+          type: "Feature",
+          geometry: product.geometry,
+        });
+
+        const productGeo = format.writeFeatureObject(productFeature as any);
+        const prodBbox = turf.bbox(productGeo);
+
+        targetAois.forEach((aoiLayer) => {
+          try {
+            if (!aoiLayer?.geojson) return;
+            const aoiFeature = format.readFeature(aoiLayer.geojson);
+            const aoiGeo = format.writeFeatureObject(aoiFeature as any);
+
+            // Fast BBox check: skip if not overlapping
+            const aoiBbox = turf.bbox(aoiGeo);
+            if (
+              aoiBbox[0] > prodBbox[2] ||
+              aoiBbox[2] < prodBbox[0] ||
+              aoiBbox[1] > prodBbox[3] ||
+              aoiBbox[3] < prodBbox[1]
+            ) {
+              return;
+            }
+
+            const intersection = turf.intersect(
+              turf.featureCollection([aoiGeo, productGeo] as any),
+            );
+
+            if (intersection) {
+              const feature = format.readFeature(intersection);
+
+              (feature as any).set("productId", product.id);
+
+              (feature as any).setStyle(
+                new Style({
+                  fill: new Fill({
+                    color: "rgba(255, 204, 128, 0.12)",
+                  }),
+                  stroke: new Stroke({
+                    color: "#ff6f00",
+                    width: 1,
+                  }),
+                }),
+              );
+
+              source.addFeature(feature as any);
+            }
+          } catch {
+            // Ignore geometry intersection errors on pin
+          }
+        });
       });
-
-      const productGeo = format.writeFeatureObject(productFeature as any);
-
-      aoiLayers.forEach((aoiLayer) => {
-        const aoiFeature = format.readFeature(aoiLayer.geojson);
-        const aoiGeo = format.writeFeatureObject(aoiFeature as any);
-
-        const intersection = turf.intersect(
-          turf.featureCollection([aoiGeo, productGeo] as any),
-        );
-
-        if (intersection) {
-          const feature = format.readFeature(intersection);
-
-          (feature as any).set("productId", product.id);
-
-          (feature as any).setStyle(
-            new Style({
-              fill: new Fill({
-                // Very subtle fill like the uploaded image
-                color: "rgba(255, 204, 128, 0.12)",
-              }),
-              stroke: new Stroke({
-                // Thin orange/red product boundary
-                color: "#ff6f00",
-                width: 1,
-              }),
-            }),
-          );
-
-          source.addFeature(feature as any);
-        }
-      });
-    });
+    } catch {
+      // Ignore pin errors
+    }
 
     return () => {
       source.clear();
     };
-  }, [pinnedProducts, layers]);
+  }, [pinnedProducts, layers, selectedAOIId]);
 
 
   useEffect(() => {

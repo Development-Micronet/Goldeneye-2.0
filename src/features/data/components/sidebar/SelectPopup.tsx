@@ -266,7 +266,8 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
             <span className="text-[11px] text-gray-300">Use Draw or Import to add layers.</span>
           </div>
         ) : (
-          layers.map((layer) => {
+          <>
+            {layers.slice(0, 100).map((layer) => {
             const isSelected = selectedLayerId === layer.id;
             const isEditing = editingLayerId === layer.id;
             const isMenuOpen = activeMenuLayerId === layer.id;
@@ -402,9 +403,15 @@ export const SelectPopup: React.FC<SelectPopupProps> = ({ onClose }) => {
                 )}
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+          {layers.length > 100 && (
+            <div className="py-2 text-center text-xs font-medium text-gray-500">
+              Showing first 100 of {layers.length} layers
+            </div>
+          )}
+        </>
+      )}
+    </div>
 
       {/* Dynamic Absolute 3-Dot Dropdown overlaying the whole modal */}
       {activeMenuLayerId && activeMenuPosition && (

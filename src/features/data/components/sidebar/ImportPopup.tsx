@@ -50,7 +50,7 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
     onClose();
   };
 
-  const addLayer = useLayersStore((state) => state.addLayer);
+  const addLayers = useLayersStore((state) => state.addLayers);
   const setSelectedAOI = useSelectedAOIStore((state) => state.setSelectedAOI);
   const setSelectedLayerId = useMapStore((state) => state.setSelectedLayerId);
   const setFitLayerId = useMapStore((state) => state.setFitLayerId);
@@ -151,13 +151,13 @@ export const ImportPopup: React.FC<ImportPopupProps> = ({ onClose }) => {
             shpCompanionFiles: companionOptions,
           });
 
-          parsedLayers.forEach((layer) => {
-            const newLayer = addLayer(layer);
-            if (!firstImportedLayerId) {
-              firstImportedLayerId = newLayer.id;
+          if (parsedLayers && parsedLayers.length > 0) {
+            const newLayers = addLayers(parsedLayers);
+            if (!firstImportedLayerId && newLayers.length > 0) {
+              firstImportedLayerId = newLayers[0].id;
             }
-            totalImported++;
-          });
+            totalImported += newLayers.length;
+          }
         } catch (err: any) {
           logger.error(`Error importing file ${file.name}:`, err);
           errors.push(`${file.name}: ${err.message || err}`);
