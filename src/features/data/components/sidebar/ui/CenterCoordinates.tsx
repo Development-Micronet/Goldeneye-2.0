@@ -1,12 +1,31 @@
 import React from "react";
 import Toggle from "../../ui/Toggle";
 
+export type CoordinateType = "lat" | "long";
+
+export type DMSInput = {
+  degree: number | string;
+  minutes: number | string;
+  seconds: number | string;
+  direction: string;
+};
+
 interface CenterCoordinatesProps {
   latitude: string;
   longitude: string;
-  latitudeDMS: any;
-  longitudeDMS: any;
+  latitudeDMS: DMSInput | null;
+  longitudeDMS: DMSInput | null;
 
+  onDecimalChange: (
+    value: string,
+    type: CoordinateType
+  ) => void;
+
+  onDMSChange: (
+    field: keyof DMSInput,
+    value: string,
+    type: CoordinateType
+  ) => void;
   decimalRegex: RegExp;
 
   shapeType: "Square" | "Rectangle";
@@ -43,6 +62,8 @@ const CenterCoordinates: React.FC<CenterCoordinatesProps> = ({
   setShapeType,
 
   isRectangle,
+  onDecimalChange,
+  onDMSChange,
   setLatitude,
   setLongitude,
 
@@ -68,127 +89,132 @@ const CenterCoordinates: React.FC<CenterCoordinatesProps> = ({
       <div className="px-2 py-1 text-[#3F3E3E]">
         <h2 className="mb-2 text-xs font-normal">Center Coordinates</h2>
         <p className="mb-2 text-[10px] text-gray-500">
-          Enter the center location in decimal degrees (DD). The DMS values are calculated
-          automatically.
+          Enter coordinates in Decimal Degrees (DD) or Degrees, Minutes,
+          Seconds (DMS). DMS values are calculated automatically.
         </p>
-        <div className="grid grid-cols-[55px_95px_65px_65px_65px_45px] items-center gap-2 text-[10px]">
+        <div className="grid grid-cols-[55px_100px_50px_50px_50px_45px] items-center gap-1.5 text-[10px]">
           {/* Header */}
           <div></div>
-          <div className="text-center">Degree Decimal(DD)</div>
-          <div className="text-center">Degree °</div>
-          <div className="text-center">Minutes '</div>
-          <div className="text-center">Second "</div>
-          <div className="text-center">DMS</div>
+          <div className="text-center font-medium">Degree Decimal(DD)</div>
+          <div className="text-center font-medium">Degree °</div>
+          <div className="text-center font-medium">Minutes '</div>
+          <div className="text-center font-medium">Second "</div>
+          <div className="text-center font-medium">DMS</div>
 
           {/* Latitude */}
           <div className="text-[11px] font-bold">Latitude</div>
 
-          <div className="flex items-center gap-1">
-            <div className="flex items-center gap-1">
-              <input
-                value={latitude}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  // Allow only numbers, one decimal point, and negative sign
-                  if (decimalRegex.test(value)) {
-                    setLatitude(value);
-                  }
-                }}
-                inputMode="decimal"
-                className="h-[22px] w-[85px] rounded border px-1 text-xs"
-              />
-            </div>
-            <span className="text-[14px] font-medium">°</span>
+          <div className="flex items-center gap-0.5">
+            <input
+              type="text"
+              value={latitude}
+              onChange={(e) => onDecimalChange(e.target.value, "lat")}
+              placeholder="e.g. 26.5074"
+              className="h-[22px] w-[80px] rounded border border-gray-300 px-1 text-xs outline-none focus:border-primary"
+            />
+            <span className="text-[13px] font-medium text-gray-500">°</span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <input
-              value={latitudeDMS?.degree || ""}
-              readOnly
-              className="h-[22px] w-[55px] rounded border px-1 text-xs"
+              type="text"
+              value={latitudeDMS?.degree !== undefined ? latitudeDMS.degree : ""}
+              onChange={(e) => onDMSChange("degree", e.target.value, "lat")}
+              placeholder="0"
+              className="h-[22px] w-[42px] rounded border border-gray-300 px-1 text-center text-xs outline-none focus:border-primary"
             />
-            <span className="text-[14px] font-medium">°</span>
+            <span className="text-[13px] font-medium text-gray-500">°</span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <input
-              value={latitudeDMS?.minutes || ""}
-              readOnly
-              className="h-[22px] w-[55px] rounded border px-1 text-xs"
+              type="text"
+              value={latitudeDMS?.minutes !== undefined ? latitudeDMS.minutes : ""}
+              onChange={(e) => onDMSChange("minutes", e.target.value, "lat")}
+              placeholder="0"
+              className="h-[22px] w-[42px] rounded border border-gray-300 px-1 text-center text-xs outline-none focus:border-primary"
             />
-            <span className="text-[14px] font-medium">'</span>
+            <span className="text-[13px] font-medium text-gray-500">'</span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <input
-              value={latitudeDMS?.seconds || ""}
-              readOnly
-              className="h-[22px] w-[55px] rounded border px-1 text-xs"
+              type="text"
+              value={latitudeDMS?.seconds !== undefined ? latitudeDMS.seconds : ""}
+              onChange={(e) => onDMSChange("seconds", e.target.value, "lat")}
+              placeholder="0"
+              className="h-[22px] w-[42px] rounded border border-gray-300 px-1 text-center text-xs outline-none focus:border-primary"
             />
-            <span className="text-[14px] font-medium">"</span>
+            <span className="text-[13px] font-medium text-gray-500">"</span>
           </div>
 
-          <div className="flex items-center gap-1">
-            <input
-              value={latitudeDMS?.direction || ""}
-              readOnly
-              className="h-[22px] w-[45px] rounded border px-1 text-xs"
-            />
+          <div className="flex items-center">
+            <select
+              value={latitudeDMS?.direction || "N"}
+              onChange={(e) => onDMSChange("direction", e.target.value, "lat")}
+              className="h-[22px] w-[42px] rounded border border-gray-300 bg-white px-0.5 text-xs outline-none focus:border-primary"
+            >
+              <option value="N">N</option>
+              <option value="S">S</option>
+            </select>
           </div>
 
           {/* Longitude */}
           <div className="text-[11px] font-bold">Longitude</div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <input
+              type="text"
               value={longitude}
-              onChange={(e) => {
-                const value = e.target.value;
-
-                if (decimalRegex.test(value)) {
-                  setLongitude(value);
-                }
-              }}
-              inputMode="decimal"
-              className="h-[22px] w-[85px] rounded border px-1 text-xs"
+              onChange={(e) => onDecimalChange(e.target.value, "long")}
+              placeholder="e.g. 80.2345"
+              className="h-[22px] w-[80px] rounded border border-gray-300 px-1 text-xs outline-none focus:border-primary"
             />
-            <span className="text-[14px] font-medium">°</span>
+            <span className="text-[13px] font-medium text-gray-500">°</span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <input
-              value={longitudeDMS?.degree || ""}
-              readOnly
-              className="h-[22px] w-[55px] rounded border px-1 text-xs"
+              type="text"
+              value={longitudeDMS?.degree !== undefined ? longitudeDMS.degree : ""}
+              onChange={(e) => onDMSChange("degree", e.target.value, "long")}
+              placeholder="0"
+              className="h-[22px] w-[42px] rounded border border-gray-300 px-1 text-center text-xs outline-none focus:border-primary"
             />
-            <span className="text-[14px] font-medium">°</span>
+            <span className="text-[13px] font-medium text-gray-500">°</span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <input
-              value={longitudeDMS?.minutes || ""}
-              readOnly
-              className="h-[22px] w-[55px] rounded border px-1 text-xs"
+              type="text"
+              value={longitudeDMS?.minutes !== undefined ? longitudeDMS.minutes : ""}
+              onChange={(e) => onDMSChange("minutes", e.target.value, "long")}
+              placeholder="0"
+              className="h-[22px] w-[42px] rounded border border-gray-300 px-1 text-center text-xs outline-none focus:border-primary"
             />
-            <span className="text-[14px] font-medium">'</span>
+            <span className="text-[13px] font-medium text-gray-500">'</span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <input
-              value={longitudeDMS?.seconds || ""}
-              readOnly
-              className="h-[22px] w-[55px] rounded border px-1 text-xs"
+              type="text"
+              value={longitudeDMS?.seconds !== undefined ? longitudeDMS.seconds : ""}
+              onChange={(e) => onDMSChange("seconds", e.target.value, "long")}
+              placeholder="0"
+              className="h-[22px] w-[42px] rounded border border-gray-300 px-1 text-center text-xs outline-none focus:border-primary"
             />
-            <span className="text-[14px] font-medium">"</span>
+            <span className="text-[13px] font-medium text-gray-500">"</span>
           </div>
 
-          <div className="flex items-center gap-1">
-            <input
-              value={longitudeDMS?.direction || ""}
-              readOnly
-              className="h-[22px] w-[45px] rounded border px-1 text-xs"
-            />
+          <div className="flex items-center">
+            <select
+              value={longitudeDMS?.direction || "E"}
+              onChange={(e) => onDMSChange("direction", e.target.value, "long")}
+              className="h-[22px] w-[42px] rounded border border-gray-300 bg-white px-0.5 text-xs outline-none focus:border-primary"
+            >
+              <option value="E">E</option>
+              <option value="W">W</option>
+            </select>
           </div>
         </div>
       </div>
@@ -202,9 +228,8 @@ const CenterCoordinates: React.FC<CenterCoordinatesProps> = ({
         <div className="mb-2 flex flex-col items-center gap-2">
           <div className="flex items-center gap-2">
             <span
-              className={`text-[11px] font-bold ${
-                shapeType === "Square" ? "text-primary" : "text-gray-500"
-              }`}
+              className={`text-[11px] font-bold ${shapeType === "Square" ? "text-primary" : "text-gray-500"
+                }`}
             >
               Square
             </span>
@@ -215,9 +240,8 @@ const CenterCoordinates: React.FC<CenterCoordinatesProps> = ({
             />
 
             <span
-              className={`text-[11px] font-bold ${
-                shapeType === "Rectangle" ? "text-primary" : "text-gray-500"
-              }`}
+              className={`text-[11px] font-bold ${shapeType === "Rectangle" ? "text-primary" : "text-gray-500"
+                }`}
             >
               Rectangle
             </span>
@@ -331,11 +355,10 @@ const CenterCoordinates: React.FC<CenterCoordinatesProps> = ({
           type="button"
           disabled={!isValidCenterBuffer}
           onClick={handlePlot}
-          className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-colors ${
-            isValidCenterBuffer
-              ? "bg-primary hover:bg-primary/90 cursor-pointer text-white"
-              : "cursor-not-allowed bg-gray-200 text-gray-400"
-          }`}
+          className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-colors ${isValidCenterBuffer
+            ? "bg-primary hover:bg-primary/90 cursor-pointer text-white"
+            : "cursor-not-allowed bg-gray-200 text-gray-400"
+            }`}
         >
           Draw
         </button>
