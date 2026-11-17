@@ -22,6 +22,7 @@ export interface UserData {
   schema_name?: string;
   domain_name?: string;
   date: string;
+  services?: string[];
 }
 
 export interface LoginResponse {

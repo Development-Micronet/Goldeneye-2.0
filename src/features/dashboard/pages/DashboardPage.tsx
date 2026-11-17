@@ -103,6 +103,7 @@ export const DashboardPage = () => {
             onAddUserClick={() => setShowAddUserModal(true)}
             onDeleteUser={handleDeleteUser}
             onEditUser={(user) => {
+              if (user.tenant_role === "tenant_admin") return;
               setSelectedUserToEdit(user);
               setShowEditUserModal(true);
             }}
@@ -115,6 +116,7 @@ export const DashboardPage = () => {
         open={showAddUserModal}
         onClose={() => setShowAddUserModal(false)}
         defaultOrganization={selectedCompany?.company_name ?? ""}
+        selectedCompany={selectedCompany}
         onSuccess={() => {
           refetchUsers();
         }}
@@ -124,6 +126,7 @@ export const DashboardPage = () => {
         open={showEditUserModal}
         onClose={() => setShowEditUserModal(false)}
         user={selectedUserToEdit}
+        selectedCompany={selectedCompany}
         onSuccess={() => {
           refetchUsers();
         }}

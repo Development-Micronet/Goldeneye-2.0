@@ -1,10 +1,9 @@
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronLeft, X } from "lucide-react";
 import {
   advanceDataIcon,
-  analyticsIcon,
   archiveIcon,
   indentIcon,
   mydataIcon,
@@ -20,10 +19,12 @@ import { MyIndentMenu } from "./sidebar/menus/MyIndentMenu";
 import { MyOrderMenu } from "./sidebar/menus/MyOrderMenu";
 import { OrbitographyMenu } from "./sidebar/menus/orbitography/OrbitographyMenu";
 import { TaskingMenu } from "./sidebar/menus/TaskingMenu";
-import { usePlanStore } from "../hooks/usePlanStore";
 import { useMapSidebarStore } from "../hooks/useMapSidebarStore";
 import { useParameter } from "../hooks/useParameter";
-import { isArchiveAndGeo3dOnlyUser } from "../../../utils/userAccessPermissions";
+import {
+  isArchiveAndGeo3dOnlyUser,
+  useAllowedServices,
+} from "../../../utils/userAccessPermissions";
 
 interface MapSidebarProps {
   activeIndex?: number | null;
@@ -42,44 +43,14 @@ export default function MapSidebar({
   const activeIndex = propActiveIndex !== undefined ? propActiveIndex : storeActiveIndex ?? internalActiveIndex;
   const setActiveIndex = propSetActiveIndex || storeSetActiveIndex || setInternalActiveIndex;
   const { user } = useAuthStore();
-  const role = user?.roleName || "user";
-  const plan = usePlanStore((state) => state.plan);
-  const allowedServices = plan?.services ?? [];
-
   const isArchiveAndGeo3dOnly = isArchiveAndGeo3dOnlyUser(user);
+  const { hasService, isSuperAdmin } = useAllowedServices();
 
-  React.useEffect(() => {
-    if (isArchiveAndGeo3dOnly && activeIndex !== null && activeIndex !== 0) {
-      setActiveIndex(null);
-    }
-  }, [isArchiveAndGeo3dOnly, activeIndex, setActiveIndex]);
-
-  const roleIsSuperadmin = role === "superadmin";
-
-  const hasOrbitography =
-    roleIsSuperadmin || allowedServices.some((service) => service.toLowerCase() === "orbitography");
-
-  const hasSearch =
-    roleIsSuperadmin || allowedServices.some((service) => service.toLowerCase() === "search");
-
-  const hasTasking =
-    roleIsSuperadmin ||
-    allowedServices.length === 0 ||
-    allowedServices.some((service) => service.toLowerCase() === "tasking");
-
-  const hasMyIndent =
-    roleIsSuperadmin ||
-    allowedServices.length === 0 ||
-    allowedServices.some((service) =>
-      ["my_indent", "my indent", "indent"].includes(service.toLowerCase()),
-    );
-
-  const hasMyOrder =
-    roleIsSuperadmin ||
-    allowedServices.length === 0 ||
-    allowedServices.some((service) =>
-      ["my_orders", "my order", "order", "my_order"].includes(service.toLowerCase()),
-    );
+  const hasSearch = hasService("search");
+  const hasTasking = !isArchiveAndGeo3dOnly && hasService("tasking");
+  const hasMyIndent = !isArchiveAndGeo3dOnly && hasService("my_indent");
+  const hasOrbitography = !isArchiveAndGeo3dOnly && hasService("orbitography");
+  const hasMyOrder = !isArchiveAndGeo3dOnly && hasService("my_orders");
 
   const sidebarItems = isArchiveAndGeo3dOnly
     ? [
@@ -93,71 +64,85 @@ export default function MapSidebar({
     : [
         ...(hasSearch
           ? [
-            {
-              id: 1,
-              icon: archiveIcon,
-              tooltip: "Archive Search",
-              status: true,
-            },
-          ]
+              {
+                id: 1,
+                icon: archiveIcon,
+                tooltip: "Archive Search",
+                status: true,
+              },
+            ]
           : []),
         ...(hasTasking
           ? [
-            {
-              id: 2,
-              icon: taskingIcon,
-              tooltip: "Tasking",
-              status: true,
-            },
-          ]
+              {
+                id: 2,
+                icon: taskingIcon,
+                tooltip: "Tasking",
+                status: true,
+              },
+            ]
           : []),
-        {
-          id: 3,
-          icon: advanceDataIcon,
-          tooltip: "Advance Data",
-          status: false,
-        },
-        {
-          id: 4,
-          icon: mydataIcon,
-          tooltip: "My Data",
-          status: false,
-        },
         ...(hasMyIndent
           ? [
-            {
-              id: 5,
-              icon: indentIcon,
-              tooltip: "My Indent",
-              status: true,
-            },
-          ]
+              {
+                id: 5,
+                icon: indentIcon,
+                tooltip: "My Indent",
+                status: true,
+              },
+            ]
           : []),
         ...(hasOrbitography
           ? [
-            {
-              id: 7,
-              icon: orbitIcon,
-              tooltip: "Orbitography",
-              status: true,
-            },
-          ]
+              {
+                id: 7,
+                icon: orbitIcon,
+                tooltip: "Orbitography",
+                status: true,
+              },
+            ]
           : []),
         ...(hasMyOrder
           ? [
-            {
-              id: 8,
-              icon: orderIcon,
-              tooltip: "My Order",
-              status: true,
-            },
-          ]
+              {
+                id: 8,
+                icon: orderIcon,
+                tooltip: "My Order",
+                status: true,
+              },
+            ]
+          : []),
+        // Advance Data and My Data are unassigned coming-soon items, only visible to superadmin
+        ...(isSuperAdmin
+          ? [
+              {
+                id: 3,
+                icon: advanceDataIcon,
+                tooltip: "Advance Data",
+                status: false,
+              },
+              {
+                id: 4,
+                icon: mydataIcon,
+                tooltip: "My Data",
+                status: false,
+              },
+            ]
           : []),
       ];
-  // Filter out ID 6 (My Indent) for superadmin role (business rule from Phase 2)
-  const filteredItems = sidebarItems.filter((item) =>
-    role.toLowerCase() === "superadmin" ? item.id !== 6 : true,
-  );
+
+  const filteredItems = sidebarItems;
+
+  // Auto-close open sheet if the corresponding item is not permitted / visible
+  useEffect(() => {
+    if (activeIndex !== null) {
+      const activeItemExists = filteredItems.some((it) => it.id - 1 === activeIndex);
+      if (!activeItemExists) {
+        setActiveIndex(null);
+      }
+    }
+  }, [filteredItems, activeIndex, setActiveIndex]);
+
   const handleItemClick = (index: number, status: boolean) => {
     if (!status) return; // Disable clicking for coming soon items
     setTab("none");
@@ -167,6 +152,7 @@ export default function MapSidebar({
       setActiveIndex(index);
     }
   };
+
   const renderSheetContent = (index: number) => {
     const item = filteredItems.find((it) => it.id - 1 === index);
     if (!item) return null;
@@ -187,7 +173,7 @@ export default function MapSidebar({
       case 7:
         return <OrbitographyMenu />;
       case 8:
-        return <MyOrderMenu />
+        return <MyOrderMenu />;
       default:
         return null;
     }

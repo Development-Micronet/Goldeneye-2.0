@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Mail,
   User,
+  Edit2,
 } from "lucide-react";
 import { useTenantSuperusers, useCompanyUsers } from "../hooks/useEndUsers";
 import type { Company, CompanyUser } from "../api/enduser";
@@ -30,7 +31,7 @@ const CompanyUserAccordion: React.FC<{
   onEdit?: (user: CompanyUser) => void;
   onDelete?: (id: number) => void;
   searchQuery: string;
-}> = ({ company, isAdmin, onAddUser, searchQuery }) => {
+}> = ({ company, isAdmin, onAddUser, onEdit, searchQuery }) => {
   const [open, setOpen] = useState(false);
 
   // Fetch users for the selected company
@@ -183,6 +184,11 @@ const CompanyUserAccordion: React.FC<{
                     <th className="px-4 py-3 text-center font-bold tracking-wide text-[#2c6671] uppercase">
                       Role
                     </th>
+                    {isAdmin && (
+                      <th className="px-4 py-3 text-center font-bold tracking-wide text-[#2c6671] uppercase">
+                        Action
+                      </th>
+                    )}
                   </tr>
                 </thead>
 
@@ -215,6 +221,25 @@ const CompanyUserAccordion: React.FC<{
                             </span>
                           )}
                         </td>
+                        {isAdmin && (
+                          <td className="px-4 py-3.5 text-center">
+                            {!isTenantAdmin ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEdit?.(u);
+                                }}
+                                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition-colors hover:border-[#2c6671] hover:bg-[#EFFBFD] hover:text-[#2c6671]"
+                                title={`Edit ${u.username}`}
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <span className="text-xs font-medium text-gray-300 select-none">—</span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -229,15 +254,18 @@ const CompanyUserAccordion: React.FC<{
 };
 
 // 2. Main Parent Component
-export const EndUsersTable: React.FC<EndUsersTableProps> = ({ onEdit, onDelete }) => {
+export const EndUsersTable: React.FC<EndUsersTableProps> = ({ onEdit: parentOnEdit, onDelete }) => {
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<CompanyUser | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const user = useAuthStore((state) => state.user);
   const roleName = user?.roleName.toLowerCase() || "";
-  const isAdmin = roleName === "admin";
+  const isSuperAdmin = roleName === "superadmin";
+  const isAdmin = roleName === "admin" && !isSuperAdmin;
 
   // Fetch all company tenant superusers list
   const { data: companies = [], isLoading, error } = useTenantSuperusers();
@@ -248,8 +276,17 @@ export const EndUsersTable: React.FC<EndUsersTableProps> = ({ onEdit, onDelete }
   };
 
   const handleAddUserClick = (companyName: string) => {
+    if (isSuperAdmin) return;
     setSelectedCompany(companyName);
     setShowAddModal(true);
+  };
+
+  const handleEditUserClick = (userItem: CompanyUser, companyName: string) => {
+    if (isSuperAdmin || userItem.tenant_role === "tenant_admin") return;
+    setSelectedCompany(companyName);
+    setUserToEdit(userItem);
+    setShowEditModal(true);
+    parentOnEdit?.(userItem);
   };
 
   const filteredCompanies = useMemo(() => {
@@ -346,7 +383,7 @@ export const EndUsersTable: React.FC<EndUsersTableProps> = ({ onEdit, onDelete }
             company={company}
             isAdmin={isAdmin}
             onAddUser={handleAddUserClick}
-            onEdit={onEdit}
+            onEdit={(userItem) => handleEditUserClick(userItem, company.company_name)}
             onDelete={onDelete}
             searchQuery={searchQuery}
           />
@@ -362,7 +399,22 @@ export const EndUsersTable: React.FC<EndUsersTableProps> = ({ onEdit, onDelete }
       {/* Add User Modal */}
       <EndUserFormModal
         open={showAddModal}
+        mode="create"
         onClose={() => setShowAddModal(false)}
+        companies={companies}
+        defaultOrganization={selectedCompany}
+        onSuccess={handleSuccess}
+      />
+
+      {/* Edit User Modal */}
+      <EndUserFormModal
+        open={showEditModal}
+        mode="edit"
+        userToEdit={userToEdit}
+        onClose={() => {
+          setShowEditModal(false);
+          setUserToEdit(null);
+        }}
         companies={companies}
         defaultOrganization={selectedCompany}
         onSuccess={handleSuccess}

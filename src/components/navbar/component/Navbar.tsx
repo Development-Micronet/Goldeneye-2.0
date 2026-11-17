@@ -14,7 +14,7 @@ import { useArchiveProductStore } from "../../../features/data/components/sideba
 import { useMapStore } from "../../../features/data/store/useMapStore";
 import { usePlanStore } from "../../../features/data/hooks/usePlanStore";
 import { hasGeo3dAccess, isBsfUser } from "../../../utils/geo3dPermissions";
-import { isArchiveAndGeo3dOnlyUser } from "../../../utils/userAccessPermissions";
+import { isArchiveAndGeo3dOnlyUser, useAllowedServices } from "../../../utils/userAccessPermissions";
 
 const PRODUCT_NAME_MAP: Record<string, string> = {
   PNEO: "Pleiades-Neo-0.3m",
@@ -45,22 +45,12 @@ export default function Navbar() {
   const setImages = useImageStore((state) => state.setImages);
   const quotationItem = useQuotationItemStore((state) => state.quotationItem);
   const setQuotationItems = useQuotationItemStore((state) => state.setQuotationItems);
-  const plan = usePlanStore((state) => state.plan);
-  const allowedServices = plan?.services ?? [];
+  const { allowedServices, hasService } = useAllowedServices();
 
   const isArchiveAndGeo3dOnly = isArchiveAndGeo3dOnlyUser(user);
   const hasGeo3d = hasGeo3dAccess(user, allowedServices);
-  const hasAnalytics =
-    !isArchiveAndGeo3dOnly &&
-    (roleName === "superadmin" ||
-      allowedServices.some((service) => service?.toLowerCase() === "analytics"));
-
-  const hasQuotations =
-    !isArchiveAndGeo3dOnly &&
-    (roleName === "superadmin" ||
-      allowedServices.some((service) =>
-        ["quotations", "quotation"].includes(service?.toLowerCase()?.trim()),
-      ));
+  const hasAnalytics = !isArchiveAndGeo3dOnly && hasService("analytics");
+  const hasQuotations = !isArchiveAndGeo3dOnly && hasService("quotations");
   // Search location handler using Nominatim API
   const searchPlaces = async (query: string) => {
     if (!query.trim()) {

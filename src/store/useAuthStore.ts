@@ -17,6 +17,7 @@ export interface User {
   domain_name?: string;
   date: string;
   must_reset_password?: boolean; // <-- Add this line
+  services?: string[];
 }
 
 interface AuthState {
