@@ -16,7 +16,10 @@ import { usePlanStore } from "../hooks/usePlanStore";
 
 import { exportAOIWithMapLibre, downloadFile } from "../../../utils/exportAOIGeoTIFF";
 import { useRasterStore } from "../../analytics/store/useRasterStore";
-import { isArchiveAndGeo3dOnlyUser } from "../../../utils/userAccessPermissions";
+import {
+  isArchiveAndGeo3dOnlyUser,
+  useAllowedServices,
+} from "../../../utils/userAccessPermissions";
 
 const AnalyticsButton = () => {
     const navigate = useNavigate();
@@ -24,29 +27,13 @@ const AnalyticsButton = () => {
     const [loading, setLoading] = useState(false);
 
     const user = useAuthStore((state) => state.user);
-    const roleName = user?.roleName?.toLowerCase() || "user";
-    const plan = usePlanStore((state) => state.plan);
-    const allowedServices = plan?.services ?? [];
-
-    const isSuperAdmin = roleName === "superadmin";
     const isArchiveAndGeo3dOnly = isArchiveAndGeo3dOnlyUser(user);
+    const { hasService } = useAllowedServices();
 
-    // Permission checks according to plan services
-    const hasSearch =
-      isSuperAdmin ||
-      allowedServices.length === 0 ||
-      allowedServices.some((s) => s.toLowerCase() === "search");
-
-    const hasAnalytics =
-      !isArchiveAndGeo3dOnly &&
-      (isSuperAdmin ||
-      allowedServices.some((s) => s.toLowerCase() === "analytics"));
-
-    const hasTasking =
-      !isArchiveAndGeo3dOnly &&
-      (isSuperAdmin ||
-      allowedServices.length === 0 ||
-      allowedServices.some((s) => s.toLowerCase() === "tasking"));
+    // Permission checks according to user/plan services
+    const hasSearch = hasService("search");
+    const hasAnalytics = !isArchiveAndGeo3dOnly && hasService("analytics");
+    const hasTasking = !isArchiveAndGeo3dOnly && hasService("tasking");
 
     const selectedAOIId = useSelectedAOIStore((state) => state.selectedAOIId);
 

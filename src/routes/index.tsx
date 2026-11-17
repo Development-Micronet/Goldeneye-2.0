@@ -14,7 +14,7 @@ import { ForceResetPasswordPage } from "../features/auth/pages/ForceResetPasswor
 import MapLayout from "../features/analytics/map/MapLayout";
 import { useMyPlan } from "../features/manage/hooks/usePlans";
 import { usePlanStore } from "../features/data/hooks/usePlanStore";
-import { isArchiveAndGeo3dOnlyUser } from "../utils/userAccessPermissions";
+import { isArchiveAndGeo3dOnlyUser, useAllowedServices } from "../utils/userAccessPermissions";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -81,31 +81,19 @@ interface PlanRouteProps {
 }
 
 const PlanRoute: React.FC<PlanRouteProps> = ({ children, requiredService }) => {
-  const plan = usePlanStore((state) => state.plan);
   const user = useAuthStore((state) => state.user);
+  const { hasService, isSuperAdmin } = useAllowedServices();
 
   if (isArchiveAndGeo3dOnlyUser(user)) {
     return <Navigate to="/data" replace />;
   }
 
-  const roleName = user?.roleName?.toLowerCase() || "";
-
   // Superadmin has access to everything
-  if (roleName === "superadmin") {
+  if (isSuperAdmin) {
     return <>{children}</>;
   }
 
-  const allowedServices = plan?.services ?? [];
-
-  const hasAccess = allowedServices.some((service) => {
-    const s = service?.toLowerCase()?.trim();
-    const req = requiredService.toLowerCase().trim();
-    return (
-      s === req ||
-      (req === "quotations" && s === "quotation") ||
-      (req === "quotation" && s === "quotations")
-    );
-  });
+  const hasAccess = hasService(requiredService);
 
   if (!hasAccess) {
     return <Navigate to="/data" replace />;

@@ -115,37 +115,41 @@ export function UserTable({
                 {isAdmin && (
                   <td className="px-4 py-3.5 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => onEditUser?.(user)}
-                        className="cursor-pointer rounded-md p-1 text-[#2c6671] transition-colors hover:bg-[#EFFBFD] hover:text-[#1f4e57]"
-                        title="Edit User"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
+                      {user.tenant_role !== "tenant_admin" ? (
+                        <>
+                          <button
+                            onClick={() => onEditUser?.(user)}
+                            className="cursor-pointer rounded-md p-1 text-[#2c6671] transition-colors hover:bg-[#EFFBFD] hover:text-[#1f4e57]"
+                            title="Edit User"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
 
-                      {user.tenant_role !== "tenant_admin" && (
-                        <button
-                          onClick={async () => {
-                            const result = await Swal.fire({
-                              title: "Are you sure?",
-                              text: "This user will be permanently deleted.",
-                              icon: "warning",
-                              showCancelButton: true,
-                              confirmButtonColor: "#ef4444",
-                              cancelButtonColor: "#6b7280",
-                              confirmButtonText: "Yes, delete it",
-                              cancelButtonText: "Cancel",
-                              reverseButtons: true,
-                            });
-                            if (result.isConfirmed) {
-                              onDeleteUser?.(user.id);
-                            }
-                          }}
-                          className="cursor-pointer rounded-md p-1 text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
-                          title="Delete User"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                          <button
+                            onClick={async () => {
+                              const result = await Swal.fire({
+                                title: "Are you sure?",
+                                text: "This user will be permanently deleted.",
+                                icon: "warning",
+                                showCancelButton: true,
+                                confirmButtonColor: "#ef4444",
+                                cancelButtonColor: "#6b7280",
+                                confirmButtonText: "Yes, delete it",
+                                cancelButtonText: "Cancel",
+                                reverseButtons: true,
+                              });
+                              if (result.isConfirmed) {
+                                onDeleteUser?.(user.id);
+                              }
+                            }}
+                            className="cursor-pointer rounded-md p-1 text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                            title="Delete User"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-xs font-medium text-gray-300 select-none">—</span>
                       )}
                     </div>
                   </td>
