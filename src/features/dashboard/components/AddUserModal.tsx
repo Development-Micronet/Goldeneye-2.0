@@ -116,9 +116,19 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
         gender: u.gender || "",
       });
 
-      if (Array.isArray(u.services) && u.services.length > 0) {
-        setSelectedServices(u.services);
+      // Filter user's existing services against company's plan so unauthorized services are not held
+      const initialServices = Array.isArray(u.services) ? u.services : [];
+      const validInitialServices =
+        availableServices.length > 0
+          ? initialServices.filter((s: string) => availableServices.includes(s))
+          : initialServices;
+      if (validInitialServices.length > 0) {
+        setSelectedServices(validInitialServices);
       } else if (availableServices.includes("search")) {
+        setSelectedServices(["search"]);
+      } else if (availableServices.length > 0) {
+        setSelectedServices([availableServices[0]]);
+      } else {
         setSelectedServices(["search"]);
       }
 
@@ -170,7 +180,13 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
               gender: fetchedUser.gender || prev.gender,
             }));
             if (Array.isArray(fetchedUser.services) && fetchedUser.services.length > 0) {
-              setSelectedServices(fetchedUser.services);
+              const validFetched =
+                availableServices.length > 0
+                  ? fetchedUser.services.filter((s: string) => availableServices.includes(s))
+                  : fetchedUser.services;
+              if (validFetched.length > 0) {
+                setSelectedServices(validFetched);
+              }
             }
           }
         })
@@ -210,14 +226,21 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
     }
   }, [open, userToEdit?.id, isEditMode, defaultOrganization]);
 
-  // Default services for new user creation if services list loads asynchronously
+  // Synchronize and sanitize selectedServices against availableServices from the plan
   useEffect(() => {
-    if (!isEditMode && open && selectedServices.length === 0 && availableServices.length > 0) {
-      setSelectedServices(
-        availableServices.includes("search") ? ["search"] : [availableServices[0]],
-      );
+    if (!open) return;
+    if (availableServices.length > 0) {
+      setSelectedServices((prev) => {
+        // Filter out any services that are not part of the company's active plan (e.g. legacy geo_3d)
+        const valid = prev.filter((s) => availableServices.includes(s));
+        if (valid.length > 0) {
+          if (valid.length === prev.length) return prev;
+          return valid;
+        }
+        return availableServices.includes("search") ? ["search"] : [availableServices[0]];
+      });
     }
-  }, [availableServices, isEditMode, open]);
+  }, [availableServices, open]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -316,7 +339,21 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
       return;
     }
 
-    if (selectedServices.length === 0) {
+    // Ensure we only submit services permitted by the company's plan
+    const sanitizedServices =
+      availableServices.length > 0
+        ? selectedServices.filter((s) => availableServices.includes(s))
+        : selectedServices;
+    const finalServices =
+      sanitizedServices.length > 0
+        ? sanitizedServices
+        : availableServices.includes("search")
+          ? ["search"]
+          : availableServices.length > 0
+            ? [availableServices[0]]
+            : ["search"];
+
+    if (finalServices.length === 0) {
       toast.error("Please select at least one service (*)");
       return;
     }
@@ -339,7 +376,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
         locality: formData.locality,
         address: formData.address,
         gender: formData.gender,
-        services: selectedServices.length > 0 ? selectedServices : ["search"],
+        services: finalServices,
       };
 
       let response: any;
